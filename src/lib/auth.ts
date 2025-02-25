@@ -1,17 +1,22 @@
+// src/lib/auth.ts
 import jwt from "jsonwebtoken"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
+const JWT_SECRET = process.env.JWT_SECRET || "your-default-secret"
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "1d" })
+export function verifyToken(token: string): boolean {
+  try {
+    jwt.verify(token, JWT_SECRET)
+    return true
+  } catch {
+    return false
+  }
 }
 
-export function verifyToken(token: string): Promise<jwt.JwtPayload> {
-  return new Promise((resolve, reject) => {
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-      if (err) reject(err)
-      resolve(decoded as jwt.JwtPayload)
-    })
-  })
+export function createToken(payload: object): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" })
+}
+
+export function generateToken(payload: object): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" })
 }
 

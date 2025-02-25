@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 interface RunningModel {
   model: string
@@ -20,8 +20,9 @@ export default function RunningModels() {
         if (!response.ok) throw new Error("Failed to fetch running models")
         const data = await response.json()
         setModels(data.models)
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch running models", variant: "destructive" })
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err.message : "Failed to fetch running models"
+        toast.error(error)
       }
     }
 

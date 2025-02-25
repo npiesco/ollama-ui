@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 interface VersionInfo {
   version: string
@@ -18,8 +18,9 @@ export default function Version() {
         if (!response.ok) throw new Error("Failed to fetch version information")
         const data = await response.json()
         setVersionInfo(data)
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch version information", variant: "destructive" })
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err.message : "Failed to fetch version information"
+        toast.error(error)
       }
     }
 

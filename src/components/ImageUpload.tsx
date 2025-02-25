@@ -1,6 +1,7 @@
 import type React from "react"
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 interface ImageUploadProps {
   onImageUpload: (file: File) => void
@@ -32,7 +33,13 @@ export function ImageUpload({ onImageUpload }: ImageUploadProps) {
       <Button onClick={handleButtonClick}>Upload Image</Button>
       {preview && (
         <div className="mt-2">
-          <img src={preview || "/placeholder.svg"} alt="Preview" className="max-w-full h-auto" />
+          <Image
+            src={preview}
+            alt="Upload preview"
+            width={200}
+            height={200}
+            className="max-w-full h-auto"
+          />
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export default function PushModel() {
   const [name, setName] = useState("")
@@ -20,9 +20,10 @@ export default function PushModel() {
         body: JSON.stringify({ name, insecure }),
       })
       if (!response.ok) throw new Error("Failed to push model")
-      toast({ title: "Success", description: "Model pushed successfully" })
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to push model", variant: "destructive" })
+      toast.success("Model pushed successfully")
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Failed to push model"
+      toast.error(error)
     }
   }
 

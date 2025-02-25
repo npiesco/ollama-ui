@@ -6,7 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export default function Login() {
   const [username, setUsername] = useState("")
@@ -23,8 +23,9 @@ export default function Login() {
       })
       if (!response.ok) throw new Error("Login failed")
       router.push("/")
-    } catch (error) {
-      toast({ title: "Error", description: "Login failed", variant: "destructive" })
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Login failed"
+      toast.error(error)
     }
   }
 

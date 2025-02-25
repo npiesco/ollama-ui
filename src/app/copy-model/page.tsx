@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export default function CopyModel() {
   const [source, setSource] = useState("")
@@ -20,9 +20,10 @@ export default function CopyModel() {
         body: JSON.stringify({ source, destination }),
       })
       if (!response.ok) throw new Error("Failed to copy model")
-      toast({ title: "Success", description: "Model copied successfully" })
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to copy model", variant: "destructive" })
+      toast.success("Model copied successfully")
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Failed to copy model"
+      toast.error(error)
     }
   }
 

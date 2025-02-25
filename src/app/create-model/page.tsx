@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export default function CreateModel() {
   const [name, setName] = useState("")
@@ -21,9 +21,10 @@ export default function CreateModel() {
         body: JSON.stringify({ name, modelfile }),
       })
       if (!response.ok) throw new Error("Failed to create model")
-      toast({ title: "Success", description: "Model created successfully" })
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to create model", variant: "destructive" })
+      toast.success("Model created successfully")
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Failed to create model"
+      toast.error(error)
     }
   }
 
