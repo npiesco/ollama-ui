@@ -33,6 +33,20 @@ export interface Tool {
   function: {
     name: string;
     description: string;
-    parameters: Record<string, any>;
+    parameters: {
+      type: string;
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
   };
+}
+
+export interface ModelResponse {
+  name: string
+  details: {
+    format: string
+    family: string
+    parameter_size: string
+    quantization_level: string
+  }
 } 

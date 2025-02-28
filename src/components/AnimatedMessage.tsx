@@ -1,3 +1,4 @@
+// /ollama-ui/src/components/AnimatedMessage.tsx
 "use client"
 
 import type React from "react"

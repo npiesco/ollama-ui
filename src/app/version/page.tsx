@@ -1,3 +1,4 @@
+// /ollama-ui/src/app/version/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"

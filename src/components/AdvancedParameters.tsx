@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+// /ollama-ui/src/components/AdvancedParameters.tsx
+import { useState } from 'react'; 
+import { Label } from '@/components/ui/label';
 import { Slider } from './ui/slider';
 import { Switch } from './ui/switch';
 import { AdvancedParameters } from '@/types/ollama';
@@ -17,7 +17,7 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
     top_p: topP,
   });
 
-  const handleChange = (key: keyof AdvancedParameters, value: any) => {
+  const handleChange = (key: keyof AdvancedParameters, value: number | boolean) => {
     const newParams = { ...params, [key]: value };
     setParams(newParams);
     onParamsChange(newParams);
