@@ -41,7 +41,7 @@ export const useChatStore = create<ChatState>()(
       name: 'chat-store',
       storage: {
         getItem: (name) => {
-          const str = sessionStorage.getItem(name);
+          const str = localStorage.getItem(name);
           if (!str) return null;
           try {
             return JSON.parse(str);
@@ -50,9 +50,9 @@ export const useChatStore = create<ChatState>()(
           }
         },
         setItem: (name, value) => {
-          sessionStorage.setItem(name, JSON.stringify(value));
+          localStorage.setItem(name, JSON.stringify(value));
         },
-        removeItem: (name) => sessionStorage.removeItem(name),
+        removeItem: (name) => localStorage.removeItem(name),
       },
     }
   )
