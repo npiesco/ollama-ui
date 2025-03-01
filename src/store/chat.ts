@@ -3,10 +3,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AdvancedParameters } from '@/types/ollama';
 
-interface Message {
-  role: string;
+export interface Message {
+  role: 'user' | 'assistant';  // Restrict roles to user/assistant
   content: string;
-  image?: string;
+  images?: string[];  // Make images an array and optional
 }
 
 interface ChatState {
@@ -18,6 +18,7 @@ interface ChatState {
   clearMessages: () => void;
   setModel: (model: string) => void;
   setParameters: (params: AdvancedParameters) => void;
+  getFormattedMessages: () => Message[];  // Add new function to get formatted messages
 }
 
 // Clear any existing storage on app load
@@ -27,7 +28,7 @@ if (typeof window !== 'undefined') {
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       messages: [],
       model: null,
       parameters: {
@@ -53,6 +54,7 @@ export const useChatStore = create<ChatState>()(
       clearMessages: () => set({ messages: [] }),
       setModel: (model) => set({ model }),
       setParameters: (params) => set({ parameters: params }),
+      getFormattedMessages: () => get().messages,  // Return properly formatted messages
     }),
     {
       name: 'chat-store',

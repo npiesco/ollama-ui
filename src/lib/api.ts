@@ -1,5 +1,6 @@
 // ollama-ui/src/lib/api.ts
 import { config } from './config'
+import type { Message } from '@/store/chat'
 
 const BASE_URL = config.OLLAMA_API_HOST
 
@@ -17,7 +18,7 @@ interface ModelResponse {
 
 interface ChatResponse extends JsonBody {
   model: string
-  messages: Array<{ role: string; content: string }>
+  messages: Message[]
   stream?: boolean
 }
 

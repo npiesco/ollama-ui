@@ -2,13 +2,12 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { AnimatedMessage } from "@/components/AnimatedMessage"
-import Image from "next/image"
 import { AdvancedParametersControl } from '@/components/AdvancedParameters'
 import { MultimodalInput } from '@/components/MultimodalInput'
 import { AdvancedParameters, Tool, ModelResponse } from '@/types/ollama'
@@ -19,6 +18,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, MessageSquare, Maximize2, Minimize2 } from 'lucide-react'
 import { useChatStore } from '@/store/chat'
+import type { Message } from '@/store/chat'
 
 interface ChatProps {
   isPopped?: boolean
@@ -29,16 +29,23 @@ export function Chat({ isPopped = false }: ChatProps) {
   const chatStore = useChatStore()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
-  const [temperature, setTemperature] = useState(chatStore.parameters.temperature ?? 0.2)
-  const [topP, setTopP] = useState(chatStore.parameters.top_p ?? 0.1)
+  const defaultParams = {
+    temperature: 0.2,
+    top_p: 0.1,
+    num_predict: 1024,
+    top_k: 20,
+    repeat_penalty: 1.3,
+    presence_penalty: 0.2
+  }
+  const [temperature, setTemperature] = useState(chatStore.parameters?.temperature ?? defaultParams.temperature)
+  const [topP, setTopP] = useState(chatStore.parameters?.top_p ?? defaultParams.top_p)
   const [advancedParams, setAdvancedParams] = useState<AdvancedParameters>({
-    ...chatStore.parameters,
-    temperature: chatStore.parameters.temperature ?? 0.2,
-    top_p: chatStore.parameters.top_p ?? 0.1,
-    num_predict: chatStore.parameters.num_predict ?? 1024,
-    top_k: chatStore.parameters.top_k ?? 20,
-    repeat_penalty: chatStore.parameters.repeat_penalty ?? 1.3,
-    presence_penalty: chatStore.parameters.presence_penalty ?? 0.2
+    temperature: chatStore.parameters?.temperature ?? defaultParams.temperature,
+    top_p: chatStore.parameters?.top_p ?? defaultParams.top_p,
+    num_predict: chatStore.parameters?.num_predict ?? defaultParams.num_predict,
+    top_k: chatStore.parameters?.top_k ?? defaultParams.top_k,
+    repeat_penalty: chatStore.parameters?.repeat_penalty ?? defaultParams.repeat_penalty,
+    presence_penalty: chatStore.parameters?.presence_penalty ?? defaultParams.presence_penalty
   })
   const [images, setImages] = useState<string[]>([])
   const [tools] = useState<Tool[]>([])
@@ -53,41 +60,7 @@ export function Chat({ isPopped = false }: ChatProps) {
     }
   }, [isPopped]);
 
-  useEffect(() => {
-    fetchModels()
-  }, [])
-
-  useEffect(() => {
-    if (availableModels.length > 0 && !chatStore.model) {
-      const firstModel = availableModels.sort((a, b) => a.name.localeCompare(b.name))[0].name;
-      chatStore.setModel(firstModel);
-    }
-  }, [availableModels, chatStore]);
-
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
-        }
-      }, 100);
-    }
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [chatStore.messages])
-
-  useEffect(() => {
-    if (isPopped) {
-      // Call multiple times to ensure it scrolls after content is fully loaded
-      scrollToBottom()
-      setTimeout(scrollToBottom, 100)
-      setTimeout(scrollToBottom, 500)
-    }
-  }, [isPopped])
-
-  const fetchModels = async () => {
+  const fetchModels = useCallback(async () => {
     try {
       const response = await fetch('/api/models')
       if (!response.ok) throw new Error('Failed to fetch models')
@@ -98,7 +71,82 @@ export function Chat({ isPopped = false }: ChatProps) {
     } finally {
       setIsLoadingModels(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchModels()
+  }, [fetchModels])
+
+  useEffect(() => {
+    if (availableModels.length > 0 && !chatStore.model) {
+      const firstModel = availableModels.sort((a, b) => a.name.localeCompare(b.name))[0].name;
+      chatStore.setModel(firstModel);
+    }
+  }, [availableModels, chatStore]);
+
+  const scrollToBottom = useCallback((force: boolean = false) => {
+    if (messagesEndRef.current) {
+      const element = messagesEndRef.current;
+      const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 100;
+      
+      if (force || isNearBottom) {
+        try {
+          // First try requestAnimationFrame for smoother scrolling
+          requestAnimationFrame(() => {
+            try {
+              element.scrollTo({
+                top: element.scrollHeight,
+                behavior: force ? 'instant' : 'smooth'
+              });
+            } catch {
+              // Fallback to direct scrollTop assignment
+              element.scrollTop = element.scrollHeight;
+            }
+          });
+        } catch {
+          // Final fallback
+          element.scrollTop = element.scrollHeight;
+        }
+      }
+    }
+  }, [])
+
+  // Scroll on new messages
+  useEffect(() => {
+    // Double RAF to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToBottom(true);
+      });
+    });
+  }, [chatStore.messages, scrollToBottom]);
+
+  // Scroll on initial load and in popup
+  useEffect(() => {
+    if (isPopped) {
+      const element = messagesEndRef.current;
+      if (element) {
+        element.scrollTo({
+          top: element.scrollHeight,
+          behavior: 'instant'
+        });
+      }
+    }
+  }, [isPopped]);
+
+  // Update scroll during streaming
+  useEffect(() => {
+    let scrollInterval: NodeJS.Timeout;
+    
+    if (chatStore.messages.length > 0) {
+      // Force scroll during streaming
+      scrollInterval = setInterval(() => scrollToBottom(true), 100);
+    }
+
+    return () => {
+      clearInterval(scrollInterval);
+    };
+  }, [chatStore.messages.length, scrollToBottom]);
 
   const handleModelNotFound = () => {
     toast.error(
@@ -115,21 +163,30 @@ export function Chat({ isPopped = false }: ChatProps) {
     )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     
     if (!availableModels.some(m => m.name === chatStore.model)) {
       handleModelNotFound()
       return
     }
     
+    const userMessage: Message = {
+      role: 'user',
+      content: input,
+      ...(images.length > 0 && { images })
+    }
+
+    // Add user message immediately
+    chatStore.addMessage(userMessage)
+    setInput("")
+
+    // Force scroll to bottom when sending a new message
+    scrollToBottom(true);
+
     const payload = {
       model: chatStore.model,
-      messages: [{
-        role: 'user',
-        content: input,
-        ...(images.length > 0 && { images })
-      }],
+      messages: chatStore.getFormattedMessages(),
       format,
       tools,
       ...advancedParams
@@ -151,14 +208,15 @@ export function Chat({ isPopped = false }: ChatProps) {
         throw new Error(errorData.error || "Chat request failed")
       }
 
-      chatStore.addMessage({ role: "user", content: input })
-      setInput("")
-
       // Add initial empty assistant message
-      chatStore.addMessage({ role: "assistant", content: "" })
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: ''
+      }
+      chatStore.addMessage(assistantMessage)
       
       const reader = response.body?.getReader()
-      let assistantMessage = ""
+      let assistantMessageContent = ""
       let buffer = ""
 
       while (true) {
@@ -175,8 +233,8 @@ export function Chat({ isPopped = false }: ChatProps) {
               const parsed = JSON.parse(line)
               if (parsed.message?.content) {
                 const content = parsed.message.content
-                assistantMessage += content
-                chatStore.updateLastMessage(assistantMessage)
+                assistantMessageContent += content
+                chatStore.updateLastMessage(assistantMessageContent)
               }
             } catch (error) {
               console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error')
@@ -189,8 +247,8 @@ export function Chat({ isPopped = false }: ChatProps) {
         try {
           const parsed = JSON.parse(buffer)
           if (parsed.message?.content) {
-            assistantMessage += parsed.message.content
-            chatStore.updateLastMessage(assistantMessage)
+            assistantMessageContent += parsed.message.content
+            chatStore.updateLastMessage(assistantMessageContent)
           }
         } catch (error) {
           console.error("Failed to parse final buffer:", buffer, error instanceof Error ? error.message : 'Unknown error')
@@ -203,12 +261,12 @@ export function Chat({ isPopped = false }: ChatProps) {
     }
   }
 
-  const handleAdvancedParamsChange = (params: AdvancedParameters) => {
+  const handleAdvancedParamsChange = useCallback((params: AdvancedParameters) => {
     if (typeof params.temperature === 'number') setTemperature(params.temperature)
     if (typeof params.top_p === 'number') setTopP(params.top_p)
     setAdvancedParams(params)
     chatStore.setParameters(params)  // Save parameters to persistent store
-  }
+  }, [chatStore])
 
   const handlePopOut = () => {
     const width = 600
@@ -217,7 +275,11 @@ export function Chat({ isPopped = false }: ChatProps) {
     const top = (window.screen.height - height) / 2
     
     // Save current chat state before opening popup
-    const state = {
+    const state: {
+      messages: Message[];
+      model: string | null;
+      parameters: AdvancedParameters;
+    } = {
       messages: chatStore.messages,
       model: chatStore.model,
       parameters: advancedParams
@@ -239,28 +301,24 @@ export function Chat({ isPopped = false }: ChatProps) {
       try {
         const savedState = sessionStorage.getItem('chatState')
         if (savedState) {
-          const state = JSON.parse(savedState) as {
-            messages: Array<{ role: string; content: string; image?: string }>;
-            model: string;
-            parameters?: AdvancedParameters;
+          const { messages, model, parameters } = JSON.parse(savedState) as {
+            messages: Message[];
+            model: string | null;
+            parameters: AdvancedParameters;
           }
-          if (state.model) {
-            setModel(state.model)
-          }
-          if (Array.isArray(state.messages)) {
-            clearMessages()
-            state.messages.forEach(msg => addMessage(msg))
-          }
-          if (state.parameters) {
-            handleAdvancedParamsChange(state.parameters)
-          }
+          clearMessages()
+          messages.forEach((msg: Message) => {
+            addMessage(msg)
+          })
+          if (model) setModel(model)
+          if (parameters) handleAdvancedParamsChange(parameters)
           sessionStorage.removeItem('chatState')
         }
       } catch (error) {
         console.error('Failed to load chat state:', error)
       }
     }
-  }, [isPopped, chatStore])
+  }, [isPopped, chatStore, handleAdvancedParamsChange])
 
   // Save state when popup closes
   useEffect(() => {
@@ -287,16 +345,20 @@ export function Chat({ isPopped = false }: ChatProps) {
         try {
           const savedState = sessionStorage.getItem('chatState')
           if (savedState) {
-            const state = JSON.parse(savedState) as {
-              messages: Array<{ role: string; content: string; image?: string }>;
-              model: string;
+            const { messages, model, parameters } = JSON.parse(savedState) as {
+              messages: Message[];
+              model: string | null;
+              parameters: AdvancedParameters;
             }
-            if (state.model) {
-              setModel(state.model)
+            if (model) {
+              setModel(model)
             }
-            if (Array.isArray(state.messages)) {
+            if (Array.isArray(messages)) {
               clearMessages()
-              state.messages.forEach(msg => addMessage(msg))
+              messages.forEach((msg: Message) => addMessage(msg))
+            }
+            if (parameters) {
+              handleAdvancedParamsChange(parameters)
             }
             sessionStorage.removeItem('chatState')
           }
@@ -313,7 +375,16 @@ export function Chat({ isPopped = false }: ChatProps) {
         clearInterval(intervalId)
       }
     }
-  }, [isPopped, chatStore])
+  }, [isPopped, chatStore, handleAdvancedParamsChange])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim()) {
+        handleSubmit();
+      }
+    }
+  };
 
   if (isPopped) {
     return (
@@ -338,18 +409,9 @@ export function Chat({ isPopped = false }: ChatProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                {chatStore.messages.map((message: { role: string; content: string; image?: string }, index: number) => (
-                  <AnimatedMessage key={index} isUser={message.role === "user"}>
-                    {message.image && (
-                      <Image 
-                        src={message.image} 
-                        alt="Generated image"
-                        width={512}
-                        height={512}
-                        className="rounded-lg"
-                      />
-                    )}
-                    <div className={`whitespace-pre-wrap font-mono ${message.role === "user" ? "bg-gray-200 text-black" : "bg-black text-white"} p-2 rounded border-0 ring-0 ring-offset-0`}>{message.content}</div>
+                {chatStore.messages.map((message: Message, index: number) => (
+                  <AnimatedMessage key={index} isUser={message.role === 'user'}>
+                    {message.content}
                   </AnimatedMessage>
                 ))}
               </div>
@@ -358,18 +420,11 @@ export function Chat({ isPopped = false }: ChatProps) {
         </div>
         
         <div className="p-4 pt-2">
-          <form onSubmit={handleSubmit} className="space-y-2">
+          <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (input.trim()) {
-                    handleSubmit(e);
-                  }
-                }
-              }}
+              onKeyDown={handleKeyDown}
               placeholder={`Message ${chatStore.model}...\n(Enter to send, Shift+Enter for new line)`}
               className="w-full font-mono min-h-[80px]"
             />
@@ -461,7 +516,7 @@ export function Chat({ isPopped = false }: ChatProps) {
                   </SelectContent>
                 </Select>
 
-                <div className="border p-4 h-[400px] relative" ref={messagesEndRef}>
+                <div className="border p-4 h-[400px] relative overflow-hidden">
                   <div className="absolute top-2 right-2 z-10">
                     <Button 
                       variant="ghost" 
@@ -473,7 +528,11 @@ export function Chat({ isPopped = false }: ChatProps) {
                     </Button>
                   </div>
 
-                  <div className="h-full overflow-y-auto overflow-x-hidden scroll-smooth">
+                  <div 
+                    ref={messagesEndRef}
+                    className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4"
+                    style={{ maxHeight: "calc(100% - 8px)" }}
+                  >
                     {chatStore.messages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <MessageSquare className="h-8 w-8 mb-2" />
@@ -481,18 +540,9 @@ export function Chat({ isPopped = false }: ChatProps) {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {chatStore.messages.map((message: { role: string; content: string; image?: string }, index: number) => (
-                          <AnimatedMessage key={index} isUser={message.role === "user"}>
-                            {message.image && (
-                              <Image 
-                                src={message.image} 
-                                alt="Generated image"
-                                width={512}
-                                height={512}
-                                className="rounded-lg"
-                              />
-                            )}
-                            <div className={`whitespace-pre-wrap font-mono ${message.role === "user" ? "bg-gray-200 text-black" : "bg-black text-white"} p-2 rounded border-0 ring-0 ring-offset-0`}>{message.content}</div>
+                        {chatStore.messages.map((message: Message, index: number) => (
+                          <AnimatedMessage key={index} isUser={message.role === 'user'}>
+                            {message.content}
                           </AnimatedMessage>
                         ))}
                       </div>
@@ -500,18 +550,11 @@ export function Chat({ isPopped = false }: ChatProps) {
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-2">
+                <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (input.trim()) {
-                          handleSubmit(e);
-                        }
-                      }
-                    }}
+                    onKeyDown={handleKeyDown}
                     placeholder={`Message ${chatStore.model}...\n(Enter to send, Shift+Enter for new line)`}
                     className="w-full font-mono min-h-[80px]"
                   />

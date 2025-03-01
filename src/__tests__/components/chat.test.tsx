@@ -9,29 +9,43 @@ jest.mock("sonner")
 
 // Mock chat store
 interface Message {
-  role: string;
+  role: 'user' | 'assistant';
   content: string;
-  image?: string;
+  images?: string[];
+}
+
+interface Parameters {
+  temperature?: number;
+  top_p?: number;
+  num_predict?: number;
+  top_k?: number;
+  repeat_penalty?: number;
+  presence_penalty?: number;
 }
 
 interface MockStore {
   messages: Message[];
   model: string | null;
+  parameters: Parameters;
   addMessage: jest.Mock<void, [Message]>;
   updateLastMessage: jest.Mock<void, [string]>;
   clearMessages: jest.Mock<void, []>;
   setModel: jest.Mock<void, [string]>;
+  setParameters: jest.Mock<void, [Parameters]>;
+  getFormattedMessages: jest.Mock<Message[]>;
 }
 
 const createMockStore = (): MockStore => {
   const state = {
     messages: [] as Message[],
-    model: null as string | null
+    model: null as string | null,
+    parameters: {}
   };
 
   return {
     get messages() { return state.messages; },
     get model() { return state.model; },
+    get parameters() { return state.parameters; },
     addMessage: jest.fn((message: Message) => {
       console.log('Adding message:', message);
       state.messages = [...state.messages, { ...message }];
@@ -52,7 +66,11 @@ const createMockStore = (): MockStore => {
     }),
     setModel: jest.fn((model: string) => {
       state.model = model;
-    })
+    }),
+    setParameters: jest.fn((params: Parameters) => {
+      state.parameters = { ...state.parameters, ...params };
+    }),
+    getFormattedMessages: jest.fn(() => state.messages)
   };
 };
 
