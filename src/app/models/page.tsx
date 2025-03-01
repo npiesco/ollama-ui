@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from "@/lib/utils"
 
 const RECOMMENDED_MODELS = [
   {
@@ -58,16 +59,19 @@ export default function ModelsPage() {
       const response = await fetch('/api/models')
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
-      setModels(data)
-    } catch {
+      console.log('Fetched models:', data)
+      setModels(data || [])
+    } catch (error) {
+      console.error('Error fetching models:', error)
       toast.error('Failed to fetch models')
+      setModels([])
     } finally {
       setIsLoading(false)
     }
   }
 
   const pullModel = async (modelName: string) => {
-    if (!modelName) return
+    if (!modelName || isModelInstalled(modelName)) return
     
     setPulling(true)
     setModelToPull(modelName)
@@ -81,8 +85,9 @@ export default function ModelsPage() {
 
       if (!response.ok) throw new Error('Failed to pull model')
       toast.success(`Successfully pulled ${modelName}`)
-      fetchModels()
-    } catch {
+      await fetchModels() // Wait for models to refresh
+    } catch (error) {
+      console.error('Error pulling model:', error)
       toast.error(`Failed to pull ${modelName}`)
     } finally {
       setPulling(false)
@@ -91,10 +96,21 @@ export default function ModelsPage() {
   }
 
   const isModelInstalled = (modelName: string) => {
-    return models.some(model => model.name === modelName)
+    if (!models || models.length === 0) return false
+    
+    const normalizedName = modelName.split(':')[0].toLowerCase()
+    const isInstalled = models.some(model => {
+      const installedName = (model.name || '').split(':')[0].toLowerCase()
+      return installedName === normalizedName
+    })
+    
+    console.log(`Checking if ${modelName} is installed:`, isInstalled, 'Current models:', models)
+    return isInstalled
   }
 
   const deleteModel = async (modelName: string) => {
+    if (!modelName || !isModelInstalled(modelName)) return
+
     try {
       const response = await fetch('/api/models/delete', {
         method: 'POST',
@@ -104,8 +120,9 @@ export default function ModelsPage() {
 
       if (!response.ok) throw new Error('Failed to delete model')
       toast.success(`Successfully deleted ${modelName}`)
-      fetchModels()
-    } catch {
+      await fetchModels() // Wait for models to refresh
+    } catch (error) {
+      console.error('Error deleting model:', error)
       toast.error(`Failed to delete ${modelName}`)
     }
   }
@@ -131,7 +148,10 @@ export default function ModelsPage() {
 
       <div className="grid md:grid-cols-2 gap-4">
         {RECOMMENDED_MODELS.map((model) => (
-          <Card key={model.name} className={model.recommended ? 'border-primary' : ''}>
+          <Card key={model.name} className={cn(
+            model.recommended ? 'border-primary' : '',
+            isModelInstalled(model.name) ? 'bg-primary/5' : ''
+          )}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {model.name}
@@ -154,7 +174,7 @@ export default function ModelsPage() {
                   ) : (
                     <Button
                       onClick={() => pullModel(model.name)}
-                      disabled={isPulling}
+                      disabled={isPulling || isModelInstalled(model.name)}
                       variant="outline"
                     >
                       {modelToPull === model.name ? 'Pulling...' : 'Install Model'}
