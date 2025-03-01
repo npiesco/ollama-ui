@@ -29,14 +29,29 @@ export function Chat({ isPopped = false }: ChatProps) {
   const chatStore = useChatStore()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
-  const [temperature, setTemperature] = useState(0.7)
-  const [topP, setTopP] = useState(0.9)
-  const [advancedParams, setAdvancedParams] = useState<AdvancedParameters>({})
+  const [temperature, setTemperature] = useState(chatStore.parameters.temperature ?? 0.2)
+  const [topP, setTopP] = useState(chatStore.parameters.top_p ?? 0.1)
+  const [advancedParams, setAdvancedParams] = useState<AdvancedParameters>({
+    ...chatStore.parameters,
+    temperature: chatStore.parameters.temperature ?? 0.2,
+    top_p: chatStore.parameters.top_p ?? 0.1,
+    num_predict: chatStore.parameters.num_predict ?? 1024,
+    top_k: chatStore.parameters.top_k ?? 20,
+    repeat_penalty: chatStore.parameters.repeat_penalty ?? 1.3,
+    presence_penalty: chatStore.parameters.presence_penalty ?? 0.2
+  })
   const [images, setImages] = useState<string[]>([])
   const [tools] = useState<Tool[]>([])
   const [format, setFormat] = useState<'json' | null>(null)
   const [availableModels, setAvailableModels] = useState<ModelResponse[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(true)
+
+  useEffect(() => {
+    if (!isPopped) {
+      sessionStorage.removeItem('chat-store');
+      sessionStorage.removeItem('chatState');
+    }
+  }, [isPopped]);
 
   useEffect(() => {
     fetchModels()
@@ -189,9 +204,10 @@ export function Chat({ isPopped = false }: ChatProps) {
   }
 
   const handleAdvancedParamsChange = (params: AdvancedParameters) => {
-    setAdvancedParams(params)
     if (typeof params.temperature === 'number') setTemperature(params.temperature)
     if (typeof params.top_p === 'number') setTopP(params.top_p)
+    setAdvancedParams(params)
+    chatStore.setParameters(params)  // Save parameters to persistent store
   }
 
   const handlePopOut = () => {
@@ -203,9 +219,10 @@ export function Chat({ isPopped = false }: ChatProps) {
     // Save current chat state before opening popup
     const state = {
       messages: chatStore.messages,
-      model: chatStore.model
+      model: chatStore.model,
+      parameters: advancedParams
     }
-    localStorage.setItem('chatState', JSON.stringify(state))
+    sessionStorage.setItem('chatState', JSON.stringify(state))
     
     window.open(
       '/chat/popout',
@@ -220,11 +237,12 @@ export function Chat({ isPopped = false }: ChatProps) {
     
     if (isPopped) {
       try {
-        const savedState = localStorage.getItem('chatState')
+        const savedState = sessionStorage.getItem('chatState')
         if (savedState) {
           const state = JSON.parse(savedState) as {
             messages: Array<{ role: string; content: string; image?: string }>;
             model: string;
+            parameters?: AdvancedParameters;
           }
           if (state.model) {
             setModel(state.model)
@@ -233,7 +251,10 @@ export function Chat({ isPopped = false }: ChatProps) {
             clearMessages()
             state.messages.forEach(msg => addMessage(msg))
           }
-          localStorage.removeItem('chatState')
+          if (state.parameters) {
+            handleAdvancedParamsChange(state.parameters)
+          }
+          sessionStorage.removeItem('chatState')
         }
       } catch (error) {
         console.error('Failed to load chat state:', error)
@@ -245,15 +266,16 @@ export function Chat({ isPopped = false }: ChatProps) {
   useEffect(() => {
     if (isPopped) {
       const handleBeforeUnload = () => {
-        localStorage.setItem('chatState', JSON.stringify({
+        sessionStorage.setItem('chatState', JSON.stringify({
           messages: chatStore.messages,
-          model: chatStore.model
+          model: chatStore.model,
+          parameters: advancedParams
         }))
       }
       window.addEventListener('beforeunload', handleBeforeUnload)
       return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [isPopped, chatStore])
+  }, [isPopped, chatStore, advancedParams])
 
   // Check for state changes in main window
   useEffect(() => {
@@ -263,7 +285,7 @@ export function Chat({ isPopped = false }: ChatProps) {
     if (!isPopped) {
       const checkPopupState = () => {
         try {
-          const savedState = localStorage.getItem('chatState')
+          const savedState = sessionStorage.getItem('chatState')
           if (savedState) {
             const state = JSON.parse(savedState) as {
               messages: Array<{ role: string; content: string; image?: string }>;
@@ -276,7 +298,7 @@ export function Chat({ isPopped = false }: ChatProps) {
               clearMessages()
               state.messages.forEach(msg => addMessage(msg))
             }
-            localStorage.removeItem('chatState')
+            sessionStorage.removeItem('chatState')
           }
         } catch (error) {
           console.error('Failed to load chat state:', error)
