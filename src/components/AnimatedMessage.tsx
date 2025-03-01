@@ -18,7 +18,7 @@ export function AnimatedMessage({ children, isUser }: AnimatedMessageProps) {
       transition={{ duration: 0.3 }}
       className={`mb-2 ${isUser ? "text-right" : "text-left"}`}
     >
-      <span className={`inline-block p-2 rounded-lg ${isUser ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
+      <span className="inline-block max-w-full break-words">
         {children}
       </span>
     </motion.div>

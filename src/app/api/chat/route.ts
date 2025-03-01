@@ -28,8 +28,47 @@ export async function POST(request: Request) {
       throw new Error('No response stream available');
     }
 
-    // Return the stream directly
-    return new Response(stream, {
+    // Create a TransformStream to intercept and log the data
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        // Convert the chunk to text
+        const text = new TextDecoder().decode(chunk);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const parsed = JSON.parse(line);
+              
+              // Format and log the JSON response
+              if (parsed.message?.content) {
+                // For regular messages
+                process.stdout.write(parsed.message.content);
+              } else if (parsed.done) {
+                console.log('\n[Response Complete]');
+              } else {
+                // For JSON responses, pretty print them
+                const formatted = JSON.stringify(parsed, null, 2);
+                console.log('\nJSON Response:');
+                console.log(formatted);
+                console.log(); // Extra newline for readability
+              }
+            } catch (e) {
+              console.error('Error parsing line:', e);
+            }
+          }
+        }
+        
+        // Forward the chunk
+        controller.enqueue(chunk);
+      }
+    });
+
+    // Pipe through our transform stream
+    const loggedStream = stream.pipeThrough(transformStream);
+
+    // Return the transformed stream
+    return new Response(loggedStream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',

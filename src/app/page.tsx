@@ -1,49 +1,53 @@
 // /ollama-ui/src/app/page.tsx
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { MessageSquare } from "lucide-react"
 
 export default function Home() {
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-4xl font-bold mb-8">Ollama UI</h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-4xl font-bold mb-8">Welcome to Ollama UI</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Link href="/chat">
-          <Button className="w-full h-32">Chat</Button>
-        </Link>
-        <Link href="/create-model">
-          <Button className="w-full h-32">Create Model</Button>
-        </Link>
-        <Link href="/copy-model">
-          <Button className="w-full h-32">Copy Model</Button>
-        </Link>
-        <Link href="/push-model">
-          <Button className="w-full h-32">Push Model</Button>
-        </Link>
-        <Link href="/running-models">
-          <Button className="w-full h-32">Running Models</Button>
-        </Link>
-        <Link href="/version">
-          <Button className="w-full h-32">Version Info</Button>
-        </Link>
-        <Link href="/embeddings">
-          <Button className="w-full h-32">Generate Embeddings</Button>
-        </Link>
-        <Link href="/model-info">
-          <Button className="w-full h-32">Model Information</Button>
-        </Link>
-        <Link href="/delete-model">
-          <Button className="w-full h-32">Delete Model</Button>
-        </Link>
-        <Link href="/pull-model">
-          <Button className="w-full h-32">Pull Model</Button>
-        </Link>
-        <Link href="/list-models">
-          <Button className="w-full h-32">List Models</Button>
-        </Link>
-        <Link href="/blobs">
-          <Button className="w-full h-32">Blob Management</Button>
-        </Link>
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Getting Started</CardTitle>
+            <CardDescription>
+              A modern interface for interacting with your Ollama models
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              Use the sidebar navigation to:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Chat with your models</li>
+              <li>Manage your model collection</li>
+              <li>Monitor running models</li>
+              <li>Generate embeddings</li>
+              <li>And more...</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Quick Start
+            </CardTitle>
+            <CardDescription>
+              Start chatting with your models in seconds
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal pl-6 space-y-2">
+              <li>Click the Start Server button if the server is not running</li>
+              <li>Navigate to Chat in the sidebar</li>
+              <li>Select a model from the dropdown</li>
+              <li>Start your conversation!</li>
+            </ol>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

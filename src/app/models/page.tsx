@@ -3,12 +3,11 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { ModelResponse } from '@/types/ollama'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { InfoIcon, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 const RECOMMENDED_MODELS = [
@@ -46,10 +45,9 @@ const RECOMMENDED_MODELS = [
 
 export default function ModelsPage() {
   const [models, setModels] = useState<ModelResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isPulling, setPulling] = useState(false)
   const [modelToPull, setModelToPull] = useState("")
-  const [currentStatus, setCurrentStatus] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchModels()
@@ -61,7 +59,7 @@ export default function ModelsPage() {
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
       setModels(data)
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch models')
     } finally {
       setIsLoading(false)
@@ -73,6 +71,7 @@ export default function ModelsPage() {
     
     setPulling(true)
     setModelToPull(modelName)
+
     try {
       const response = await fetch('/api/models/pull', {
         method: 'POST',
@@ -81,47 +80,18 @@ export default function ModelsPage() {
       })
 
       if (!response.ok) throw new Error('Failed to pull model')
-
-      // Stream the pull progress
-      const reader = response.body?.getReader()
-      while (reader) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = new TextDecoder().decode(value)
-        const lines = chunk.split("\\n")
-        lines.forEach(line => {
-          if (line.trim()) {
-            try {
-              const data = JSON.parse(line)
-              if (data.status) {
-                setCurrentStatus(data.status)
-                if (data.status.includes('downloading')) {
-                  const match = data.status.match(/(\d+)%/)
-                  if (match) {
-                    toast.info(`Downloading ${modelName}: ${match[1]}%`)
-                  }
-                }
-              }
-            } catch (e) {
-              // Ignore parse errors for incomplete chunks
-            }
-          }
-        })
-      }
-
       toast.success(`Successfully pulled ${modelName}`)
       fetchModels()
-    } catch (error) {
+    } catch {
       toast.error(`Failed to pull ${modelName}`)
     } finally {
       setPulling(false)
       setModelToPull("")
-      setCurrentStatus("")
     }
   }
 
   const isModelInstalled = (modelName: string) => {
-    return models.some(m => m.name === modelName)
+    return models.some(model => model.name === modelName)
   }
 
   const deleteModel = async (modelName: string) => {
@@ -135,7 +105,7 @@ export default function ModelsPage() {
       if (!response.ok) throw new Error('Failed to delete model')
       toast.success(`Successfully deleted ${modelName}`)
       fetchModels()
-    } catch (error) {
+    } catch {
       toast.error(`Failed to delete ${modelName}`)
     }
   }
@@ -154,7 +124,7 @@ export default function ModelsPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Welcome to Ollama UI!</AlertTitle>
           <AlertDescription>
-            To get started, you'll need to install at least one model. We recommend starting with Llama 2 or Mistral.
+            To get started, you&apos;ll need to install at least one model. We recommend starting with Llama 2 or Mistral.
           </AlertDescription>
         </Alert>
       )}
@@ -174,19 +144,31 @@ export default function ModelsPage() {
               <CardDescription>{model.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                {isModelInstalled(model.name) ? (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Installed</span>
-                  </div>
-                ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isModelInstalled(model.name) ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Installed</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => pullModel(model.name)}
+                      disabled={isPulling}
+                      variant="outline"
+                    >
+                      {modelToPull === model.name ? 'Pulling...' : 'Install Model'}
+                    </Button>
+                  )}
+                </div>
+                {isModelInstalled(model.name) && (
                   <Button
-                    onClick={() => pullModel(model.name)}
-                    disabled={isPulling}
-                    variant="outline"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteModel(model.name)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
                   >
-                    {modelToPull === model.name ? 'Pulling...' : 'Install Model'}
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -194,72 +176,6 @@ export default function ModelsPage() {
           </Card>
         ))}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Advanced</CardTitle>
-          <CardDescription>Install a specific model or version</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Model name (e.g., llama2:latest)"
-              value={modelToPull}
-              onChange={(e) => setModelToPull(e.target.value)}
-            />
-            <Button 
-              onClick={() => pullModel(modelToPull)}
-              disabled={isPulling || !modelToPull}
-            >
-              {isPulling ? "Pulling..." : "Install"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {currentStatus && (
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertDescription>{currentStatus}</AlertDescription>
-        </Alert>
-      )}
-
-      {models.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Installed Models</CardTitle>
-            <CardDescription>Your currently installed models</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              {models.map((model) => (
-                <div key={model.name} className="border p-4 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium flex items-center gap-2">
-                      {model.name}
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => deleteModel(model.name)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="text-sm text-gray-500 mt-2 grid grid-cols-2 gap-2">
-                    <p>Format: {model.details.format}</p>
-                    <p>Family: {model.details.family}</p>
-                    <p>Size: {model.details.parameter_size}</p>
-                    <p>Quantization: {model.details.quantization_level}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 } 

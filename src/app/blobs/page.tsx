@@ -1,24 +1,20 @@
 // /ollama-ui/src/app/blobs/page.tsx
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 import { toast } from "sonner"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { InfoIcon, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react'
-import Link from 'next/link'
+import { AlertCircle } from 'lucide-react'
 
 export default function BlobsPage() {
   const [blobs, setBlobs] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [file, setFile] = useState<File | null>(null)
   const [digest, setDigest] = useState("")
-
-  useEffect(() => {
-    fetchBlobs()
-  }, [])
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchBlobs = async () => {
     try {
@@ -26,7 +22,7 @@ export default function BlobsPage() {
       if (!response.ok) throw new Error('Failed to fetch blobs')
       const data = await response.json()
       setBlobs(data)
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch blobs')
     } finally {
       setIsLoading(false)
@@ -34,29 +30,23 @@ export default function BlobsPage() {
   }
 
   const uploadBlob = async () => {
-    if (!file || !digest) {
-      toast.error('Please provide both file and SHA256 digest')
-      return
-    }
+    if (!file || !digest) return
 
     try {
-      const response = await fetch(`http://localhost:11434/api/blobs/${digest}`, {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('digest', digest)
+
+      const response = await fetch('/api/blobs/upload', {
         method: 'POST',
-        body: file
+        body: formData
       })
 
-      if (!response.ok) {
-        const errorData = await response.text()
-        throw new Error(errorData)
-      }
-
+      if (!response.ok) throw new Error('Failed to upload blob')
       toast.success('Blob uploaded successfully')
       fetchBlobs()
-      setFile(null)
-      setDigest("")
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload blob'
-      toast.error(message)
+    } catch {
+      toast.error('Failed to upload blob')
     }
   }
 
@@ -71,7 +61,7 @@ export default function BlobsPage() {
       if (!response.ok) throw new Error('Failed to delete blob')
       toast.success('Blob deleted successfully')
       fetchBlobs()
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete blob')
     }
   }
@@ -145,7 +135,7 @@ export default function BlobsPage() {
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       onClick={() => deleteBlob(blob)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <AlertCircle className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

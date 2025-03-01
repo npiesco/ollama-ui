@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { Play, Square } from 'lucide-react'
 
 export function ServerControl() {
   const [isRunning, setIsRunning] = useState(false)
@@ -63,11 +64,25 @@ export function ServerControl() {
   }
 
   return (
-    <Button
-      variant={isRunning ? "destructive" : "default"}
-      onClick={isRunning ? stopServer : startServer}
-    >
-      {isRunning ? 'Stop Server' : 'Start Server'}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button
+        variant="default"
+        onClick={startServer}
+        disabled={isRunning}
+        className="flex items-center gap-2"
+      >
+        <Play className="h-4 w-4" />
+        Start Server
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={stopServer}
+        disabled={!isRunning}
+        className="flex items-center gap-2"
+      >
+        <Square className="h-4 w-4" />
+        Stop Server
+      </Button>
+    </div>
   )
 } 
