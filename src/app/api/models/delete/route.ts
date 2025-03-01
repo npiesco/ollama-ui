@@ -1,11 +1,12 @@
 // /ollama-ui/src/app/api/models/delete/route.ts
 import { NextResponse } from 'next/server'
+import { config } from '@/lib/config'
 
 export async function POST(request: Request) {
   try {
     const { name } = await request.json()
     
-    const response = await fetch('http://localhost:11434/api/delete', {
+    const response = await fetch(`${config.OLLAMA_API_HOST}/api/delete`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

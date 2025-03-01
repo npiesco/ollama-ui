@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 interface VersionInfo {
   version: string
@@ -15,7 +16,7 @@ export default function Version() {
   useEffect(() => {
     const fetchVersionInfo = async () => {
       try {
-        const response = await fetch("http://localhost:11434/api/version")
+        const response = await fetch(`${config.OLLAMA_API_HOST}/api/version`)
         if (!response.ok) throw new Error("Failed to fetch version information")
         const data = await response.json()
         setVersionInfo(data)

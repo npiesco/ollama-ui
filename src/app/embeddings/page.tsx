@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 export default function Embeddings() {
   const [input, setInput] = useState("")
@@ -15,7 +16,7 @@ export default function Embeddings() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await fetch("http://localhost:11434/api/embed", {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/embed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

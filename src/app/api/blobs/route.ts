@@ -1,9 +1,10 @@
 // /ollama-ui/src/app/api/blobs/route.ts
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config'
 
 export async function GET() {
   try {
-    const response = await fetch('http://localhost:11434/api/blobs', {
+    const response = await fetch(`${config.OLLAMA_API_HOST}/api/blobs`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

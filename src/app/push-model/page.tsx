@@ -7,6 +7,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 export default function PushModel() {
   const [name, setName] = useState("")
@@ -15,7 +16,7 @@ export default function PushModel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:11434/api/push", {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/push`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, insecure }),

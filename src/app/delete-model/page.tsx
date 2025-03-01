@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 interface Model {
   name: string
@@ -18,7 +19,7 @@ export default function DeleteModel() {
 
   const fetchModels = async () => {
     try {
-      const response = await fetch("http://localhost:11434/api/tags")
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
       if (!response.ok) throw new Error("Failed to fetch models")
       const data = await response.json()
       setModels(data.models)
@@ -37,7 +38,7 @@ export default function DeleteModel() {
 
     setLoading(true)
     try {
-      const response = await fetch("http://localhost:11434/api/delete", {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: modelName }),

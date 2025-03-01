@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 interface PullStatus {
   status: string
@@ -23,7 +24,7 @@ export default function PullModel() {
     setLoading(true)
     
     try {
-      const response = await fetch("http://localhost:11434/api/pull", {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/pull`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: modelName }),

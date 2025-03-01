@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { config } from '@/lib/config'
 
 interface ModelInfo {
   modelfile: string
@@ -28,7 +29,7 @@ export default function ModelInfo() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await fetch("http://localhost:11434/api/show", {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/show`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: modelName }),

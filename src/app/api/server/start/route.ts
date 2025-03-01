@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { config } from '@/lib/config'
 
 const execAsync = promisify(exec)
 
@@ -9,7 +10,7 @@ export async function POST() {
   try {
     // Check if server is already running
     try {
-      const response = await fetch('http://localhost:11434/api/tags')
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
       if (response.ok) {
         return NextResponse.json({ success: true, message: 'Server is already running' })
       }
@@ -29,7 +30,7 @@ export async function POST() {
     let attempts = 0
     while (attempts < 10) {
       try {
-        const response = await fetch('http://localhost:11434/api/tags')
+        const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
         if (response.ok) {
           return NextResponse.json({ success: true })
         }

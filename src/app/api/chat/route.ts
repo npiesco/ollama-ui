@@ -1,12 +1,13 @@
 // /ollama-ui/src/app/api/chat/route.ts
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('Request body:', body);
     
-    const response = await fetch('http://localhost:11434/api/chat', {
+    const response = await fetch(`${config.OLLAMA_API_HOST}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
