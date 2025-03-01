@@ -19,6 +19,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, MessageSquare, Maximize2, Minimize2 } from 'lucide-react'
 import { useChatStore } from '@/store/chat'
 import type { Message } from '@/store/chat'
+import { FormattedMessage } from "@/components/FormattedMessage"
 
 interface ChatProps {
   isPopped?: boolean
@@ -91,7 +92,6 @@ export function Chat({ isPopped = false }: ChatProps) {
       
       if (force || isNearBottom) {
         try {
-          // First try requestAnimationFrame for smoother scrolling
           requestAnimationFrame(() => {
             try {
               element.scrollTo({
@@ -99,12 +99,10 @@ export function Chat({ isPopped = false }: ChatProps) {
                 behavior: force ? 'instant' : 'smooth'
               });
             } catch {
-              // Fallback to direct scrollTop assignment
               element.scrollTop = element.scrollHeight;
             }
           });
         } catch {
-          // Final fallback
           element.scrollTop = element.scrollHeight;
         }
       }
@@ -113,12 +111,13 @@ export function Chat({ isPopped = false }: ChatProps) {
 
   // Scroll on new messages
   useEffect(() => {
-    // Double RAF to ensure DOM is fully updated
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    if (chatStore.messages.length > 0) {
+      // Only scroll on new messages
+      const lastMessage = chatStore.messages[chatStore.messages.length - 1];
+      if (lastMessage.content === '') {  // New empty message = new response starting
         scrollToBottom(true);
-      });
-    });
+      }
+    }
   }, [chatStore.messages, scrollToBottom]);
 
   // Scroll on initial load and in popup
@@ -139,14 +138,17 @@ export function Chat({ isPopped = false }: ChatProps) {
     let scrollInterval: NodeJS.Timeout;
     
     if (chatStore.messages.length > 0) {
-      // Force scroll during streaming
-      scrollInterval = setInterval(() => scrollToBottom(true), 100);
+      const lastMessage = chatStore.messages[chatStore.messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.content === '') {
+        // Only auto-scroll during streaming of new assistant messages
+        scrollInterval = setInterval(() => scrollToBottom(false), 100);
+      }
     }
 
     return () => {
       clearInterval(scrollInterval);
     };
-  }, [chatStore.messages.length, scrollToBottom]);
+  }, [chatStore.messages, scrollToBottom]);
 
   const handleModelNotFound = () => {
     toast.error(
@@ -411,7 +413,11 @@ export function Chat({ isPopped = false }: ChatProps) {
               <div className="space-y-2">
                 {chatStore.messages.map((message: Message, index: number) => (
                   <AnimatedMessage key={index} isUser={message.role === 'user'}>
-                    {message.content}
+                    {message.role === 'user' ? (
+                      <div className="text-primary">{message.content}</div>
+                    ) : (
+                      <FormattedMessage content={message.content} />
+                    )}
                   </AnimatedMessage>
                 ))}
               </div>
@@ -530,7 +536,7 @@ export function Chat({ isPopped = false }: ChatProps) {
 
                   <div 
                     ref={messagesEndRef}
-                    className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4"
+                    className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4 max-w-[calc(100vw-32px)]"
                     style={{ maxHeight: "calc(100% - 8px)" }}
                   >
                     {chatStore.messages.length === 0 ? (
@@ -542,7 +548,11 @@ export function Chat({ isPopped = false }: ChatProps) {
                       <div className="space-y-2">
                         {chatStore.messages.map((message: Message, index: number) => (
                           <AnimatedMessage key={index} isUser={message.role === 'user'}>
-                            {message.content}
+                            {message.role === 'user' ? (
+                              <div className="text-primary">{message.content}</div>
+                            ) : (
+                              <FormattedMessage content={message.content} />
+                            )}
                           </AnimatedMessage>
                         ))}
                       </div>

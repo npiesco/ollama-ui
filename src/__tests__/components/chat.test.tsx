@@ -7,6 +7,11 @@ import React from "react"
 // Mock essential dependencies
 jest.mock("sonner")
 
+// Mock FormattedMessage component
+jest.mock("@/components/FormattedMessage", () => ({
+  FormattedMessage: ({ content }: { content: string }) => <div>{content}</div>
+}))
+
 // Mock chat store
 interface Message {
   role: 'user' | 'assistant';

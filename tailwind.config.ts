@@ -55,8 +55,38 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            code: {
+              backgroundColor: 'hsl(var(--muted))',
+              borderRadius: '0.375rem',
+              paddingTop: '0.125rem',
+              paddingRight: '0.375rem',
+              paddingBottom: '0.125rem',
+              paddingLeft: '0.375rem',
+            },
+            'code::before': {
+              content: 'none',
+            },
+            'code::after': {
+              content: 'none',
+            },
+            pre: {
+              backgroundColor: 'transparent',
+              color: 'inherit',
+              padding: 0,
+              margin: 0,
+            },
+          },
+        },
+      },
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+  ],
 } satisfies Config;

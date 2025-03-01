@@ -21,7 +21,7 @@ const config: Config = {
     '!src/**/*.stories.{ts,tsx}',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(lucide-react|@radix-ui|@testing-library)/)',
+    'node_modules/(?!(lucide-react|@radix-ui|@testing-library|react-markdown|react-syntax-highlighter|rehype-katex|remark-gfm|remark-math)/)',
   ],
   moduleDirectories: ['node_modules', '<rootDir>'],
 }
