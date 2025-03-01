@@ -10,34 +10,50 @@ interface Message {
 
 interface ChatState {
   messages: Message[];
-  model: string;
+  model: string | null;
   addMessage: (message: Message) => void;
   updateLastMessage: (content: string) => void;
-  setModel: (model: string) => void;
   clearMessages: () => void;
+  setModel: (model: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
   persist(
     (set) => ({
       messages: [],
-      model: '',
+      model: null,
       addMessage: (message) =>
-        set((state) => ({ messages: [...state.messages, message] })),
+        set((state) => ({
+          messages: [...state.messages, message],
+        })),
       updateLastMessage: (content) =>
-        set((state) => {
-          const messages = [...state.messages];
-          if (messages.length > 0) {
-            messages[messages.length - 1].content = content;
-          }
-          return { messages };
-        }),
-      setModel: (model) => set({ model }),
+        set((state) => ({
+          messages: state.messages.map((msg, idx) =>
+            idx === state.messages.length - 1
+              ? { ...msg, content }
+              : msg
+          ),
+        })),
       clearMessages: () => set({ messages: [] }),
+      setModel: (model) => set({ model }),
     }),
     {
-      name: 'chat-storage',
-      skipHydration: true, // Prevents hydration issues with Next.js
+      name: 'chat-store',
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name);
+          if (!str) return null;
+          try {
+            return JSON.parse(str);
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
     }
   )
 ); 

@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { Play, Square } from 'lucide-react'
+import { Play } from 'lucide-react'
+import { api } from '@/lib/api'
 
 export function ServerControl() {
   const [isRunning, setIsRunning] = useState(false)
@@ -16,8 +17,8 @@ export function ServerControl() {
 
   const checkServerStatus = async () => {
     try {
-      const response = await fetch('http://localhost:11434/api/tags')
-      setIsRunning(response.ok)
+      const isRunning = await api.checkServer()
+      setIsRunning(isRunning)
     } catch {
       setIsRunning(false)
     } finally {
@@ -42,47 +43,18 @@ export function ServerControl() {
     }
   }
 
-  const stopServer = async () => {
-    try {
-      const response = await fetch('/api/server/stop', { method: 'POST' })
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to stop server')
-      }
-      
-      toast.success(data.message || 'Ollama server stopped')
-      setIsRunning(false)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to stop Ollama server'
-      toast.error(message)
-    }
-  }
-
   if (isLoading) {
     return <Button disabled>Checking server...</Button>
   }
 
+  if (isRunning) {
+    return <Button disabled>Server Running</Button>
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="default"
-        onClick={startServer}
-        disabled={isRunning}
-        className="flex items-center gap-2"
-      >
-        <Play className="h-4 w-4" />
-        Start Server
-      </Button>
-      <Button
-        variant="destructive"
-        onClick={stopServer}
-        disabled={!isRunning}
-        className="flex items-center gap-2"
-      >
-        <Square className="h-4 w-4" />
-        Stop Server
-      </Button>
-    </div>
+    <Button onClick={startServer}>
+      <Play className="h-4 w-4 mr-2" />
+      Start Server
+    </Button>
   )
 } 

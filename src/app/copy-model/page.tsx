@@ -2,11 +2,11 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 export default function CopyModel() {
   const [source, setSource] = useState("")
@@ -15,12 +15,7 @@ export default function CopyModel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:11434/api/copy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source, destination }),
-      })
-      if (!response.ok) throw new Error("Failed to copy model")
+      await api.copyModel({ source, destination })
       toast.success("Model copied successfully")
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : "Failed to copy model"

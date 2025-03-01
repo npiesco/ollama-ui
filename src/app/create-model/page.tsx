@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 export default function CreateModel() {
   const [name, setName] = useState("")
@@ -16,12 +17,7 @@ export default function CreateModel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:11434/api/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, modelfile }),
-      })
-      if (!response.ok) throw new Error("Failed to create model")
+      await api.createModel({ name, modelfile })
       toast.success("Model created successfully")
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : "Failed to create model"

@@ -1,3 +1,4 @@
+// /ollama-ui/src/components/Chat.tsx
 "use client"
 
 import type React from "react"
@@ -14,7 +15,7 @@ import { AdvancedParameters, Tool, ModelResponse } from '@/types/ollama'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, MessageSquare, Maximize2, Minimize2 } from 'lucide-react'
 import { useChatStore } from '@/store/chat'
@@ -413,12 +414,9 @@ export function Chat({ isPopped = false }: ChatProps) {
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div>
-            <CardTitle>Chat</CardTitle>
-            <CardDescription>
-              Chat with {chatStore.model} model. {chatStore.model === 'llava' && 'You can also share images for discussion.'}
-            </CardDescription>
+            <CardTitle className="text-2xl font-bold">Chat</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -426,7 +424,7 @@ export function Chat({ isPopped = false }: ChatProps) {
             <div className="w-2/3">
               <div className="space-y-2">
                 <Select 
-                  value={chatStore.model} 
+                  value={chatStore.model ?? undefined} 
                   onValueChange={chatStore.setModel}
                 >
                   <SelectTrigger>

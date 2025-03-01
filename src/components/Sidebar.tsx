@@ -44,15 +44,6 @@ const navigationItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<string[]>([])
-
-  const toggleDescription = (path: string) => {
-    setExpandedItems(prev => 
-      prev.includes(path) 
-        ? prev.filter(item => item !== path)
-        : [...prev, path]
-    )
-  }
 
   return (
     <div className={cn(
@@ -74,28 +65,39 @@ export function Sidebar() {
 
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <div className="mb-4 flex items-center space-x-2">
-            <Image
-              src="/llama.png"
-              alt="Ollama"
-              width={24}
-              height={24}
-              className="rounded"
-            />
-            {!isCollapsed && <span className="text-lg font-semibold">Ollama UI</span>}
+          <div className="mb-4">
+            <Link 
+              href="/" 
+              className="flex items-center gap-3 group px-3 py-2 rounded-lg hover:bg-primary/5 transition-all duration-200 border-2 border-muted/85 hover:border-primary/30"
+            >
+              <Image
+                src="/llama.svg"
+                alt="Home"
+                width={40}
+                height={40}
+                className="rounded group-hover:scale-105 transition-transform dark:invert dark:brightness-90"
+              />
+              {!isCollapsed && (
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold group-hover:text-primary transition-colors">Ollama UI</span>
+                  <span className="text-xs text-muted-foreground group-hover:text-primary/80 italic">
+                    Return to Home
+                  </span>
+                </div>
+              )}
+            </Link>
           </div>
           <div className="space-y-1.5">
             {navigationItems.map((item) => {
               const Icon = item.icon
-              const isExpanded = expandedItems.includes(item.path)
               const isActive = pathname === item.path
               return (
                 <div key={item.path} className="flex flex-col">
-                  <div className="flex items-center group">
+                  <div className="group relative">
                     <Link
                       href={item.path}
                       className={cn(
-                        "flex-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200",
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200",
                         isActive 
                           ? "border border-primary text-primary bg-primary/5" 
                           : "border border-transparent hover:border-primary/20 hover:bg-primary/5",
@@ -107,33 +109,22 @@ export function Sidebar() {
                         isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
                       )} />
                       {!isCollapsed && (
-                        <span className={cn(
-                          "transition-colors duration-200",
-                          isActive ? "text-primary font-medium" : "text-muted-foreground group-hover:text-primary"
-                        )}>
-                          {item.name}
-                        </span>
+                        <>
+                          <span className={cn(
+                            "transition-colors duration-200",
+                            isActive ? "text-primary font-medium" : "text-muted-foreground group-hover:text-primary"
+                          )}>
+                            {item.name}
+                          </span>
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center px-3 py-2 bg-muted/95">
+                            <span className="text-xs text-muted-foreground">
+                              {item.description}
+                            </span>
+                          </div>
+                        </>
                       )}
                     </Link>
-                    {!isCollapsed && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8 ml-1 transition-colors",
-                          isExpanded ? "text-primary" : "text-muted-foreground hover:text-primary"
-                        )}
-                        onClick={() => toggleDescription(item.path)}
-                      >
-                        <Info className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
-                  {!isCollapsed && isExpanded && (
-                    <div className="ml-9 mr-2 mt-1.5 text-xs text-muted-foreground bg-muted/50 p-2 rounded-md transition-all duration-200 border border-muted">
-                      {item.description}
-                    </div>
-                  )}
                 </div>
               )
             })}

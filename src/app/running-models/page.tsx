@@ -28,8 +28,6 @@ function formatSize(bytes: number): string {
   return `${gb.toFixed(2)} GB`
 }
 
-
-
 function RunningModelsList() {
   const [models, setModels] = useState<RunningModel[]>([])
   const [error, setError] = useState<string | null>(null)

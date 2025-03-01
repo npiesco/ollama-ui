@@ -1,0 +1,184 @@
+// ollama-ui/src/setupTests.ts
+import React from 'react'
+import '@testing-library/jest-dom'
+import { cleanup } from '@testing-library/react'
+
+// Extend Jest matchers
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeInTheDocument(): R
+      toHaveClass(className: string): R
+    }
+  }
+}
+
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+      pathname: '/',
+    }
+  },
+  usePathname() {
+    return '/'
+  },
+  useSearchParams() {
+    return new URLSearchParams()
+  },
+}))
+
+// Mock lucide-react icons globally
+jest.mock('lucide-react', () => {
+  const icons = [
+    'Play',
+    'Square',
+    'ChevronUp',
+    'ChevronDown',
+    'Check',
+    'ChevronsUpDown',
+  ]
+  const mockedIcons: Record<string, React.FC> = {}
+  icons.forEach(icon => {
+    mockedIcons[icon] = () => React.createElement('div', { 'data-testid': `${icon.toLowerCase()}-icon` }, `${icon} Icon`)
+  })
+  return mockedIcons
+})
+
+// Mock IntersectionObserver
+class MockIntersectionObserver {
+  observe = jest.fn();
+  disconnect = jest.fn();
+  unobserve = jest.fn();
+}
+
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver
+});
+
+// Mock ResizeObserver
+class MockResizeObserver {
+  observe = jest.fn();
+  disconnect = jest.fn();
+  unobserve = jest.fn();
+}
+
+Object.defineProperty(window, 'ResizeObserver', {
+  writable: true,
+  configurable: true,
+  value: MockResizeObserver
+});
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock window.scrollTo
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  value: jest.fn(),
+});
+
+// Mock TextEncoder/TextDecoder
+class MockTextEncoder {
+  encode(input = ''): Uint8Array {
+    return new Uint8Array(Buffer.from(input));
+  }
+}
+
+class MockTextDecoder {
+  decode(input = new Uint8Array()): string {
+    return Buffer.from(input).toString();
+  }
+}
+
+Object.defineProperty(window, 'TextEncoder', {
+  writable: true,
+  value: MockTextEncoder,
+});
+
+Object.defineProperty(window, 'TextDecoder', {
+  writable: true,
+  value: MockTextDecoder,
+});
+
+// Mock ReadableStream
+interface ReadableStreamController<T> {
+  enqueue(chunk: T): void;
+  close(): void;
+  error(reason?: unknown): void;
+}
+
+interface ReadableStreamSource<T> {
+  start?(controller: ReadableStreamController<T>): void | Promise<void>;
+}
+
+class MockReadableStream<T> {
+  constructor(source?: ReadableStreamSource<T>) {
+    if (source?.start) {
+      source.start({
+        enqueue: () => {},
+        close: () => {},
+        error: () => {}
+      });
+    }
+  }
+
+  getReader() {
+    return {
+      read: () => Promise.resolve({ done: true, value: undefined }),
+      releaseLock: () => {}
+    };
+  }
+
+  pipeThrough<U>(): MockReadableStream<U> {
+    return new MockReadableStream<U>();
+  }
+}
+
+Object.defineProperty(global, 'ReadableStream', {
+  writable: true,
+  value: MockReadableStream
+});
+
+// Automatically cleanup after each test
+afterEach(() => {
+  cleanup()
+})
+
+// Mock window.fetch
+global.fetch = jest.fn()
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+}) 
