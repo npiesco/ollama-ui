@@ -15,6 +15,12 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 
 ## 🌟 Features
 
+### 🔐 Authentication
+- Secure login system
+- Protected routes and API endpoints
+- JWT-based authentication
+- Session management
+
 ### 💬 Chat Interface
 - Real-time streaming responses
 - Customizable model parameters
@@ -111,10 +117,11 @@ ollama-ui/
 
 ## 🛠 Tech Stack
 
-- **Framework:** Next.js 15 with App Router and TurboPack
+- **Framework:** Next.js 15.1.7 with App Router and TurboPack
 - **Language:** TypeScript 5
+- **Authentication:** JSON Web Tokens (JWT)
 - **Styling:** 
-  - Tailwind CSS 3.4
+  - Tailwind CSS 3.4.1
   - CSS Animations
   - Dark/Light mode support
 - **UI Components:** 
@@ -187,6 +194,10 @@ The application uses environment variables for configuration. Create a `.env` fi
 # Required - Ollama API endpoint
 OLLAMA_API_HOST=http://localhost:11434
 
+# Required - Authentication (if enabled)
+JWT_SECRET=your-secret-key-here
+AUTH_ENABLED=true
+
 # Optional - Server configuration
 NODE_ENV=development
 PORT=3000
@@ -203,6 +214,8 @@ PORT=3000
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `OLLAMA_API_HOST` | Ollama API endpoint URL | http://localhost:11434 | Yes |
+| `JWT_SECRET` | Secret key for JWT signing | - | Yes (if auth enabled) |
+| `AUTH_ENABLED` | Enable/disable authentication | false | No |
 | `NODE_ENV` | Node environment (development/production/test) | development | No |
 | `PORT` | Port for the Next.js application | 3000 | No |
 
