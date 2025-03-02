@@ -8,7 +8,17 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+  	container: {
+  		center: true,
+  		padding: "1rem",
+  		screens: {
+  			"2xl": "1400px",
+  		},
+  	},
   	extend: {
+  		fontFamily: {
+  			sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+  		},
   		keyframes: {
   			"accordion-down": {
   				from: { height: "0" },
@@ -106,6 +116,13 @@ export default {
             },
           },
         },
+      },
+      transitionDuration: {
+        '250': '250ms',
+        '350': '350ms',
+      },
+      transitionTimingFunction: {
+        'ease-spring': 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
       },
   	}
   },
