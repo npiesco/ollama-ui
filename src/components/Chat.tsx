@@ -92,15 +92,9 @@ export function Chat({ isPopped = false }: ChatProps) {
       
       if (force || isNearBottom) {
         try {
-          requestAnimationFrame(() => {
-            try {
-              element.scrollTo({
-                top: element.scrollHeight,
-                behavior: force ? 'instant' : 'smooth'
-              });
-            } catch {
-              element.scrollTop = element.scrollHeight;
-            }
+          element.scrollTo({
+            top: element.scrollHeight,
+            behavior: force ? 'instant' : 'smooth'
           });
         } catch {
           element.scrollTop = element.scrollHeight;
@@ -116,6 +110,9 @@ export function Chat({ isPopped = false }: ChatProps) {
       const lastMessage = chatStore.messages[chatStore.messages.length - 1];
       if (lastMessage.content === '') {  // New empty message = new response starting
         scrollToBottom(true);
+      } else {
+        // Also scroll when content is updated
+        scrollToBottom(false);
       }
     }
   }, [chatStore.messages, scrollToBottom]);
@@ -139,14 +136,17 @@ export function Chat({ isPopped = false }: ChatProps) {
     
     if (chatStore.messages.length > 0) {
       const lastMessage = chatStore.messages[chatStore.messages.length - 1];
-      if (lastMessage.role === 'assistant' && lastMessage.content === '') {
-        // Only auto-scroll during streaming of new assistant messages
+      if (lastMessage.role === 'assistant') {
+        // Auto-scroll during any content updates from assistant
         scrollInterval = setInterval(() => scrollToBottom(false), 100);
+        
+        // Clear interval when content stops changing
+        return () => clearInterval(scrollInterval);
       }
     }
-
+    
     return () => {
-      clearInterval(scrollInterval);
+      if (scrollInterval) clearInterval(scrollInterval);
     };
   }, [chatStore.messages, scrollToBottom]);
 
@@ -414,9 +414,13 @@ export function Chat({ isPopped = false }: ChatProps) {
                 {chatStore.messages.map((message: Message, index: number) => (
                   <AnimatedMessage key={index} isUser={message.role === 'user'}>
                     {message.role === 'user' ? (
-                      <div className="text-primary">{message.content}</div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+                        {message.content}
+                      </div>
                     ) : (
-                      <FormattedMessage content={message.content} />
+                      <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-lg">
+                        <FormattedMessage content={message.content} />
+                      </div>
                     )}
                   </AnimatedMessage>
                 ))}
@@ -427,13 +431,18 @@ export function Chat({ isPopped = false }: ChatProps) {
         
         <div className="p-4 pt-2">
           <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={`Message ${chatStore.model}...\n(Enter to send, Shift+Enter for new line)`}
-              className="w-full font-mono min-h-[80px]"
-            />
+            <div className="relative">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`Message ${chatStore.model}`}
+                className="w-full font-mono min-h-[80px] placeholder:text-muted-foreground"
+              />
+              <span className="absolute left-[14px] top-[38px] text-xs text-muted-foreground italic pointer-events-none md:static md:mt-1 md:ml-2">
+                (Enter to send, Shift+Enter for new line)
+              </span>
+            </div>
             <div className="flex justify-between items-center">
               <Button type="submit" disabled={!input.trim()}>Send</Button>
               <Button 
@@ -503,8 +512,8 @@ export function Chat({ isPopped = false }: ChatProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
-            <div className="w-[90%]">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 min-w-0">
               <div className="space-y-2">
                 <Select 
                   value={chatStore.model ?? undefined} 
@@ -536,7 +545,7 @@ export function Chat({ isPopped = false }: ChatProps) {
 
                   <div 
                     ref={messagesEndRef}
-                    className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4 max-w-[calc(100vw-32px)]"
+                    className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4 w-full"
                     style={{ maxHeight: "calc(100% - 8px)" }}
                   >
                     {chatStore.messages.length === 0 ? (
@@ -549,9 +558,13 @@ export function Chat({ isPopped = false }: ChatProps) {
                         {chatStore.messages.map((message: Message, index: number) => (
                           <AnimatedMessage key={index} isUser={message.role === 'user'}>
                             {message.role === 'user' ? (
-                              <div className="text-primary">{message.content}</div>
+                              <div className="prose prose-sm dark:prose-invert max-w-none bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+                                {message.content}
+                              </div>
                             ) : (
-                              <FormattedMessage content={message.content} />
+                              <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-lg">
+                                <FormattedMessage content={message.content} />
+                              </div>
                             )}
                           </AnimatedMessage>
                         ))}
@@ -561,13 +574,18 @@ export function Chat({ isPopped = false }: ChatProps) {
                 </div>
 
                 <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={`Message ${chatStore.model}...\n(Enter to send, Shift+Enter for new line)`}
-                    className="w-full font-mono min-h-[80px]"
-                  />
+                  <div className="relative">
+                    <Textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={`Message ${chatStore.model}`}
+                      className="w-full font-mono min-h-[80px] placeholder:text-muted-foreground"
+                    />
+                    <span className="absolute left-[14px] top-[38px] text-xs text-muted-foreground italic pointer-events-none md:static md:mt-1 md:ml-2">
+                      (Enter to send, Shift+Enter for new line)
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <Button type="submit" disabled={!input.trim()}>Send</Button>
                     <Button 
@@ -582,7 +600,7 @@ export function Chat({ isPopped = false }: ChatProps) {
               </div>
             </div>
             
-            <div className="w-[10%] space-y-2">
+            <div className="w-full md:w-[160px] lg:w-[160px] space-y-2">
               <div>
                 <AdvancedParametersControl 
                   temperature={temperature}

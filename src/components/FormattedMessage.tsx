@@ -41,7 +41,7 @@ export function FormattedMessage({ content }: FormattedMessageProps) {
         const codeContent = String(children || '').trim();
         
         return (
-          <div className="rounded-md my-2 w-full bg-black overflow-hidden">
+          <div className="rounded-md my-4 w-full bg-black overflow-hidden">
             <SyntaxHighlighter
               language={language}
               style={vscDarkPlus}
@@ -81,7 +81,7 @@ export function FormattedMessage({ content }: FormattedMessageProps) {
       );
     },
     p: ({ children }) => (
-      <p className="mb-4 last:mb-0 whitespace-pre-wrap">{children}</p>
+      <p className="mb-4 last:mb-0 whitespace-pre-wrap break-words">{children}</p>
     ),
     h1: ({ children }) => (
       <h1 className="text-2xl font-bold mb-4">{children}</h1>

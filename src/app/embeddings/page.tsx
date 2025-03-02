@@ -29,9 +29,10 @@ export default function Embeddings() {
       const response = await fetch('/api/models')
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
-      setIsModelInstalled(data.some((model: { name: string }) => 
-        model.name.toLowerCase() === 'nomic-embed-text'
-      ))
+      setIsModelInstalled(data.some((model: { name: string }) => {
+        const modelName = model.name.toLowerCase();
+        return modelName === 'nomic-embed-text' || modelName.startsWith('nomic-embed-text:');
+      }))
     } catch (error) {
       console.error('Error checking model:', error)
       toast.error('Failed to check model installation')

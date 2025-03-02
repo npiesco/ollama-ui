@@ -49,8 +49,8 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
     }
   ) => (
     <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <div className="space-y-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-1 flex-1">
           <Label>{label}</Label>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
@@ -89,7 +89,7 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           </div>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md transition-transform duration-300">
+      <SheetContent className="w-[95%] sm:max-w-md transition-transform duration-300">
         <SheetHeader>
           <SheetTitle>Model Parameters</SheetTitle>
           <SheetDescription>
@@ -97,7 +97,7 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           </SheetDescription>
         </SheetHeader>
         
-        <div className="py-6 space-y-6">
+        <div className="py-4 space-y-4 overflow-y-auto max-h-[calc(100vh-8rem)]">
           <div className="space-y-4">
             <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Core Parameters</h4>
             {renderParameter(

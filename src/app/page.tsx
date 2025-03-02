@@ -16,7 +16,7 @@ export default function Home() {
       title: "Install a Model",
       description: "Download and install your first AI model",
       icon: Download,
-      href: "/pull-model",
+      href: "/models",
       primary: true
     },
     {
