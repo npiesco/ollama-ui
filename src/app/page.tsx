@@ -51,26 +51,26 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex flex-col space-y-6 max-w-4xl mx-auto">
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center justify-center gap-8 py-1">
           <Image
             src="/welcome-llama.svg"
             alt="Welcome Llama"
-            width={80}
-            height={80}
-            className="dark:invert dark:brightness-90"
+            width={100}
+            height={100}
+            className="dark:invert dark:brightness-90 float-animation"
           />
-          <div>
-            <h1 className="text-4xl font-bold">Welcome to Ollama UI</h1>
-            <p className="text-xl text-muted-foreground mt-1">
-              Your Local AI Powerhouse
+          <div className="text-center">
+            <h1 className="text-5xl font-bold gradient-text mb-3">Welcome to Ollama UI</h1>
+            <p className="text-xl text-muted-foreground">
+              Local AI Workbench
             </p>
           </div>
         </div>
 
         <NavigationMenu className="self-center">
-          <NavigationMenuList className="flex gap-2">
+          <NavigationMenuList className="flex gap-3">
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
                     <Globe className="w-4 h-4" />
@@ -79,23 +79,23 @@ export default function Home() {
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-2">Work Offline with Confidence</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <h3 className="text-lg font-semibold mb-3 gradient-text">Work Offline with Confidence</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
                       Run powerful AI models without constant internet connectivity. Once downloaded, your models work entirely offline.
                     </p>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
                         No internet required for inference
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
                         Download once, use anywhere
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
                         Perfect for air-gapped environments
                       </li>
                     </ul>
@@ -105,7 +105,7 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
                     <Cpu className="w-4 h-4" />
@@ -114,23 +114,23 @@ export default function Home() {
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-2">Your Machine, Your Rules</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <h3 className="text-lg font-semibold mb-3 gradient-text">Your Machine, Your Rules</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
                       Host models directly on your hardware for maximum control and flexibility over your AI infrastructure.
                     </p>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
                         Full control over model deployment
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
                         Customize resource allocation
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
                         Zero latency to external services
                       </li>
                     </ul>
@@ -140,7 +140,7 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
                     <Shield className="w-4 h-4" />
@@ -149,23 +149,23 @@ export default function Home() {
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-2">Break Free from the Cloud</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <h3 className="text-lg font-semibold mb-3 gradient-text">Break Free from the Cloud</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
                       Complete independence from cloud services and external APIs. No subscriptions or usage limits.
                     </p>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
                         No recurring costs
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
                         Unlimited inference
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
                         No API rate limits
                       </li>
                     </ul>
@@ -175,7 +175,7 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
                     <Lock className="w-4 h-4" />
@@ -184,23 +184,23 @@ export default function Home() {
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-2">Your Data Stays Private</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <h3 className="text-lg font-semibold mb-3 gradient-text">Your Data Stays Private</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
                       Keep your data completely private and secure on your local system. No data ever leaves your machine.
                     </p>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
                         Complete data sovereignty
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
                         No cloud data transmission
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="bg-muted p-1 rounded-full" />
+                      <li className="flex items-center gap-3">
+                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
                         Perfect for sensitive data
                       </li>
                     </ul>
@@ -214,45 +214,49 @@ export default function Home() {
 
       <OllamaInstaller />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 max-w-6xl mx-auto">
         {quickStartSteps.map((step, index) => {
           const Icon = step.icon
           return (
-            <Card 
-              key={index}
-              className={`transition-all duration-300 hover:shadow-lg ${
-                step.primary ? 'border-primary' : ''
-              }`}
+            <Link 
+              key={index} 
+              href={step.href}
+              className="group"
             >
-              <Link href={step.href} className="h-full">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${
+              <Card className={`h-full card-hover ${
+                step.primary ? 'animated-border' : ''
+              }`}>
+                <CardHeader className="pb-1">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3.5 rounded-xl ${
                       step.primary 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
-                    }`}>
+                    } group-hover:scale-110 transition-transform`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-xl">{step.title}</CardTitle>
+                    <CardTitle className="text-2xl">{step.title}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-1 py-2">
-                  <CardDescription className="text-base font-medium">
+                <CardContent className="space-y-1 py-1.5">
+                  <CardDescription className="text-base font-medium mb-1">
                     {step.description}
                   </CardDescription>
                   <p className="text-sm text-muted-foreground">
                     {step.details}
                   </p>
                 </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="ghost" className="ml-auto group">
+                <CardFooter className="pt-1">
+                  <Button 
+                    variant={step.primary ? "default" : "ghost"} 
+                    className="ml-auto group/button"
+                  >
                     Get Started
-                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover/button:translate-x-1 transition-transform" />
                   </Button>
                 </CardFooter>
-              </Link>
-            </Card>
+              </Card>
+            </Link>
           )
         })}
       </div>

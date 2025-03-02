@@ -16,7 +16,7 @@ describe('CreateModel', () => {
   it('renders form inputs', () => {
     render(<CreateModel />)
     expect(screen.getByPlaceholderText('Model name')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Modelfile content')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Model file content')).toBeInTheDocument()
   })
 
   it('handles successful model creation', async () => {
@@ -29,7 +29,7 @@ describe('CreateModel', () => {
     fireEvent.change(screen.getByPlaceholderText('Model name'), {
       target: { value: 'test-model' }
     })
-    fireEvent.change(screen.getByPlaceholderText('Modelfile content'), {
+    fireEvent.change(screen.getByPlaceholderText('Model file content'), {
       target: { value: 'FROM llama2' }
     })
 
@@ -58,7 +58,7 @@ describe('CreateModel', () => {
     fireEvent.change(screen.getByPlaceholderText('Model name'), {
       target: { value: 'test-model' }
     })
-    fireEvent.change(screen.getByPlaceholderText('Modelfile content'), {
+    fireEvent.change(screen.getByPlaceholderText('Model file content'), {
       target: { value: 'FROM llama2' }
     })
 

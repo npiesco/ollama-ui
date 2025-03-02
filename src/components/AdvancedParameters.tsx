@@ -121,13 +121,13 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
             {renderParameter(
               "Top K",
               "top_k",
-              "Limits the next token selection to K most probable tokens",
+              "Limits token selection to K most probable tokens. Lower values (1-20) for more focused, predictable outputs",
               { min: 1, max: 100, step: 1, defaultValue: 40 }
             )}
             {renderParameter(
               "Top P",
               "top_p",
-              "Nucleus sampling: limits cumulative probability of selected tokens",
+              "Nucleus sampling: limits cumulative probability of selected tokens higher values (0.7-1.0) generate more creative and diverse responses",
               { min: 0, max: 1, step: 0.05, defaultValue: 0.9 }
             )}
           </div>

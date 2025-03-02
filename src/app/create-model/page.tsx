@@ -28,7 +28,7 @@ export default function CreateModel() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input placeholder="Model name" value={name} onChange={(e) => setName(e.target.value)} />
-      <Textarea placeholder="Modelfile content" value={modelfile} onChange={(e) => setModelfile(e.target.value)} />
+      <Textarea placeholder="Model file content" value={modelfile} onChange={(e) => setModelfile(e.target.value)} />
       <Button type="submit">Create Model</Button>
     </form>
   )

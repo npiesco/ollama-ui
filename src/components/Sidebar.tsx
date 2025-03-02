@@ -137,7 +137,7 @@ const navigationItems: NavigationItem[] = [
     section: 'management'
   },
   { 
-    name: 'Settings', 
+    name: 'User Settings', 
     path: '/settings', 
     icon: Settings, 
     description: 'Configure application settings',
@@ -222,7 +222,7 @@ const SettingsSection = ({ items, isCollapsed, pathname }: { items: NavigationIt
       <div className="flex items-center justify-between px-3 py-2">
         {!isCollapsed && (
           <span className="text-sm font-medium text-muted-foreground">
-            Settings
+            Settings & Info
           </span>
         )}
         <CollapsibleTrigger asChild>
