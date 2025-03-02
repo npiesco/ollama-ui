@@ -9,38 +9,37 @@ A modern, feature-rich user interface for Ollama, providing a seamless experienc
 
 ## 🎯 Why Ollama UI?
 
- AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistral, and Phi now capable of running on consumer-grade GPUs. Tools like Ollama make this possible, but there's still a significant barrier to entry - command line interfaces, AI terminology, and complex model parameters can be intimidating for newcomers.
+AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistral, and Phi now capable of running on consumer-grade GPUs. Tools like Ollama make this possible, but there's still a significant barrier to entry - command line interfaces, AI terminology, and complex model parameters can be intimidating for newcomers.
 
 Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone.
 
 ## 🌟 Features
 
-### 💬 Advanced Chat Interface
-- Real-time streaming responses with animated messages
-- Multi-modal chat support with image upload capabilities - TODO!
-- Customizable model parameters with advanced settings
-- Message history management and persistence
+### 💬 Chat Interface
+- Real-time streaming responses
+- Customizable model parameters
+- Message history management
 - Responsive design with dark/light mode support
-- Rich text formatting and code syntax highlighting - TODO!
+- Mathematical formula rendering with KaTeX
+- Code syntax highlighting
+- GitHub-flavored markdown support
 
 ### 🤖 Comprehensive Model Management
-- Browse and manage local models with detailed information
-- Pull new models from repositories with progress tracking
-- Delete unused models with confirmation
-- Detailed model information and specifications
-- Create and customize models with advanced parameters
-- Push models to registry with version control
+- Browse and manage local models
+- Pull new models from repositories
+- Delete unused models
+- View detailed model information
+- Create and customize models
+- Push models to registry
 - Copy and modify existing models
 - Monitor running model instances
 
-### 🔧 Advanced Features
-- Multi-modal support for image and text inputs - TODO!
-- Server control panel for managing Ollama instance
+### 🔧 Additional Features
 - Embeddings generation and management
-- JWT-based authentication - TODO!
+- Server control panel
 - Real-time error handling with toast notifications
-- Version information and tracking
-- Blob management for large files
+- Version information
+- Blob management
 - Advanced parameter customization
 
 ## 🚀 Getting Started
@@ -85,26 +84,29 @@ yarn dev
 ollama-ui/
 ├── src/
 │   ├── app/                # Next.js app router pages
-│   │   ├── api/           # API routes
-│   │   ├── chat/         # Chat interface
-│   │   ├── models/       # Model management
-│   │   ├── settings/     # Application settings
-│   │   ├── blobs/       # Blob management
-│   │   ├── embeddings/   # Embeddings generation
-│   │   └── version/     # Version information
-│   ├── components/        # Reusable UI components
-│   │   ├── ui/          # Base UI components
-│   │   ├── Chat.tsx     # Main chat interface
-│   │   ├── ServerControl.tsx # Server management
-│   │   ├── MultimodalInput.tsx # Multi-modal support
-│   │   └── AdvancedParameters.tsx # Model parameters
-│   ├── hooks/            # Custom React hooks
-│   ├── lib/              # Utility functions
-│   ├── store/            # State management (Zustand)
-│   └── types/            # TypeScript definitions
-├── __tests__/           # Test files
-├── public/              # Static assets
-└── ...                 # Config files
+│   │   ├── api/            # API routes
+│   │   ├── chat/           # Chat interface
+│   │   ├── models/         # Model management
+│   │   ├── settings/       # Application settings
+│   │   ├── blobs/          # Blob management
+│   │   ├── embeddings/     # Embeddings generation
+│   │   ├── version/        # Version information
+│   │   ├── list-models/    # Model listing
+│   │   ├── model-info/     # Model details
+│   │   ├── pull-model/     # Model pulling
+│   │   ├── push-model/     # Model pushing
+│   │   ├── copy-model/     # Model copying
+│   │   ├── create-model/   # Model creation
+│   │   ├── delete-model/   # Model deletion
+│   │   └── running-models/ # Running model instances
+│   ├── components/         # Reusable UI components
+│   ├── hooks/              # Custom React hooks   
+│   ├── lib/                # Utility functions
+│   ├── store/              # State management (Zustand)
+│   └── types/              # TypeScript definitions
+├── __tests__/              # Test files
+├── public/                 # Static assets
+└── ...                     # Config files
 ```
 
 ## 🛠 Tech Stack
@@ -116,23 +118,27 @@ ollama-ui/
   - CSS Animations
   - Dark/Light mode support
 - **UI Components:** 
-  - Radix UI primitives for accessible components
-  - Framer Motion for smooth animations
-  - Sonner for toast notifications
-  - shadcn/ui component library
+  - Radix UI primitives
+  - Framer Motion animations
+  - Sonner toast notifications
+  - shadcn/ui components
 - **State Management:** 
-  - Zustand for global state
-  - SWR for data fetching and caching
+  - Zustand
+  - SWR for data fetching
+- **Content Rendering:**
+  - React Markdown
+  - KaTeX for math formulas
+  - Syntax highlighting
+  - GitHub-flavored markdown
 - **Testing:**
-  - Jest for unit testing
-  - React Testing Library for component testing
+  - Jest
+  - React Testing Library
   - Coverage reporting
 - **Data Validation:** Zod schema validation
 - **Development Tools:**
-  - ESLint for code linting
+  - ESLint
   - TypeScript strict mode
-  - Jest for testing
-  - TurboPack for fast builds
+  - TurboPack
 
 ## 🧪 Testing
 
@@ -181,9 +187,6 @@ The application uses environment variables for configuration. Create a `.env` fi
 # Required - Ollama API endpoint
 OLLAMA_API_HOST=http://localhost:11434
 
-# Optional - Authentication
-JWT_SECRET=your-jwt-secret-here
-
 # Optional - Server configuration
 NODE_ENV=development
 PORT=3000
@@ -200,7 +203,6 @@ PORT=3000
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `OLLAMA_API_HOST` | Ollama API endpoint URL | http://localhost:11434 | Yes |
-| `JWT_SECRET` | Secret key for JWT authentication | undefined | No |
 | `NODE_ENV` | Node environment (development/production/test) | development | No |
 | `PORT` | Port for the Next.js application | 3000 | No |
 
@@ -228,6 +230,5 @@ PORT=3000
 ### Security Considerations
 
 - Never commit `.env` files containing sensitive information
-- Use different JWT secrets for development and production
 - In production, use secure HTTPS URLs for `OLLAMA_API_HOST`
 - Consider using a secrets manager for production deployments
