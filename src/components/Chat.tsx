@@ -418,7 +418,7 @@ export function Chat({ isPopped = false }: ChatProps) {
                         {message.content}
                       </div>
                     ) : (
-                      <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-lg">
+                      <div className="bg-gray-200 dark:bg-gray-800 text-gray-950 dark:text-gray-100 px-4 py-2 rounded-lg">
                         <FormattedMessage content={message.content} />
                       </div>
                     )}
@@ -562,7 +562,7 @@ export function Chat({ isPopped = false }: ChatProps) {
                                 {message.content}
                               </div>
                             ) : (
-                              <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-800 text-gray-950 dark:text-gray-100 px-4 py-2 rounded-lg">
                                 <FormattedMessage content={message.content} />
                               </div>
                             )}

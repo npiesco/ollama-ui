@@ -73,9 +73,9 @@ export default function Home() {
               <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
-                    <Globe className="w-4 h-4" />
+                    <Globe className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="flex-1 text-center">Offline-Centric</span>
+                  <span className="flex-1 text-center text-primary font-medium">Offline-Centric</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
@@ -87,16 +87,16 @@ export default function Home() {
                     </p>
                     <ul className="space-y-3 text-sm">
                       <li className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
-                        No internet required for inference
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">No internet required for inference</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
-                        Download once, use anywhere
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Download once, use anywhere</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
-                        Perfect for air-gapped environments
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Perfect for air-gapped environments</span>
                       </li>
                     </ul>
                   </li>
@@ -108,9 +108,9 @@ export default function Home() {
               <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
-                    <Cpu className="w-4 h-4" />
+                    <Cpu className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="flex-1 text-center">Local Hosting</span>
+                  <span className="flex-1 text-center text-primary font-medium">Local Hosting</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
@@ -122,16 +122,16 @@ export default function Home() {
                     </p>
                     <ul className="space-y-3 text-sm">
                       <li className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
-                        Full control over model deployment
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Full control over model deployment</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
-                        Customize resource allocation
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Customize resource allocation</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
-                        Zero latency to external services
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Zero latency to external services</span>
                       </li>
                     </ul>
                   </li>
@@ -143,9 +143,9 @@ export default function Home() {
               <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
-                    <Shield className="w-4 h-4" />
+                    <Shield className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="flex-1 text-center">Cloud Independent</span>
+                  <span className="flex-1 text-center text-primary font-medium">Cloud Independent</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
@@ -157,16 +157,16 @@ export default function Home() {
                     </p>
                     <ul className="space-y-3 text-sm">
                       <li className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
-                        No recurring costs
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">No recurring costs</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
-                        Unlimited inference
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Unlimited inference</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
-                        No API rate limits
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">No API rate limits</span>
                       </li>
                     </ul>
                   </li>
@@ -178,9 +178,9 @@ export default function Home() {
               <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
                 <div className="flex items-center w-full">
                   <div className="px-4 py-2">
-                    <Lock className="w-4 h-4" />
+                    <Lock className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="flex-1 text-center">Privacy-First</span>
+                  <span className="flex-1 text-center text-primary font-medium">Privacy-First</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
@@ -192,16 +192,16 @@ export default function Home() {
                     </p>
                     <ul className="space-y-3 text-sm">
                       <li className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary p-1.5 rounded-full" />
-                        Complete data sovereignty
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Complete data sovereignty</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-secondary/10 text-secondary p-1.5 rounded-full" />
-                        No cloud data transmission
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">No cloud data transmission</span>
                       </li>
                       <li className="flex items-center gap-3">
-                        <span className="bg-accent/10 text-accent p-1.5 rounded-full" />
-                        Perfect for sensitive data
+                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                        <span className="text-primary font-medium">Perfect for sensitive data</span>
                       </li>
                     </ul>
                   </li>

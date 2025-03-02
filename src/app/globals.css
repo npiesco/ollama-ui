@@ -4,79 +4,67 @@
 
 @layer base {
   :root {
-    /* Neutral, professional color palette */
-    --background: 0 0% 100%;
-    --foreground: 229 84% 5%;
+    /* Light mode - with light blue background */
+    --background: 210 40% 98%; /* Light blue background */
+    --foreground: 222 47% 11%; /* Near black for text */
     
-    --card: 0 0% 100%;
-    --card-foreground: 229 84% 5%;
+    --card: 210 45% 96.5%; /* Slightly darker light blue for cards */
+    --card-foreground: 222 47% 11%;
     
-    --popover: 0 0% 100%;
-    --popover-foreground: 229 84% 5%;
+    --popover: 210 45% 96.5%;
+    --popover-foreground: 222 47% 11%;
     
-    --primary: 229 84% 5%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
     
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 229 84% 5%;
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 222 47% 11%;
     
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 222 47% 20%;
     
-    --accent: 220 14% 96%;
-    --accent-foreground: 229 84% 5%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
     
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
     
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 229 84% 5%;
+    --border: 210 35% 92%;
+    --input: 210 35% 92%;
+    --ring: 222 47% 11%;
     
-    --chart-1: 229 84% 5%;
-    --chart-2: 220 9% 46%;
-    --chart-3: 222 47% 11%;
-    --chart-4: 217 33% 17%;
-    --chart-5: 215 25% 27%;
-    
-    --radius: 0.4rem;
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Dark mode with deep, rich colors */
-    --background: 229 84% 5%;
-    --foreground: 0 0% 100%;
+    /* Dark mode - keeping the dark blue you like */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
     
-    --card: 228 82% 7%;
-    --card-foreground: 0 0% 100%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
     
-    --popover: 228 82% 7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
     
-    --primary: 0 0% 100%;
-    --primary-foreground: 229 84% 5%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
     
-    --secondary: 228 45% 11%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
     
-    --muted: 228 45% 11%;
-    --muted-foreground: 220 9% 70%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 25% 70%;
     
-    --accent: 228 45% 11%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
     
     --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
     
-    --border: 228 45% 11%;
-    --input: 228 45% 11%;
-    --ring: 220 14% 96%;
-    
-    --chart-1: 0 0% 100%;
-    --chart-2: 220 9% 70%;
-    --chart-3: 220 14% 96%;
-    --chart-4: 220 13% 91%;
-    --chart-5: 220 9% 80%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 210 40% 98%;
   }
 }
 
@@ -86,11 +74,11 @@
   }
   
   body {
-    @apply bg-background text-foreground antialiased min-h-screen;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Refined scrollbar */
+  /* Professional scrollbar */
   ::-webkit-scrollbar {
     @apply w-1.5 h-1.5;
   }
@@ -107,71 +95,60 @@
 @layer components {
   /* Refined card hover effect */
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:shadow-ring/5 hover:border-ring/10;
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-ring/5 hover:border-ring/10;
   }
 
-  /* Modern glass effect */
+  /* Enhanced glass effect */
   .glass {
-    @apply bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/20;
+    @apply bg-card/95 backdrop-blur-md border border-border/20 shadow-sm;
   }
 
-  /* Animated border */
-  .animated-border {
-    @apply relative overflow-hidden;
-  }
-  
-  .animated-border::after {
-    @apply content-[''] absolute inset-0 border border-ring/10 rounded-[inherit] transition-[transform,opacity] duration-300 ease-out;
-  }
-  
-  .animated-border:hover::after {
-    @apply scale-95 opacity-0;
+  /* Interactive elements */
+  .interactive-border {
+    @apply border border-border/30 transition-colors hover:border-border/60;
   }
 
-  /* Gradient text */
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80;
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-200 ease-in-out;
   }
 
-  /* Focus ring */
-  .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  /* Button hover effects */
+  .button-hover {
+    @apply hover:shadow-md hover:translate-y-[-1px] active:translate-y-0 transition-all duration-200;
+  }
+
+  /* Input focus styles */
+  .input-focus {
+    @apply focus:ring-2 focus:ring-ring/20 focus:border-ring/30 transition-all duration-200;
   }
 }
 
-/* Subtle animations */
+/* Animations */
 @keyframes float {
   0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 }
 
 .float-animation {
-  animation: float 4s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.fade-up {
-  animation: fade-up 0.4s ease-out forwards;
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Typography */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .text-pretty {
-    text-wrap: pretty;
-  }
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
 }

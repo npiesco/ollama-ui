@@ -1,13 +1,10 @@
 // ollama-ui/src/app/layout.tsx
-import { Inter as FontSans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientLayout } from "@/components/ClientLayout";
 import type { Metadata } from "next";
 
-const fontSans = FontSans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Ollama UI",
@@ -21,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${fontSans.variable} font-sans`}>
+      <body className={inter.className}>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
