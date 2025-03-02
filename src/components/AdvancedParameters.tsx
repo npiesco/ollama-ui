@@ -1,14 +1,22 @@
 // /ollama-ui/src/components/AdvancedParameters.tsx
-import { useState } from 'react'; 
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from './ui/slider';
 import { Switch } from './ui/switch';
 import { AdvancedParameters } from '@/types/ollama';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EditableValue } from './EditableValue';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Info } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
+import { EditableValue } from './EditableValue';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 interface AdvancedParamsProps {
   temperature: number;
@@ -21,7 +29,7 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
     temperature,
     top_p: topP,
   });
-  const [expandedParams, setExpandedParams] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
 
   const handleChange = (key: keyof AdvancedParameters, value: number | boolean) => {
     const newParams = { ...params, [key]: value };
@@ -29,303 +37,154 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
     onParamsChange(newParams);
   };
 
-  const toggleDescription = (param: string) => {
-    setExpandedParams(prev => 
-      prev.includes(param)
-        ? prev.filter(p => p !== param)
-        : [...prev, param]
-    );
-  };
+  const renderParameter = (
+    label: string,
+    key: keyof AdvancedParameters,
+    description: string,
+    config: {
+      min: number;
+      max: number;
+      step: number;
+      defaultValue: number;
+    }
+  ) => (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <div className="space-y-1">
+          <Label>{label}</Label>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        <EditableValue
+          value={params[key] as number || config.defaultValue}
+          min={config.min}
+          max={config.max}
+          step={config.step}
+          onChange={(value) => handleChange(key, value)}
+        />
+      </div>
+      <Slider
+        value={[params[key] as number || config.defaultValue]}
+        min={config.min}
+        max={config.max}
+        step={config.step}
+        onValueChange={([value]) => handleChange(key, value)}
+      />
+    </div>
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Core Parameters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Core Parameters</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('temperature') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('temperature')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Temperature</Label>
-              </div>
-              <EditableValue
-                value={params.temperature || 0.7}
-                min={0}
-                max={2}
-                step={0.1}
-                onChange={(value) => handleChange('temperature', value)}
-              />
-            </div>
-            {expandedParams.includes('temperature') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Controls randomness: 0 is focused/deterministic, 2 is more creative/random
-              </div>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full group relative hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200"
+        >
+          <div className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-accent text-accent-foreground text-[10px] px-2">
+            <span className="line-clamp-1">Adjust model parameters</span>
+          </div>
+          <div className="flex items-center w-full text-sm">
+            <Settings2 className="w-4 h-4 ml-2 transition-colors duration-200 group-hover:text-primary" />
+            <span className="flex-grow text-center transition-colors duration-200 group-hover:text-primary">Parameters</span>
+          </div>
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-md transition-transform duration-300">
+        <SheetHeader>
+          <SheetTitle>Model Parameters</SheetTitle>
+          <SheetDescription>
+            Adjust these parameters to control the model&apos;s behavior and output quality.
+          </SheetDescription>
+        </SheetHeader>
+        
+        <div className="py-6 space-y-6">
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Core Parameters</h4>
+            {renderParameter(
+              "Temperature",
+              "temperature",
+              "Controls randomness: lower values are more focused, higher values more creative",
+              { min: 0, max: 2, step: 0.1, defaultValue: 0.7 }
             )}
-            <Slider 
-              value={[params.temperature || 0.7]}
-              min={0}
-              max={2}
-              step={0.1}
-              onValueChange={([value]) => handleChange('temperature', value)}
-            />
+            {renderParameter(
+              "Number of Tokens",
+              "num_predict",
+              "Maximum number of tokens to generate",
+              { min: 128, max: 4096, step: 128, defaultValue: 2048 }
+            )}
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('num_predict') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('num_predict')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Number of Tokens</Label>
-              </div>
-              <EditableValue
-                value={params.num_predict || 2048}
-                min={128}
-                max={4096}
-                step={128}
-                onChange={(value) => handleChange('num_predict', value)}
-              />
-            </div>
-            {expandedParams.includes('num_predict') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Maximum number of tokens to generate (longer responses = more tokens)
-              </div>
-            )}
-            <Slider 
-              value={[params.num_predict || 2048]}
-              min={128}
-              max={4096}
-              step={128}
-              onValueChange={([value]) => handleChange('num_predict', value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <Separator />
 
-      {/* Sampling Parameters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Sampling Control</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('top_k') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('top_k')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Top K</Label>
-              </div>
-              <EditableValue
-                value={params.top_k || 40}
-                min={1}
-                max={100}
-                step={1}
-                onChange={(value) => handleChange('top_k', value)}
-              />
-            </div>
-            {expandedParams.includes('top_k') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Limits the next token selection to K most probable tokens
-              </div>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Sampling Control</h4>
+            {renderParameter(
+              "Top K",
+              "top_k",
+              "Limits the next token selection to K most probable tokens",
+              { min: 1, max: 100, step: 1, defaultValue: 40 }
             )}
-            <Slider 
-              value={[params.top_k || 40]}
-              min={1}
-              max={100}
-              step={1}
-              onValueChange={([value]) => handleChange('top_k', value)}
-            />
+            {renderParameter(
+              "Top P",
+              "top_p",
+              "Nucleus sampling: limits cumulative probability of selected tokens",
+              { min: 0, max: 1, step: 0.05, defaultValue: 0.9 }
+            )}
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('top_p') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('top_p')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Top P</Label>
-              </div>
-              <EditableValue
-                value={params.top_p || 0.9}
-                min={0}
-                max={1}
-                step={0.05}
-                onChange={(value) => handleChange('top_p', value)}
-              />
-            </div>
-            {expandedParams.includes('top_p') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Nucleus sampling: limits cumulative probability of selected tokens
-              </div>
-            )}
-            <Slider 
-              value={[params.top_p || 0.9]}
-              min={0}
-              max={1}
-              step={0.05}
-              onValueChange={([value]) => handleChange('top_p', value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <Separator />
 
-      {/* Quality Parameters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Quality Control</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('repeat_penalty') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('repeat_penalty')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Repeat Penalty</Label>
-              </div>
-              <EditableValue
-                value={params.repeat_penalty || 1.1}
-                min={1}
-                max={2}
-                step={0.1}
-                onChange={(value) => handleChange('repeat_penalty', value)}
-              />
-            </div>
-            {expandedParams.includes('repeat_penalty') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Penalize repetition: higher values = less repetitive responses
-              </div>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Quality Control</h4>
+            {renderParameter(
+              "Repeat Penalty",
+              "repeat_penalty",
+              "Penalize repetition: higher values = less repetitive responses",
+              { min: 1, max: 2, step: 0.1, defaultValue: 1.1 }
             )}
-            <Slider 
-              value={[params.repeat_penalty || 1.1]}
-              min={1}
-              max={2}
-              step={0.1}
-              onValueChange={([value]) => handleChange('repeat_penalty', value)}
-            />
+            {renderParameter(
+              "Presence Penalty",
+              "presence_penalty",
+              "Penalize new tokens based on their presence in the text so far",
+              { min: 0, max: 1, step: 0.1, defaultValue: 0 }
+            )}
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('presence_penalty') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('presence_penalty')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Label>Presence Penalty</Label>
-              </div>
-              <EditableValue
-                value={params.presence_penalty || 0}
-                min={0}
-                max={1}
-                step={0.1}
-                onChange={(value) => handleChange('presence_penalty', value)}
-              />
-            </div>
-            {expandedParams.includes('presence_penalty') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mb-2">
-                Penalize new tokens based on their presence in the text so far
-              </div>
-            )}
-            <Slider 
-              value={[params.presence_penalty || 0]}
-              min={0}
-              max={1}
-              step={0.1}
-              onValueChange={([value]) => handleChange('presence_penalty', value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <Separator />
 
-      {/* Advanced Options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Advanced Options</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-6 w-6 transition-colors",
-                    expandedParams.includes('raw') ? "text-primary" : "text-muted-foreground hover:text-primary"
-                  )}
-                  onClick={() => toggleDescription('raw')}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Advanced Options</h4>
+            <div className="flex items-center justify-between group">
+              <div className="space-y-1 relative">
                 <Label>Raw Mode</Label>
+                <p className="text-xs text-muted-foreground">
+                  Output raw, unfiltered model responses
+                </p>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center px-3 py-2 bg-muted/95">
+                  <span className="text-[10px] text-muted-foreground line-clamp-2">
+                    Enable raw mode to receive unprocessed model output
+                  </span>
+                </div>
               </div>
-              <Switch 
+              <Switch
                 checked={params.raw}
                 onCheckedChange={(checked) => handleChange('raw', checked)}
+                className="transition-transform duration-200 group-hover:scale-105"
               />
             </div>
-            {expandedParams.includes('raw') && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border border-muted mt-2">
-                Outputs raw, unfiltered model responses without post-processing
-              </div>
-            )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <SheetFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+            className="hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200"
+          >
+            Close
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 } 

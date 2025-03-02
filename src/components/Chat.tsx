@@ -504,7 +504,7 @@ export function Chat({ isPopped = false }: ChatProps) {
         </CardHeader>
         <CardContent>
           <div className="flex space-x-4">
-            <div className="w-2/3">
+            <div className="w-[90%]">
               <div className="space-y-2">
                 <Select 
                   value={chatStore.model ?? undefined} 
@@ -582,26 +582,21 @@ export function Chat({ isPopped = false }: ChatProps) {
               </div>
             </div>
             
-            <div className="w-1/3 space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Parameters</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AdvancedParametersControl 
-                    temperature={temperature}
-                    topP={topP}
-                    onParamsChange={handleAdvancedParamsChange}
-                  />
-                </CardContent>
-              </Card>
+            <div className="w-[10%] space-y-2">
+              <div>
+                <AdvancedParametersControl 
+                  temperature={temperature}
+                  topP={topP}
+                  onParamsChange={handleAdvancedParamsChange}
+                />
+              </div>
               
               {chatStore.model === "llava" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Image Input</CardTitle>
+                <Card className="mt-2">
+                  <CardHeader className="p-2">
+                    <CardTitle className="text-sm">Image Input</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-2">
                     <MultimodalInput 
                       onImageSelect={(img) => {
                         if (img) {
@@ -621,18 +616,18 @@ export function Chat({ isPopped = false }: ChatProps) {
                 </Card>
               )}
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Options</CardTitle>
+              <Card className="mt-2">
+                <CardHeader className="p-2">
+                  <CardTitle className="text-sm">Options</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
+                <CardContent className="p-2">
+                  <div className="flex items-center gap-2">
                     <Switch
                       id="json-mode"
                       checked={format === 'json'}
                       onCheckedChange={(checked) => setFormat(checked ? 'json' : null)}
                     />
-                    <Label htmlFor="json-mode">JSON Output</Label>
+                    <Label htmlFor="json-mode" className="text-xs">JSON Output</Label>
                   </div>
                 </CardContent>
               </Card>

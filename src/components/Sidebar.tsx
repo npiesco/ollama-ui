@@ -1,12 +1,13 @@
 // ollama-ui/src/components/Sidebar.tsx
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   MessageSquare,
   Settings,
@@ -23,6 +24,7 @@ import {
   FolderInput,
   ChevronLeft,
   ChevronRight,
+  Menu,
   LucideIcon
 } from 'lucide-react'
 
@@ -147,28 +149,76 @@ const navigationItems: NavigationItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // Try to get persisted state from cookie
+    if (typeof window !== 'undefined') {
+      const cookie = document.cookie.split(';').find(c => c.trim().startsWith('sidebar_state='))
+      return cookie ? cookie.split('=')[1] === 'true' : false
+    }
+    return false
+  })
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault()
+        setIsCollapsed(prev => {
+          const newState = !prev
+          // Persist state in cookie
+          document.cookie = `sidebar_state=${newState}; path=/; max-age=31536000`
+          return newState
+        })
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
+
+  const handleCollapse = () => {
+    setIsCollapsed(prev => {
+      const newState = !prev
+      // Persist state in cookie
+      document.cookie = `sidebar_state=${newState}; path=/; max-age=31536000`
+      return newState
+    })
+  }
 
   const mainItems = navigationItems.filter(item => item.section === 'main')
   const managementItems = navigationItems.filter(item => item.section === 'management')
 
-  return (
+  const SidebarContent = () => (
     <div className={cn(
-      "relative pb-12 border-r transition-all duration-300",
+      "h-screen pb-12 border-r transition-all duration-300 relative",
       isCollapsed ? "w-16" : "w-64"
     )}>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute right-[-20px] top-2 h-8 w-8 rounded-full border shadow-md bg-background"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
-      </Button>
+      {!isMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-[-20px] top-2 h-8 w-8 rounded-full border shadow-md bg-background z-50"
+          onClick={handleCollapse}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+          <span className="sr-only">Toggle Sidebar (⌘B)</span>
+        </Button>
+      )}
 
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
@@ -220,9 +270,35 @@ export function Sidebar() {
       </div>
     </div>
   )
+
+  // Mobile sidebar with improved Sheet animation
+  if (isMobile) {
+    return (
+      <>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden fixed left-4 top-4 z-40"
+            >
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Open Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64 transition-transform duration-300">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </>
+    )
+  }
+
+  // Desktop sidebar
+  return <SidebarContent />
 }
 
-// Navigation Item Component
+// Update NavigationItem to improve hover descriptions
 function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
   const Icon = item.icon
   const isActive = pathname === item.path
@@ -253,11 +329,16 @@ function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
                 {item.name}
               </span>
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center px-3 py-2 bg-muted/95">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground line-clamp-2">
                   {item.description}
                 </span>
               </div>
             </>
+          )}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 text-[10px]">
+              {item.name}
+            </div>
           )}
         </Link>
       </div>
