@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useSidebarStore } from '@/store/sidebar'
 import {
   MessageSquare,
   Settings,
@@ -25,10 +26,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  LucideIcon
+  LucideIcon,
+  Github,
+  Linkedin,
+  ChevronDown,
 } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
-type NavigationSection = 'main' | 'management'
+type NavigationSection = 'main' | 'management' | 'settings' | 'social'
 
 interface NavigationItem {
   name: string
@@ -69,6 +74,13 @@ const navigationItems: NavigationItem[] = [
   },
   // Model Management Section
   { 
+    name: 'Pull Model', 
+    path: '/pull-model', 
+    icon: Download, 
+    description: 'Download models from a registry',
+    section: 'management'
+  },
+  { 
     name: 'Create Model', 
     path: '/create-model', 
     icon: Plus, 
@@ -87,13 +99,6 @@ const navigationItems: NavigationItem[] = [
     path: '/push-model', 
     icon: Upload, 
     description: 'Push a model to a remote registry',
-    section: 'management'
-  },
-  { 
-    name: 'Version Info', 
-    path: '/version', 
-    icon: Info, 
-    description: 'View system and model version information',
     section: 'management'
   },
   { 
@@ -118,13 +123,6 @@ const navigationItems: NavigationItem[] = [
     section: 'management'
   },
   { 
-    name: 'Pull Model', 
-    path: '/pull-model', 
-    icon: Download, 
-    description: 'Download models from a registry',
-    section: 'management'
-  },
-  { 
     name: 'List Models', 
     path: '/list-models', 
     icon: List, 
@@ -143,9 +141,117 @@ const navigationItems: NavigationItem[] = [
     path: '/settings', 
     icon: Settings, 
     description: 'Configure application settings',
-    section: 'management'
+    section: 'settings'
+  },
+  { 
+    name: 'Version Info', 
+    path: '/version', 
+    icon: Info, 
+    description: 'View system and model version information',
+    section: 'settings'
+  },
+  // Social Links
+  { 
+    name: 'LinkedIn', 
+    path: 'https://www.linkedin.com/in/nicholas-g-piesco-7aba7b106/', 
+    icon: Linkedin, 
+    description: 'Connect with me on LinkedIn',
+    section: 'social'
+  },
+  { 
+    name: 'GitHub', 
+    path: 'https://github.com/npiesco', 
+    icon: Github, 
+    description: 'View my GitHub profile',
+    section: 'social'
   },
 ] as const
+
+const ManagementSection = ({ items, isCollapsed, pathname }: { items: NavigationItem[], isCollapsed: boolean, pathname: string }) => {
+  const { isManagementOpen, setManagementOpen } = useSidebarStore()
+
+  return (
+    <Collapsible
+      open={isManagementOpen}
+      onOpenChange={setManagementOpen}
+      className="space-y-1"
+    >
+      <div className="flex items-center justify-between px-3 py-2">
+        {!isCollapsed && (
+          <span className="text-sm font-medium text-muted-foreground">
+            Model Management
+          </span>
+        )}
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0",
+              isCollapsed && "w-full"
+            )}
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                isManagementOpen && "rotate-180"
+              )}
+            />
+            <span className="sr-only">Toggle Model Management section</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-1">
+        {items.map((item) => (
+          <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+const SettingsSection = ({ items, isCollapsed, pathname }: { items: NavigationItem[], isCollapsed: boolean, pathname: string }) => {
+  const { isSettingsOpen, setSettingsOpen } = useSidebarStore()
+
+  return (
+    <Collapsible
+      open={isSettingsOpen}
+      onOpenChange={setSettingsOpen}
+      className="space-y-1"
+    >
+      <div className="flex items-center justify-between px-3 py-2">
+        {!isCollapsed && (
+          <span className="text-sm font-medium text-muted-foreground">
+            Settings
+          </span>
+        )}
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0",
+              isCollapsed && "w-full"
+            )}
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                isSettingsOpen && "rotate-180"
+              )}
+            />
+            <span className="sr-only">Toggle Settings section</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-1">
+        {items.map((item) => (
+          <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -198,10 +304,12 @@ export function Sidebar() {
 
   const mainItems = navigationItems.filter(item => item.section === 'main')
   const managementItems = navigationItems.filter(item => item.section === 'management')
+  const settingsItems = navigationItems.filter(item => item.section === 'settings')
+  const socialItems = navigationItems.filter(item => item.section === 'social')
 
   const SidebarContent = () => (
     <div className={cn(
-      "h-screen pb-12 border-r transition-all duration-300 relative",
+      "h-screen pb-12 border-r transition-all duration-300 relative flex flex-col",
       isCollapsed ? "w-16" : "w-64"
     )}>
       {!isMobile && (
@@ -220,51 +328,72 @@ export function Sidebar() {
         </Button>
       )}
 
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <div className="mb-4">
-            <Link 
-              href="/" 
-              className="flex items-center gap-3 group px-3 py-2 rounded-lg hover:bg-primary/5 transition-all duration-200 border-2 border-muted/85 hover:border-primary/30"
-            >
-              <Image
-                src="/llama.svg"
-                alt="Home"
-                width={40}
-                height={40}
-                className="rounded group-hover:scale-105 transition-transform dark:invert dark:brightness-90"
-              />
+      <div className="flex flex-col h-full">
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 space-y-4 py-4 overflow-y-auto">
+          <div className="px-3 py-2">
+            <div className="mb-4">
+              <Link 
+                href="/" 
+                className="flex items-center gap-3 group px-3 py-2 rounded-lg hover:bg-primary/5 transition-all duration-200 border-2 border-muted/85 hover:border-primary/30"
+              >
+                <Image
+                  src="/llama.svg"
+                  alt="Home"
+                  width={40}
+                  height={40}
+                  className="rounded group-hover:scale-105 transition-transform dark:invert dark:brightness-90"
+                />
+                {!isCollapsed && (
+                  <div className="flex flex-col">
+                    <span className="text-lg font-semibold group-hover:text-primary transition-colors">Ollama UI</span>
+                    <span className="text-xs text-muted-foreground group-hover:text-primary/80 italic">
+                      Return to Home
+                    </span>
+                  </div>
+                )}
+              </Link>
+            </div>
+            <div className="space-y-1.5">
+              {/* Main Section */}
+              <div className="space-y-1">
+                {mainItems.map((item) => (
+                  <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
+                ))}
+              </div>
+
+              {/* Divider */}
               {!isCollapsed && (
-                <div className="flex flex-col">
-                  <span className="text-lg font-semibold group-hover:text-primary transition-colors">Ollama UI</span>
-                  <span className="text-xs text-muted-foreground group-hover:text-primary/80 italic">
-                    Return to Home
-                  </span>
+                <div className="my-4 px-3">
+                  <div className="h-px bg-border" />
                 </div>
               )}
-            </Link>
+
+              {/* Management Section */}
+              <ManagementSection items={managementItems} isCollapsed={isCollapsed} pathname={pathname} />
+
+              {/* Divider */}
+              {!isCollapsed && (
+                <div className="my-4 px-3">
+                  <div className="h-px bg-border" />
+                </div>
+              )}
+
+              {/* Settings Section */}
+              <SettingsSection items={settingsItems} isCollapsed={isCollapsed} pathname={pathname} />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            {/* Main Section */}
-            <div className="space-y-1">
-              {mainItems.map((item) => (
-                <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
-              ))}
-            </div>
+        </div>
 
-            {/* Divider */}
-            {!isCollapsed && (
-              <div className="my-4 px-3">
-                <div className="h-px bg-border" />
-              </div>
-            )}
-
-            {/* Management Section */}
-            <div className="space-y-1">
-              {managementItems.map((item) => (
-                <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
-              ))}
-            </div>
+        {/* Social Links - Fixed at Bottom */}
+        <div className="p-4 border-t bg-background">
+          <div className={cn(
+            "grid gap-2",
+            isCollapsed ? "grid-cols-1" : "grid-cols-2"
+          )}>
+            {socialItems.map((item) => (
+              <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
+            ))}
           </div>
         </div>
       </div>
@@ -302,12 +431,22 @@ export function Sidebar() {
 function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
   const Icon = item.icon
   const isActive = pathname === item.path
+  const isExternal = item.path.startsWith('http')
+
+  const LinkComponent = isExternal ? 'a' : Link
+  const linkProps = isExternal ? { 
+    href: item.path,
+    target: "_blank",
+    rel: "noopener noreferrer"
+  } : { 
+    href: item.path 
+  }
 
   return (
     <div className="flex flex-col">
       <div className="group relative">
-        <Link
-          href={item.path}
+        <LinkComponent
+          {...linkProps}
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200",
             isActive 
@@ -340,7 +479,7 @@ function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
               {item.name}
             </div>
           )}
-        </Link>
+        </LinkComponent>
       </div>
     </div>
   )

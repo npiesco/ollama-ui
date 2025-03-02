@@ -2,19 +2,25 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MessageSquare, Download, Play, Settings } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { MessageSquare, Download, Play, Settings, ArrowRight, Shield, Cpu, Globe, Lock } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { OllamaInstaller } from "@/components/OllamaInstaller"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu"
 
 export default function Home() {
-  const router = useRouter()
-
   const quickStartSteps = [
     {
       title: "Install a Model",
       description: "Download and install your first AI model",
+      details: "Get started with popular models like Llama 2, DeepSeek R1, or Mistral. Choose the right one for your needs.",
       icon: Download,
       href: "/models",
       primary: true
@@ -22,18 +28,21 @@ export default function Home() {
     {
       title: "Start Chatting",
       description: "Begin a conversation with your AI model",
+      details: "Engage in natural conversations with state-of-the-art language models. Ask questions, get creative, or solve problems together.",
       icon: MessageSquare,
       href: "/chat"
     },
     {
       title: "View Running Models",
       description: "Monitor your active model instances",
+      details: "Keep track of your running models, manage resources, and ensure optimal performance of your AI assistants.",
       icon: Play,
       href: "/running-models"
     },
     {
       title: "Configure Settings",
       description: "Customize your Ollama UI experience",
+      details: "Personalize your experience with custom parameters, model configurations, and interface preferences.",
       icon: Settings,
       href: "/settings"
     }
@@ -41,23 +50,169 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="space-y-2">
-        <div className="text-center flex items-center justify-center gap-4">
+      <div className="flex flex-col space-y-6 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-6">
           <Image
             src="/welcome-llama.svg"
             alt="Welcome Llama"
-            width={64}
-            height={64}
-            className="rounded-lg dark:invert dark:brightness-90"
+            width={80}
+            height={80}
+            className="dark:invert dark:brightness-90"
           />
           <div>
-            <h2 className="text-lg font-semibold">Welcome to Ollama UI</h2>
-            <p className="text-gray-500 mt-2">
-              To get started, you&apos;ll need to install a model first.
+            <h1 className="text-4xl font-bold">Welcome to Ollama UI</h1>
+            <p className="text-xl text-muted-foreground mt-1">
+              Your Local AI Powerhouse
             </p>
           </div>
         </div>
+
+        <NavigationMenu className="self-center">
+          <NavigationMenuList className="flex gap-2">
+            <NavigationMenuItem className="relative">
+              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+                <div className="flex items-center w-full">
+                  <div className="px-4 py-2">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-center">Offline-Centric</span>
+                </div>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="absolute left-0 top-full z-50">
+                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                  <li>
+                    <h3 className="text-lg font-semibold mb-2">Work Offline with Confidence</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Run powerful AI models without constant internet connectivity. Once downloaded, your models work entirely offline.
+                    </p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        No internet required for inference
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Download once, use anywhere
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Perfect for air-gapped environments
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem className="relative">
+              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+                <div className="flex items-center w-full">
+                  <div className="px-4 py-2">
+                    <Cpu className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-center">Local Hosting</span>
+                </div>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="absolute left-0 top-full z-50">
+                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                  <li>
+                    <h3 className="text-lg font-semibold mb-2">Your Machine, Your Rules</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Host models directly on your hardware for maximum control and flexibility over your AI infrastructure.
+                    </p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Full control over model deployment
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Customize resource allocation
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Zero latency to external services
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem className="relative">
+              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+                <div className="flex items-center w-full">
+                  <div className="px-4 py-2">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-center">Cloud Independent</span>
+                </div>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="absolute left-0 top-full z-50">
+                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                  <li>
+                    <h3 className="text-lg font-semibold mb-2">Break Free from the Cloud</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Complete independence from cloud services and external APIs. No subscriptions or usage limits.
+                    </p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        No recurring costs
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Unlimited inference
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        No API rate limits
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem className="relative">
+              <NavigationMenuTrigger className="bg-background border w-[220px] p-0 pr-4">
+                <div className="flex items-center w-full">
+                  <div className="px-4 py-2">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <span className="flex-1 text-center">Privacy-First</span>
+                </div>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="absolute left-0 top-full z-50">
+                <ul className="p-4 w-[400px] rounded-md border bg-popover shadow-md">
+                  <li>
+                    <h3 className="text-lg font-semibold mb-2">Your Data Stays Private</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Keep your data completely private and secure on your local system. No data ever leaves your machine.
+                    </p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Complete data sovereignty
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        No cloud data transmission
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="bg-muted p-1 rounded-full" />
+                        Perfect for sensitive data
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
+
+      <OllamaInstaller />
 
       <div className="grid gap-4 md:grid-cols-2">
         {quickStartSteps.map((step, index) => {
@@ -65,78 +220,42 @@ export default function Home() {
           return (
             <Card 
               key={index}
-              className={`transition-all duration-200 hover:shadow-md ${
+              className={`transition-all duration-300 hover:shadow-lg ${
                 step.primary ? 'border-primary' : ''
               }`}
             >
-              <Link href={step.href}>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-lg ${
+              <Link href={step.href} className="h-full">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-lg ${
                       step.primary 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
                     }`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <CardTitle>{step.title}</CardTitle>
+                    <CardTitle className="text-xl">{step.title}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">
+                <CardContent className="space-y-1 py-2">
+                  <CardDescription className="text-base font-medium">
                     {step.description}
                   </CardDescription>
+                  <p className="text-sm text-muted-foreground">
+                    {step.details}
+                  </p>
                 </CardContent>
+                <CardFooter className="pt-2">
+                  <Button variant="ghost" className="ml-auto group">
+                    Get Started
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </CardFooter>
               </Link>
             </Card>
           )
         })}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting Started Guide</CardTitle>
-          <CardDescription>
-            Follow these steps to get up and running with Ollama
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">1. Install a Model</h3>
-              <p className="text-muted-foreground">
-                Start by pulling a model from the registry. We recommend starting with a smaller model like &quot;mistral&quot; for testing.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => router.push('/pull-model')}
-              >
-                Go to Model Installation
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">2. Start a Chat</h3>
-              <p className="text-muted-foreground">
-                Once your model is installed, you can start chatting with it. The chat interface supports both text and, for compatible models, image inputs.
-              </p>
-              <Button 
-                variant="outline"
-                onClick={() => router.push('/chat')}
-              >
-                Open Chat
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">3. Explore Features</h3>
-              <p className="text-muted-foreground">
-                Discover additional features like model management, embeddings generation, and more through the sidebar navigation.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
