@@ -13,6 +13,82 @@ AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistr
 
 Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone.
 
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.6+ (for deployment script)
+- Node.js 20.x or later (for local development)
+- npm/yarn (for local development)
+- Docker and docker-compose (for containerized deployment)
+- Ollama installed and running locally (for local development)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd ollama-ui
+```
+
+2. Install Python dependencies for the deployment script:
+```bash
+pip install requests
+```
+
+### Deployment Options
+
+#### Option 1: Local Development
+This option is best for development and testing. It requires Ollama to be installed and running locally.
+
+1. Start Ollama:
+```bash
+ollama serve
+```
+
+2. Deploy the UI:
+```bash
+python deploy.py --environment local
+```
+
+This will:
+- Create a local environment configuration
+- Verify Ollama is running locally
+- Start the Next.js development server
+- Open the UI at http://localhost:3000
+
+#### Option 2: Docker Deployment
+This option is recommended for production and distribution. It packages both Ollama and the UI in containers.
+
+1. Deploy with Docker:
+```bash
+python deploy.py --environment docker
+```
+
+This will:
+- Create a Docker-specific environment configuration
+- Check for GPU support
+- Pull and build Docker images
+- Start the containers
+- Open the UI at http://localhost:3000
+
+### Environment Configuration
+
+The application uses different environment configurations based on the deployment method:
+
+#### Local Development
+```env
+OLLAMA_API_HOST=http://localhost:11434
+NODE_ENV=development
+```
+
+#### Docker Deployment
+```env
+OLLAMA_API_HOST=http://ollama:11434
+NODE_ENV=production
+```
+
+You can customize these settings by editing the `.env` file.
+
 ## 🌟 Features
 
 ### 🔐 Authentication
@@ -30,7 +106,7 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 - Code syntax highlighting
 - GitHub-flavored markdown support
 
-### 🤖 Comprehensive Model Management
+### 🤖 Model Management
 - Browse and manage local models
 - Pull new models from repositories
 - Delete unused models
@@ -40,49 +116,73 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 - Copy and modify existing models
 - Monitor running model instances
 
-### 🔧 Additional Features
-- Embeddings generation and management
-- Server control panel
-- Real-time error handling with toast notifications
-- Version information
-- Blob management
-- Advanced parameter customization
+## 🧪 Testing
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 20.x or later
-- npm/yarn
-- Ollama installed and running locally
-
-### Installation
-
-1. Clone the repository:
+Run the test suite:
 ```bash
-git clone <repository-url>
-cd ollama-ui
-```
-
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-# or
-yarn install
+
+# Run all tests
+npm test
+
+# Watch mode for development
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
 ```
 
-3. Create a `.env` file:
-```env
-OLLAMA_API_HOST=http://localhost:11434
-```
+## 🛠 Troubleshooting
 
-4. Start the development server:
+### Local Development
+1. If Ollama isn't running:
 ```bash
-npm run dev
-# or
-yarn dev
+ollama serve
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+2. If the UI isn't responding:
+```bash
+# Restart the Next.js server
+npm run dev
+```
+
+### Docker Deployment
+1. View container logs:
+```bash
+docker-compose logs -f
+```
+
+2. Restart services:
+```bash
+docker-compose restart
+```
+
+3. Reset everything:
+```bash
+docker-compose down -v
+python deploy.py --environment docker
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is privately licensed. All rights reserved.
+
+---
+
+<div align="center">
+Made with ❤️ to lower the barrier for those wanting to learn and play with AI
+
+[Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
+</div>
 
 ## 🏗 Project Structure
 
