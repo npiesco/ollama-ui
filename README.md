@@ -16,8 +16,8 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.6+ (for deployment script)
-- Node.js 20.x or later (for local development)
+- Python 3.8+ (for deployment script)
+- Node.js 20.x LTS (for local development)
 - npm/yarn (for local development)
 - Docker and docker-compose (for containerized deployment)
 - Ollama installed and running locally (for local development)
@@ -57,7 +57,7 @@ This will:
 - Open the UI at http://localhost:3000
 
 #### Option 2: Docker Deployment
-This option is recommended for production and distribution. It packages both Ollama and the UI in containers.
+This option is recommended for production and distribution. It packages both Ollama and the UI in containers, with automatic health checks and graceful startup handling.
 
 1. Deploy with Docker:
 ```bash
@@ -66,28 +66,35 @@ python deploy.py --environment docker
 
 This will:
 - Create a Docker-specific environment configuration
-- Check for GPU support
+- Check for GPU support (works on both GPU and non-GPU systems)
 - Pull and build Docker images
-- Start the containers
+- Start the containers with health checks
 - Open the UI at http://localhost:3000
 
 ### Environment Configuration
 
-The application uses different environment configurations based on the deployment method:
+The application uses different environment configurations based on the deployment method. A `.env.example` file is provided as a template:
 
-#### Local Development
 ```env
-OLLAMA_API_HOST=http://localhost:11434
-NODE_ENV=development
-```
+# Ollama API Configuration
+OLLAMA_API_HOST=http://ollama:11434  # Use http://localhost:11434 for local development
 
-#### Docker Deployment
-```env
-OLLAMA_API_HOST=http://ollama:11434
+# Environment
 NODE_ENV=production
+
+# Authentication
+AUTH_ENABLED=false
+JWT_SECRET=change-this-to-a-secure-secret-key
+
+# Optional: Model Configuration
+DEFAULT_MODEL=llama2
+MODEL_CACHE_DIR=/root/.ollama/models
+
+# Optional: UI Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-You can customize these settings by editing the `.env` file.
+You can customize these settings by copying `.env.example` to `.env` and modifying the values.
 
 ## 🌟 Features
 
@@ -150,19 +157,48 @@ npm run dev
 ### Docker Deployment
 1. View container logs:
 ```bash
+# View all container logs
 docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f ollama
+docker-compose logs -f ollama-ui
 ```
 
-2. Restart services:
+2. Check container health:
 ```bash
+# View container status
+docker-compose ps
+
+# Check container health status
+docker inspect ollama-ui --format "{{.State.Health.Status}}"
+docker inspect ollama --format "{{.State.Health.Status}}"
+```
+
+3. Restart services:
+```bash
+# Restart all services
 docker-compose restart
+
+# Restart specific service
+docker-compose restart ollama
+docker-compose restart ollama-ui
 ```
 
-3. Reset everything:
+4. Reset everything:
 ```bash
+# Stop and remove all containers, networks, and volumes
 docker-compose down -v
+
+# Rebuild and start fresh
 python deploy.py --environment docker
 ```
+
+5. Common Issues:
+   - If containers fail health checks, check the logs for specific error messages
+   - Ensure ports 3000 and 11434 are not in use by other applications
+   - For GPU support issues, verify NVIDIA drivers and nvidia-container-toolkit are installed
+   - If the UI can't connect to Ollama, verify the OLLAMA_API_HOST environment variable
 
 ## 🤝 Contributing
 
@@ -206,13 +242,23 @@ ollama-ui/
 │   │   ├── delete-model/   # Model deletion
 │   │   └── running-models/ # Running model instances
 │   ├── components/         # Reusable UI components
+│   │   ├── Chat.tsx        # Main chat interface
+│   │   ├── AnimatedMessage.tsx  # Animated message display
+│   │   ├── AdvancedParameters.tsx  # Model parameter controls
+│   │   └── MultimodalInput.tsx  # Text and image input handling
 │   ├── hooks/              # Custom React hooks   
 │   ├── lib/                # Utility functions
 │   ├── store/              # State management (Zustand)
 │   └── types/              # TypeScript definitions
 ├── __tests__/              # Test files
 ├── public/                 # Static assets
-└── ...                     # Config files
+├── .env.example           # Example environment configuration
+├── docker-compose.yml     # Docker Compose configuration
+├── Dockerfile            # UI container build configuration
+├── Dockerfile.ollama     # Ollama container build configuration
+├── deploy.py             # Deployment script
+├── next.config.ts        # Next.js configuration
+└── package.json          # Project dependencies and scripts
 ```
 
 ## 🛠 Tech Stack
@@ -246,6 +292,11 @@ ollama-ui/
   - ESLint
   - TypeScript strict mode
   - TurboPack
+- **Containerization:**
+  - Docker
+  - Docker Compose
+  - Health checks
+  - GPU support (optional)
 
 ## 🧪 Testing
 
@@ -290,58 +341,4 @@ Made with ❤️ to lower the barrier for those wanting to learn and play with A
 
 The application uses environment variables for configuration. Create a `.env` file in the root directory with the following variables:
 
-```env
-# Required - Ollama API endpoint
-OLLAMA_API_HOST=http://localhost:11434
-
-# Required - Authentication (if enabled)
-JWT_SECRET=your-secret-key-here
-AUTH_ENABLED=true
-
-# Optional - Server configuration
-NODE_ENV=development
-PORT=3000
 ```
-
-### Environment Files
-
-- `.env`: Main environment file for local development
-- `.env.test`: Environment configuration for testing
-- `.env.example`: Example configuration (do not use in production)
-
-### Configuration Options
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `OLLAMA_API_HOST` | Ollama API endpoint URL | http://localhost:11434 | Yes |
-| `JWT_SECRET` | Secret key for JWT signing | - | Yes (if auth enabled) |
-| `AUTH_ENABLED` | Enable/disable authentication | false | No |
-| `NODE_ENV` | Node environment (development/production/test) | development | No |
-| `PORT` | Port for the Next.js application | 3000 | No |
-
-### Usage in Different Environments
-
-1. **Local Development**
-   ```bash
-   # Use default .env file
-   npm run dev
-   ```
-
-2. **Testing**
-   ```bash
-   # Use .env.test configuration
-   npm run test
-   ```
-
-3. **Production**
-   ```bash
-   # Use production environment variables
-   npm run build
-   npm run start
-   ```
-
-### Security Considerations
-
-- Never commit `.env` files containing sensitive information
-- In production, use secure HTTPS URLs for `OLLAMA_API_HOST`
-- Consider using a secrets manager for production deployments
