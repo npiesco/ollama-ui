@@ -334,4 +334,3 @@ Made with ❤️ to lower the barrier for those wanting to learn and play with A
 
 [Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
 </div>
-```
