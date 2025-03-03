@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const response = await fetch('http://localhost:11434/api/version');
+    const ollamaHost = process.env.OLLAMA_API_HOST || 'http://localhost:11434';
+    const response = await fetch(`${ollamaHost}/api/version`);
     if (!response.ok) {
       throw new Error('Ollama API returned non-200 status');
     }
