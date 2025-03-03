@@ -174,11 +174,11 @@ const ManagementSection = ({ items, isCollapsed, pathname }: { items: Navigation
     <Collapsible
       open={isManagementOpen}
       onOpenChange={setManagementOpen}
-      className="space-y-1"
+      className="space-y-0.5"
     >
-      <div className="flex items-center justify-between px-3 py-2">
+      <div className="flex items-center justify-between px-2 py-1">
         {!isCollapsed && (
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">
             Model Management
           </span>
         )}
@@ -187,13 +187,13 @@ const ManagementSection = ({ items, isCollapsed, pathname }: { items: Navigation
             variant="ghost"
             size="sm"
             className={cn(
-              "h-6 w-6 p-0",
+              "h-5 w-5 p-0",
               isCollapsed && "w-full"
             )}
           >
             <ChevronDown
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform",
+                "h-3 w-3 text-muted-foreground transition-transform",
                 isManagementOpen && "rotate-180"
               )}
             />
@@ -201,7 +201,7 @@ const ManagementSection = ({ items, isCollapsed, pathname }: { items: Navigation
           </Button>
         </CollapsibleTrigger>
       </div>
-      <CollapsibleContent className="space-y-1">
+      <CollapsibleContent className="space-y-0.5">
         {items.map((item) => (
           <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
         ))}
@@ -217,11 +217,11 @@ const SettingsSection = ({ items, isCollapsed, pathname }: { items: NavigationIt
     <Collapsible
       open={isSettingsOpen}
       onOpenChange={setSettingsOpen}
-      className="space-y-1"
+      className="space-y-0.5"
     >
-      <div className="flex items-center justify-between px-3 py-2">
+      <div className="flex items-center justify-between px-2 py-1">
         {!isCollapsed && (
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">
             Settings & Info
           </span>
         )}
@@ -230,13 +230,13 @@ const SettingsSection = ({ items, isCollapsed, pathname }: { items: NavigationIt
             variant="ghost"
             size="sm"
             className={cn(
-              "h-6 w-6 p-0",
+              "h-5 w-5 p-0",
               isCollapsed && "w-full"
             )}
           >
             <ChevronDown
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform",
+                "h-3 w-3 text-muted-foreground transition-transform",
                 isSettingsOpen && "rotate-180"
               )}
             />
@@ -244,7 +244,7 @@ const SettingsSection = ({ items, isCollapsed, pathname }: { items: NavigationIt
           </Button>
         </CollapsibleTrigger>
       </div>
-      <CollapsibleContent className="space-y-1">
+      <CollapsibleContent className="space-y-0.5">
         {items.map((item) => (
           <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
         ))}
@@ -309,20 +309,20 @@ export function Sidebar() {
 
   const SidebarContent = () => (
     <div className={cn(
-      "h-screen pb-12 border-r transition-all duration-300 relative flex flex-col",
-      isCollapsed ? "w-16" : "w-64"
+      "h-screen pb-4 border-r transition-all duration-300 relative flex flex-col",
+      isCollapsed ? "w-14" : "w-56"
     )}>
       {!isMobile && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-[-20px] top-2 h-8 w-8 rounded-full border shadow-md bg-background z-50"
+          className="absolute right-[-16px] top-2 h-6 w-6 rounded-full border shadow-md bg-background z-50"
           onClick={handleCollapse}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           )}
           <span className="sr-only">Toggle Sidebar (⌘B)</span>
         </Button>
@@ -330,33 +330,33 @@ export function Sidebar() {
 
       <div className="flex flex-col h-full">
         {/* Main Content - Scrollable */}
-        <div className="flex-1 space-y-4 py-4 overflow-y-auto">
-          <div className="px-3 py-2">
-            <div className="mb-4">
+        <div className="flex-1 space-y-2 py-2 overflow-y-auto">
+          <div className="px-2 py-1">
+            <div className="mb-2">
               <Link 
                 href="/" 
-                className="flex items-center gap-3 group px-3 py-2 rounded-lg hover:bg-primary/5 transition-all duration-200 border-2 border-muted/85 hover:border-primary/30"
+                className="flex items-center gap-2 group px-2 py-1.5 rounded-lg hover:bg-primary/5 transition-all duration-200 border border-muted/85 hover:border-primary/30"
               >
                 <Image
                   src="/llama.svg"
                   alt="Home"
-                  width={40}
-                  height={40}
+                  width={28}
+                  height={28}
                   className="rounded group-hover:scale-105 transition-transform dark:invert dark:brightness-90"
                 />
                 {!isCollapsed && (
                   <div className="flex flex-col">
-                    <span className="text-lg font-semibold group-hover:text-primary transition-colors">Ollama UI</span>
-                    <span className="text-xs text-muted-foreground group-hover:text-primary/80 italic">
+                    <span className="text-base font-semibold group-hover:text-primary transition-colors">Ollama UI</span>
+                    <span className="text-[10px] text-muted-foreground group-hover:text-primary/80 italic">
                       Return to Home
                     </span>
                   </div>
                 )}
               </Link>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {/* Main Section */}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {mainItems.map((item) => (
                   <NavigationItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={pathname} />
                 ))}
@@ -364,7 +364,7 @@ export function Sidebar() {
 
               {/* Divider */}
               {!isCollapsed && (
-                <div className="my-4 px-3">
+                <div className="my-2 px-2">
                   <div className="h-px bg-border" />
                 </div>
               )}
@@ -374,7 +374,7 @@ export function Sidebar() {
 
               {/* Divider */}
               {!isCollapsed && (
-                <div className="my-4 px-3">
+                <div className="my-2 px-2">
                   <div className="h-px bg-border" />
                 </div>
               )}
@@ -386,9 +386,9 @@ export function Sidebar() {
         </div>
 
         {/* Social Links - Fixed at Bottom */}
-        <div className="p-4 border-t bg-background">
+        <div className="p-2 border-t bg-background">
           <div className={cn(
-            "grid gap-2",
+            "grid gap-1",
             isCollapsed ? "grid-cols-1" : "grid-cols-2"
           )}>
             {socialItems.map((item) => (
@@ -427,7 +427,7 @@ export function Sidebar() {
   return <SidebarContent />
 }
 
-// Update NavigationItem to improve hover descriptions
+// Update NavigationItem to be more compact
 function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
   const Icon = item.icon
   const isActive = pathname === item.path
@@ -448,7 +448,7 @@ function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
         <LinkComponent
           {...linkProps}
           className={cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200",
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-all duration-200",
             isActive 
               ? "border border-primary text-primary bg-primary/5" 
               : "border border-transparent hover:border-primary/20 hover:bg-primary/5",
@@ -456,7 +456,7 @@ function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
           )}
         >
           <Icon className={cn(
-            "h-4 w-4 shrink-0 transition-colors duration-200",
+            "h-3.5 w-3.5 shrink-0 transition-colors duration-200",
             isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
           )} />
           {!isCollapsed && (
@@ -467,15 +467,15 @@ function NavigationItem({ item, isCollapsed, pathname }: NavigationItemProps) {
               )}>
                 {item.name}
               </span>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center px-3 py-2 bg-muted/95">
-                <span className="text-[10px] text-muted-foreground line-clamp-2">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center px-2 py-1.5 bg-muted/95">
+                <span className="text-[9px] text-muted-foreground line-clamp-2">
                   {item.description}
                 </span>
               </div>
             </>
           )}
           {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 text-[10px]">
+            <div className="absolute left-full ml-1.5 px-1.5 py-1 bg-popover text-popover-foreground rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 text-[9px]">
               {item.name}
             </div>
           )}

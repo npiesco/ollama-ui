@@ -49,53 +49,53 @@ export default function Home() {
   ]
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col space-y-6 max-w-4xl mx-auto">
-        <div className="flex items-center justify-center gap-8 py-1">
+    <div className="container mx-auto p-1 space-y-2 h-[calc(100vh-4rem)]">
+      <div className="flex flex-col space-y-2 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3">
           <Image
             src="/welcome-llama.svg"
             alt="Welcome Llama"
-            width={100}
-            height={100}
+            width={60}
+            height={60}
             className="dark:invert dark:brightness-90 float-animation"
           />
           <div className="text-center">
-            <h1 className="text-5xl font-bold gradient-text mb-3">Welcome to Ollama UI</h1>
-            <p className="text-xl text-muted-foreground">
+            <h1 className="text-3xl font-bold gradient-text mb-1">Welcome to Ollama UI</h1>
+            <p className="text-base text-muted-foreground">
               Local AI Workbench
             </p>
           </div>
         </div>
 
         <NavigationMenu className="self-center">
-          <NavigationMenuList className="flex gap-3">
+          <NavigationMenuList className="flex flex-wrap gap-1.5 justify-center">
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[160px] p-0 pr-3">
                 <div className="flex items-center w-full">
-                  <div className="px-4 py-2">
-                    <Globe className="w-4 h-4 text-primary" />
+                  <div className="px-3 py-1.5">
+                    <Globe className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="flex-1 text-center text-primary font-medium">Offline-Centric</span>
+                  <span className="flex-1 text-center text-primary font-medium text-sm">Offline-Centric</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
+                <ul className="p-3 w-[280px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-3 gradient-text">Work Offline with Confidence</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="text-sm font-semibold mb-1.5 gradient-text">Work Offline with Confidence</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
                       Run powerful AI models without constant internet connectivity. Once downloaded, your models work entirely offline.
                     </p>
-                    <ul className="space-y-3 text-sm">
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                    <ul className="space-y-1.5 text-xs">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">No internet required for inference</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Download once, use anywhere</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Perfect for air-gapped environments</span>
                       </li>
                     </ul>
@@ -105,32 +105,32 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[160px] p-0 pr-3">
                 <div className="flex items-center w-full">
-                  <div className="px-4 py-2">
-                    <Cpu className="w-4 h-4 text-primary" />
+                  <div className="px-3 py-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="flex-1 text-center text-primary font-medium">Local Hosting</span>
+                  <span className="flex-1 text-center text-primary font-medium text-sm">Local Hosting</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
+                <ul className="p-3 w-[280px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-3 gradient-text">Your Machine, Your Rules</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="text-sm font-semibold mb-1.5 gradient-text">Your Machine, Your Rules</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
                       Host models directly on your hardware for maximum control and flexibility over your AI infrastructure.
                     </p>
-                    <ul className="space-y-3 text-sm">
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                    <ul className="space-y-1.5 text-xs">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Full control over model deployment</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Customize resource allocation</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Zero latency to external services</span>
                       </li>
                     </ul>
@@ -140,32 +140,32 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[160px] p-0 pr-3">
                 <div className="flex items-center w-full">
-                  <div className="px-4 py-2">
-                    <Shield className="w-4 h-4 text-primary" />
+                  <div className="px-3 py-1.5">
+                    <Shield className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="flex-1 text-center text-primary font-medium">Cloud Independent</span>
+                  <span className="flex-1 text-center text-primary font-medium text-sm">Cloud Independent</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
+                <ul className="p-3 w-[280px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-3 gradient-text">Break Free from the Cloud</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="text-sm font-semibold mb-1.5 gradient-text">Break Free from the Cloud</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
                       Complete independence from cloud services and external APIs. No subscriptions or usage limits.
                     </p>
-                    <ul className="space-y-3 text-sm">
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                    <ul className="space-y-1.5 text-xs">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">No recurring costs</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Unlimited inference</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">No API rate limits</span>
                       </li>
                     </ul>
@@ -175,32 +175,32 @@ export default function Home() {
             </NavigationMenuItem>
 
             <NavigationMenuItem className="relative">
-              <NavigationMenuTrigger className="glass animated-border w-[220px] p-0 pr-4">
+              <NavigationMenuTrigger className="glass animated-border w-[160px] p-0 pr-3">
                 <div className="flex items-center w-full">
-                  <div className="px-4 py-2">
-                    <Lock className="w-4 h-4 text-primary" />
+                  <div className="px-3 py-1.5">
+                    <Lock className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="flex-1 text-center text-primary font-medium">Privacy-First</span>
+                  <span className="flex-1 text-center text-primary font-medium text-sm">Privacy-First</span>
                 </div>
               </NavigationMenuTrigger>
               <NavigationMenuContent className="absolute left-0 top-full z-50">
-                <ul className="p-6 w-[400px] rounded-xl glass shadow-lg">
+                <ul className="p-3 w-[280px] rounded-xl glass shadow-lg">
                   <li>
-                    <h3 className="text-lg font-semibold mb-3 gradient-text">Your Data Stays Private</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <h3 className="text-sm font-semibold mb-1.5 gradient-text">Your Data Stays Private</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
                       Keep your data completely private and secure on your local system. No data ever leaves your machine.
                     </p>
-                    <ul className="space-y-3 text-sm">
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                    <ul className="space-y-1.5 text-xs">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Complete data sovereignty</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">No cloud data transmission</span>
                       </li>
-                      <li className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30" />
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-primary/30" />
                         <span className="text-primary font-medium">Perfect for sensitive data</span>
                       </li>
                     </ul>
@@ -214,7 +214,7 @@ export default function Home() {
 
       <OllamaInstaller />
 
-      <div className="grid gap-6 md:grid-cols-2 max-w-6xl mx-auto">
+      <div className="grid gap-2 md:grid-cols-2 max-w-6xl mx-auto">
         {quickStartSteps.map((step, index) => {
           const Icon = step.icon
           return (
@@ -226,33 +226,33 @@ export default function Home() {
               <Card className={`h-full card-hover ${
                 step.primary ? 'animated-border' : ''
               }`}>
-                <CardHeader className="pb-1">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3.5 rounded-xl ${
+                <CardHeader className="pb-0.5">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${
                       step.primary 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
                     } group-hover:scale-110 transition-transform`}>
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <CardTitle className="text-2xl">{step.title}</CardTitle>
+                    <CardTitle className="text-lg">{step.title}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-1 py-1.5">
-                  <CardDescription className="text-base font-medium mb-1">
+                <CardContent className="space-y-0.5 py-0.5">
+                  <CardDescription className="text-xs font-medium">
                     {step.description}
                   </CardDescription>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {step.details}
                   </p>
                 </CardContent>
-                <CardFooter className="pt-1">
+                <CardFooter className="pt-0.5">
                   <Button 
                     variant={step.primary ? "default" : "ghost"} 
-                    className="ml-auto group/button"
+                    className="ml-auto group/button text-xs h-7 px-2"
                   >
                     Get Started
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover/button:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-3 h-3 ml-1 group-hover/button:translate-x-1 transition-transform" />
                   </Button>
                 </CardFooter>
               </Card>

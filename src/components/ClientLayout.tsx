@@ -27,11 +27,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
           {!isPopout && <Sidebar />}
           <div className="flex-1 overflow-auto">
             {!isPopout && (
-              <div className="flex justify-end p-4 border-b">
+              <div className="flex justify-end p-2 border-b">
                 <ServerControl />
               </div>
             )}
-            <main className={isPopout ? "h-full" : "p-6"}>
+            <main className={isPopout ? "h-full" : "p-2"}>
               {children}
             </main>
           </div>
