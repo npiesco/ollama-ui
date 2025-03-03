@@ -13,17 +13,10 @@ services:
       - AUTH_ENABLED=${AUTH_ENABLED:-false}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
     depends_on:
-      ollama:
-        condition: service_healthy
+      - ollama
     restart: unless-stopped
     networks:
       - ollama-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     logging:
       driver: "json-file"
       options:
@@ -40,19 +33,6 @@ services:
     restart: unless-stopped
     networks:
       - ollama-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     logging:
       driver: "json-file"
       options:

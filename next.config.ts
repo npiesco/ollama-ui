@@ -1,6 +1,10 @@
+// /ollama-ui/next.config.ts
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const config: NextConfig = {
+  output: 'standalone',
+  reactStrictMode: true,
+  swcMinify: true,
   images: {
     remotePatterns: [
       {
@@ -11,7 +15,13 @@ const nextConfig: NextConfig = {
       },
       // Add any other domains you need to support
     ],
+    domains: ['localhost'],
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000'],
+    },
   },
 };
 
-export default nextConfig;
+export default config;
