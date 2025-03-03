@@ -12,7 +12,9 @@ const baseTestEnv = {
   VIRTUAL_ENV: join(process.cwd(), 'venv'),
   PATH: `${join(process.cwd(), 'venv/bin')}:${process.env.PATH}`,
   SKIP_HEALTH_CHECK: 'true',
-  SKIP_DOCKER_COMMANDS: 'true'
+  SKIP_DOCKER_COMMANDS: 'true',
+  SKIP_NPM_COMMANDS: 'true',  // Skip starting Next.js server in tests
+  MOCK_SERVER_RESPONSE: 'true'
 };
 
 // Helper function to run the deploy script
@@ -114,7 +116,8 @@ describe('Deployment Script', () => {
       }
 
       const { exitCode } = await runDeployScript(['--environment', 'local'], {
-        MOCK_COMMANDS: 'curl,python3'
+        MOCK_COMMANDS: 'curl,python3',
+        MOCK_SERVER_RESPONSE: 'true'
       });
 
       expect(exitCode).toBe(0);
@@ -123,7 +126,24 @@ describe('Deployment Script', () => {
       expect(envContent).toContain('OLLAMA_API_HOST=http://localhost:11434');
     }, 10000);
 
-    // ... rest of the tests ...
+    it('should verify Ollama is running locally', async () => {
+      const { exitCode, output } = await runDeployScript(['--environment', 'local'], {
+        MOCK_COMMANDS: 'curl,python3',
+        MOCK_SERVER_RESPONSE: 'true'
+      });
+
+      expect(exitCode).toBe(0);
+      expect(output).toContain('Verifying Ollama is running locally');
+    });
+
+    it('should handle missing required commands', async () => {
+      const { exitCode, output } = await runDeployScript(['--environment', 'local'], {
+        MOCK_COMMANDS: ''  // No commands available
+      });
+
+      expect(exitCode).not.toBe(0);
+      expect(output).toContain('Error: The following required commands are missing');
+    });
   });
 
   describe('Docker Environment', () => {
@@ -170,6 +190,16 @@ JWT_SECRET=test-secret-key
       expect(output).toContain('Running inside Docker container');
       expect(output).toContain('Building and starting services');
     });
+
+    it('should handle Docker build failures', async () => {
+      const { exitCode, output } = await runDeployScript(['--environment', 'docker'], {
+        MOCK_COMMANDS: 'docker,docker-compose,curl',
+        MOCK_DOCKER_BUILD_FAIL: 'true'
+      });
+
+      expect(exitCode).not.toBe(0);
+      expect(output).toContain('Error: Failed to build Docker image');
+    });
   });
 
   describe('Command Detection', () => {
@@ -188,6 +218,16 @@ JWT_SECRET=test-secret-key
 
       expect(dockerExitCode).not.toBe(0);
       expect(dockerOutput).toContain('Error: The following required commands are missing');
+    });
+
+    it('should handle missing Python virtual environment', async () => {
+      const { exitCode, output } = await runDeployScript(['--environment', 'local'], {
+        MOCK_COMMANDS: 'curl,python3',
+        MOCK_VENV_MISSING: 'true'
+      });
+
+      expect(exitCode).not.toBe(0);
+      expect(output).toContain('Error: Python virtual environment not found');
     });
   });
 }); 

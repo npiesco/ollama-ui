@@ -65,7 +65,7 @@ export default function ModelInfo() {
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-2">Details</h2>
-            <div className="bg-gray-100 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <p>Format: {modelInfo.details.format}</p>
               <p>Family: {modelInfo.details.family}</p>
               <p>Parameter Size: {modelInfo.details.parameter_size}</p>
@@ -75,21 +75,21 @@ export default function ModelInfo() {
 
           <div>
             <h2 className="text-xl font-semibold mb-2">Modelfile</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
+            <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
               {modelInfo.modelfile}
             </pre>
           </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-2">Template</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
+            <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
               {modelInfo.template}
             </pre>
           </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-2">Parameters</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
+            <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-[200px] text-sm">
               {modelInfo.parameters}
             </pre>
           </div>
