@@ -5,7 +5,7 @@ A modern, feature-rich user interface for Ollama, providing a seamless experienc
 [![Next.js](https://img.shields.io/badge/next.js-15.1.7-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.1-38bdf8.svg)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-24.0.7-2496ED.svg)](https://www.docker.com)
 
 ## 🎯 Why Ollama UI?
 
@@ -334,11 +334,4 @@ Made with ❤️ to lower the barrier for those wanting to learn and play with A
 
 [Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
 </div>
-
-## ⚙️ Environment Configuration
-
-### Required Environment Variables
-
-The application uses environment variables for configuration. Create a `.env` file in the root directory with the following variables:
-
 ```
