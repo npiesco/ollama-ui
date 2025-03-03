@@ -4,7 +4,7 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync, renameSync } from 
 import { join } from 'path';
 import * as os from 'os';
 
-jest.setTimeout(10000); // Reduce timeout to 10 seconds
+jest.setTimeout(10000); // Set timeout to 10 seconds
 
 // Base test environment
 const baseTestEnv = {
@@ -121,7 +121,7 @@ describe('Deployment Script', () => {
       expect(existsSync(envPath)).toBe(true);
       const envContent = readFileSync(envPath, 'utf-8');
       expect(envContent).toContain('OLLAMA_API_HOST=http://localhost:11434');
-    }, 30000);
+    }, 10000);
 
     // ... rest of the tests ...
   });
