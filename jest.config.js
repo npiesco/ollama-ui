@@ -14,13 +14,22 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@components/(.*)$': '<rootDir>/src/components/$1',
   },
-  testTimeout: 30000, // Set default timeout to 30 seconds
+  transformIgnorePatterns: [
+    '/node_modules/(?!(lucide-react|@radix-ui|@babel/runtime)/)',
+  ],
+  testTimeout: 5000, // Set default timeout to 5 seconds
+  maxWorkers: '50%', // Use half of available CPU cores
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
     '<rootDir>/src/__tests__/setup.ts'
-  ]
+  ],
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+  },
+  verbose: false
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
