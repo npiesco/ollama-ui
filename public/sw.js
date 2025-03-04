@@ -1,4 +1,6 @@
 const CACHE_NAME = 'ollama-ui-v1';
+const MODEL_CACHE_NAME = 'ollama-models-v1';
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -14,9 +16,15 @@ const STATIC_ASSETS = [
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll(STATIC_ASSETS);
+      }),
+      caches.open(MODEL_CACHE_NAME).then((cache) => {
+        // Initialize model cache
+        return cache;
+      })
+    ])
   );
 });
 
@@ -26,7 +34,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME && name !== MODEL_CACHE_NAME)
           .map((name) => caches.delete(name))
       );
     })
@@ -40,11 +48,30 @@ self.addEventListener('fetch', (event) => {
   // Handle API requests to Ollama
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(event.request)
-        .catch(() => {
-          // If offline, return cached response if available
-          return caches.match(event.request);
-        })
+      (async () => {
+        try {
+          // Try network first
+          const response = await fetch(event.request);
+          return response;
+        } catch (error) {
+          // If offline, check cache
+          const cache = await caches.open(MODEL_CACHE_NAME);
+          const cachedResponse = await cache.match(event.request);
+          
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          // If no cached response, return offline fallback
+          return new Response(JSON.stringify({
+            error: 'Offline mode: No cached response available',
+            offline: true
+          }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      })()
     );
     return;
   }
@@ -72,9 +99,17 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle offline status
+// Handle offline status and model caching
 self.addEventListener('message', (event) => {
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'CACHE_MODEL') {
+    // Cache model data
+    const { modelId, modelData } = event.data;
+    caches.open(MODEL_CACHE_NAME).then((cache) => {
+      cache.put(`/api/models/${modelId}`, new Response(JSON.stringify(modelData), {
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    });
   }
 }); 
