@@ -135,13 +135,48 @@ You can customize these settings by copying `.env.example` to `.env` and modifyi
 - Copy and modify existing models
 - Monitor running model instances
 
+## 🛠 Tech Stack
+
+- **Framework:** Next.js 15.1.7 with App Router and TurboPack
+- **Language:** TypeScript 5
+- **Authentication:** JSON Web Tokens (JWT)
+- **Styling:** 
+  - Tailwind CSS 3.4.1
+  - CSS Animations
+  - Dark/Light mode support
+- **UI Components:** 
+  - Radix UI primitives
+  - Framer Motion animations
+  - Sonner toast notifications
+  - shadcn/ui components
+- **State Management:** 
+  - Zustand
+  - SWR for data fetching
+- **Content Rendering:**
+  - React Markdown
+  - KaTeX for math formulas
+  - Syntax highlighting
+  - GitHub-flavored markdown
+- **Testing:**
+  - Jest
+  - React Testing Library
+  - Coverage reporting
+- **Data Validation:** Zod schema validation
+- **Development Tools:**
+  - ESLint
+  - TypeScript strict mode
+  - TurboPack
+- **Containerization:**
+  - Docker
+  - Docker Compose
+  - Health checks
+  - GPU support (optional)
+
 ## 🧪 Testing
 
-Run the test suite:
-```bash
-# Install dependencies
-npm install
+The project includes comprehensive testing:
 
+```bash
 # Run all tests
 npm test
 
@@ -151,6 +186,8 @@ npm run test:watch
 # Generate coverage report
 npm run test:coverage
 ```
+
+Test files are located in the `__tests__` directory and follow the `.test.ts(x)` naming convention.
 
 ## 🛠 Troubleshooting
 
@@ -222,15 +259,13 @@ python deploy.py --environment docker
 
 ## 📝 License
 
-This project is privately licensed. All rights reserved.
+This project is licensed under the Business Source License 1.1 (BUSL). This is a source-available license that provides access to the source code while limiting certain commercial uses. Key points:
 
----
+- The source code is available for viewing, modification, and non-commercial use
+- Commercial use requires a commercial license
+- For commercial licensing inquiries, please contact the maintainer
 
-<div align="center">
-Made with ❤️ to lower the barrier for those wanting to learn and play with AI
-
-[Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
-</div>
+For full license terms, see the [LICENSE](LICENSE) file.
 
 ## 🏗 Project Structure
 
@@ -272,72 +307,6 @@ ollama-ui/
 ├── next.config.ts        # Next.js configuration
 └── package.json          # Project dependencies and scripts
 ```
-
-## 🛠 Tech Stack
-
-- **Framework:** Next.js 15.1.7 with App Router and TurboPack
-- **Language:** TypeScript 5
-- **Authentication:** JSON Web Tokens (JWT)
-- **Styling:** 
-  - Tailwind CSS 3.4.1
-  - CSS Animations
-  - Dark/Light mode support
-- **UI Components:** 
-  - Radix UI primitives
-  - Framer Motion animations
-  - Sonner toast notifications
-  - shadcn/ui components
-- **State Management:** 
-  - Zustand
-  - SWR for data fetching
-- **Content Rendering:**
-  - React Markdown
-  - KaTeX for math formulas
-  - Syntax highlighting
-  - GitHub-flavored markdown
-- **Testing:**
-  - Jest
-  - React Testing Library
-  - Coverage reporting
-- **Data Validation:** Zod schema validation
-- **Development Tools:**
-  - ESLint
-  - TypeScript strict mode
-  - TurboPack
-- **Containerization:**
-  - Docker
-  - Docker Compose
-  - Health checks
-  - GPU support (optional)
-
-## 🧪 Testing
-
-The project includes comprehensive testing:
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode for development
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
-
-Test files are located in the `__tests__` directory and follow the `.test.ts(x)` naming convention.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is privately licensed. All rights reserved.
 
 ---
 
