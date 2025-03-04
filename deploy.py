@@ -241,6 +241,9 @@ def main():
         # Skip in test mode
         if not os.environ.get('SKIP_NPM_COMMANDS'):
             print("Starting Next.js application...")
+            print("\n🚀 Ollama UI is starting up!")
+            print("📝 Once ready, you can access it at: http://localhost:3000")
+            print("💡 Press Ctrl+C to stop the application\n")
             run_command("npm run dev", shell=True)
 
     # Check service health
