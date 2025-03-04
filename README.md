@@ -30,7 +30,19 @@ git clone <repository-url>
 cd ollama-ui
 ```
 
-2. Install Python dependencies for the deployment script:
+2. Create and activate a Python virtual environment:
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+.\venv\Scripts\activate
+```
+
+3. Install Python dependencies for the deployment script:
 ```bash
 pip install requests
 ```

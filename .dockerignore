@@ -37,3 +37,4 @@ jest.config.ts
 README.md
 *.md
 .DS_Store 
+.venv
