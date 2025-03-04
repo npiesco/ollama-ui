@@ -26,7 +26,7 @@ describe('ServiceWorkerManager', () => {
     jest.clearAllMocks();
     
     // Reset singleton instance
-    (ServiceWorkerManager as any).instance = null;
+    (ServiceWorkerManager as { instance: ServiceWorkerManager | null }).instance = null;
     
     // Create new instance
     manager = ServiceWorkerManager.getInstance();

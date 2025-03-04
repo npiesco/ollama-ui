@@ -1,6 +1,6 @@
 // ollama-ui/src/lib/wasm/__tests__/offline-inference.test.ts
 import { OfflineInference } from '../offline-inference';
-import { init, InferenceSession } from 'onnxruntime-web';
+import { InferenceSession } from 'onnxruntime-web';
 
 // Mock ONNX Runtime
 jest.mock('onnxruntime-web', () => ({
@@ -23,26 +23,26 @@ jest.mock('onnxruntime-web', () => ({
 
 // Test version of IndexedDB
 class TestIDBDatabase {
-  private stores: Map<string, Map<string, any>> = new Map();
+  private stores: Map<string, Map<string, ArrayBuffer>> = new Map();
   private version: number;
 
   constructor(version: number) {
     this.version = version;
   }
 
-  createObjectStore(name: string) {
+  createObjectStore(name: string): void {
     if (!this.stores.has(name)) {
       this.stores.set(name, new Map());
     }
   }
 
-  transaction(storeNames: string | string[], mode: IDBTransactionMode = 'readonly') {
+  transaction(storeNames: string | string[], mode: IDBTransactionMode = 'readonly'): TestIDBTransaction {
     return new TestIDBTransaction(this, storeNames, mode);
   }
 
-  close() {}
+  close(): void {}
 
-  getStore(name: string): Map<string, any> {
+  getStore(name: string): Map<string, ArrayBuffer> {
     return this.stores.get(name) || new Map();
   }
 }
@@ -54,25 +54,25 @@ class TestIDBTransaction {
     private mode: IDBTransactionMode
   ) {}
 
-  objectStore(name: string) {
+  objectStore(name: string): TestIDBObjectStore {
     return new TestIDBObjectStore(this.db.getStore(name));
   }
 }
 
 class TestIDBObjectStore {
-  constructor(private store: Map<string, any>) {}
+  constructor(private store: Map<string, ArrayBuffer>) {}
 
-  get(key: string): TestIDBRequest {
-    const request = new TestIDBRequest();
+  get(key: string): TestIDBRequest<ArrayBuffer | null> {
+    const request = new TestIDBRequest<ArrayBuffer | null>();
     setTimeout(() => {
-      request.result = this.store.get(key);
+      request.result = this.store.get(key) || null;
       request.onsuccess?.({ target: request });
     }, 0);
     return request;
   }
 
-  put(value: any, key: string): TestIDBRequest {
-    const request = new TestIDBRequest();
+  put(value: ArrayBuffer, key: string): TestIDBRequest<string> {
+    const request = new TestIDBRequest<string>();
     setTimeout(() => {
       this.store.set(key, value);
       request.result = key;
@@ -82,14 +82,14 @@ class TestIDBObjectStore {
   }
 }
 
-class TestIDBRequest {
-  onsuccess: ((event: { target: TestIDBRequest }) => void) | null = null;
-  onerror: ((event: { target: TestIDBRequest }) => void) | null = null;
-  result: any = null;
-  error: any = null;
+class TestIDBRequest<T> {
+  onsuccess: ((event: { target: TestIDBRequest<T> }) => void) | null = null;
+  onerror: ((event: { target: TestIDBRequest<T> }) => void) | null = null;
+  result: T | null = null;
+  error: Error | null = null;
 }
 
-class TestIDBOpenDBRequest extends TestIDBRequest {
+class TestIDBOpenDBRequest extends TestIDBRequest<TestIDBDatabase> {
   onupgradeneeded: ((event: { target: TestIDBOpenDBRequest }) => void) | null = null;
 }
 
@@ -111,9 +111,9 @@ const indexedDB = {
   },
 };
 
-global.indexedDB = indexedDB as any;
-global.IDBDatabase = TestIDBDatabase as any;
-global.IDBOpenDBRequest = TestIDBOpenDBRequest as any;
+global.indexedDB = indexedDB as unknown as typeof window.indexedDB;
+global.IDBDatabase = TestIDBDatabase as unknown as typeof window.IDBDatabase;
+global.IDBOpenDBRequest = TestIDBOpenDBRequest as unknown as typeof window.IDBOpenDBRequest;
 
 describe('OfflineInference', () => {
   let inference: OfflineInference;

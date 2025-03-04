@@ -1,11 +1,15 @@
 // src/lib/wasm/offline-inference.ts
-import { init, InferenceSession, Tensor } from 'onnxruntime-web';
+import * as ort from 'onnxruntime-web';
 
 // Initialize ONNX Runtime
 export async function initWasm() {
-  await init({
+  // Set the WebAssembly binary file path to the local node_modules
+  ort.env.wasm.wasmPaths = '/node_modules/onnxruntime-web/dist/';
+
+  // Create session options
+  const sessionOptions: ort.InferenceSession.SessionOptions = {
     executionProviders: ['wasm'],
-    graphOptimizationLevel: 'all',
+    graphOptimizationLevel: 'all' as const,
     executionMode: 'sequential',
     enableCpuMemArena: true,
     enableMemPattern: true,
@@ -15,11 +19,14 @@ export async function initWasm() {
         log_severity_level: 0,
       },
     },
-  });
+  };
+
+  // Initialize WASM backend
+  await ort.InferenceSession.create(new Uint8Array(0), sessionOptions);
 }
 
 export class OfflineInference {
-  private session: InferenceSession | null = null;
+  private session: ort.InferenceSession | null = null;
   private modelPath: string;
 
   constructor(modelPath: string) {
@@ -30,7 +37,7 @@ export class OfflineInference {
     try {
       // Load model from IndexedDB or download if not available
       const modelBuffer = await this.getModelBuffer();
-      this.session = await InferenceSession.create(modelBuffer, {
+      this.session = await ort.InferenceSession.create(modelBuffer, {
         executionProviders: ['wasm'],
         graphOptimizationLevel: 'all',
       });
@@ -103,7 +110,7 @@ export class OfflineInference {
     }
 
     try {
-      const tensor = new Tensor('float32', input, [1, input.length]);
+      const tensor = new ort.Tensor('float32', input, [1, input.length]);
       const results = await this.session.run({ input: tensor });
       return results.output.data as Float32Array;
     } catch (error) {
