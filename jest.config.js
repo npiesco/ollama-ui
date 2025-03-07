@@ -7,15 +7,16 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: [
-    '<rootDir>/src/__tests__/setup.ts',
-    '@testing-library/jest-dom'
-  ],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@components/(.*)$': '<rootDir>/src/components/$1',
   },
+  transform: {
+    '^.+\\.(t|j)sx?$': ['babel-jest', { presets: ['next/babel'] }],
+  },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   transformIgnorePatterns: [
     '/node_modules/(?!(lucide-react|@radix-ui|@babel/runtime)/)',
   ],
@@ -24,10 +25,11 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
-    '<rootDir>/src/__tests__/setup.ts'
   ],
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.json'
+    }
   },
   verbose: false
 }

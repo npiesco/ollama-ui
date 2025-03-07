@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import jwt from "jsonwebtoken"
+import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-default-secret"
 
@@ -12,11 +12,15 @@ export function verifyToken(token: string): boolean {
   }
 }
 
-export function createToken(payload: object): string {
+interface TokenPayload {
+  [key: string]: unknown
+}
+
+export function createToken(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" })
 }
 
-export function generateToken(payload: object): string {
+export function generateToken(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" })
 }
 

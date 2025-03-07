@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-    darkMode: ["class"],
+    darkMode: "class",
     content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,28 +10,44 @@ export default {
   theme: {
   	extend: {
   		keyframes: {
-  			"accordion-down": {
-  				from: { height: "0" },
-  				to: { height: "var(--radix-accordion-content-height)" },
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
   			},
-  			"accordion-up": {
-  				from: { height: "var(--radix-accordion-content-height)" },
-  				to: { height: "0" },
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
   			},
-  			"collapsible-down": {
-  				from: { height: "0" },
-  				to: { height: "var(--radix-collapsible-content-height)" },
+  			'collapsible-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-collapsible-content-height)'
+  				}
   			},
-  			"collapsible-up": {
-  				from: { height: "var(--radix-collapsible-content-height)" },
-  				to: { height: "0" },
-  			},
+  			'collapsible-up': {
+  				from: {
+  					height: 'var(--radix-collapsible-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
   		},
   		animation: {
-  			"accordion-down": "accordion-down 0.2s ease-out",
-  			"accordion-up": "accordion-up 0.2s ease-out",
-  			"collapsible-down": "collapsible-down 0.2s ease-out",
-  			"collapsible-up": "collapsible-up 0.2s ease-out",
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'collapsible-down': 'collapsible-down 0.2s ease-out',
+  			'collapsible-up': 'collapsible-up 0.2s ease-out'
   		},
   		colors: {
   			background: 'hsl(var(--background))',
@@ -79,38 +95,10 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		},
-      typography: {
-        DEFAULT: {
-          css: {
-            maxWidth: 'none',
-            code: {
-              backgroundColor: 'hsl(var(--muted))',
-              borderRadius: '0.375rem',
-              paddingTop: '0.125rem',
-              paddingRight: '0.375rem',
-              paddingBottom: '0.125rem',
-              paddingLeft: '0.375rem',
-            },
-            'code::before': {
-              content: 'none',
-            },
-            'code::after': {
-              content: 'none',
-            },
-            pre: {
-              backgroundColor: 'transparent',
-              color: 'inherit',
-              padding: 0,
-              margin: 0,
-            },
-          },
-        },
-      },
+  		}
   	}
   },
   plugins: [
-    require("tailwindcss-animate"),
-    require("@tailwindcss/typography"),
+    require("tailwindcss-animate")
   ],
 } satisfies Config;

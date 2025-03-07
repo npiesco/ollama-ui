@@ -5,29 +5,16 @@ import sys
 import os
 import socket
 import psutil
+import signal
+import json
+
+# Model configuration
+MODEL_NAME = "phi3:mini"  # Use the official phi3:mini model
 
 def is_port_in_use(port):
     """Check if a port is in use"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('127.0.0.1', port)) == 0
-
-def kill_process_on_port(port):
-    """Kill process using a specific port"""
-    try:
-        # Get all network connections
-        connections = psutil.net_connections()
-        for conn in connections:
-            if conn.laddr.port == port:
-                try:
-                    process = psutil.Process(conn.pid)
-                    process.kill()
-                    time.sleep(1)
-                    return True
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-    except (psutil.NoSuchProcess, psutil.AccessDenied):
-        pass
-    return False
 
 def run_command(cmd, check=True):
     """Run a shell command and return its output"""
@@ -44,14 +31,14 @@ def cleanup_existing_processes():
     """Clean up any existing processes"""
     print("Cleaning up existing processes...")
     
-    # Kill processes on ports 3000 and 11434
+    # Only try to kill Next.js server on port 3000
     if is_port_in_use(3000):
-        print("Port 3000 in use, killing process...")
-        kill_process_on_port(3000)
-    
-    if is_port_in_use(11434):
-        print("Port 11434 in use, killing process...")
-        kill_process_on_port(11434)
+        print("Port 3000 in use, killing Next.js server...")
+        if sys.platform == "darwin":
+            run_command("lsof -ti:3000 | xargs kill -9", check=False)
+        else:
+            run_command("fuser -k 3000/tcp", check=False)
+        time.sleep(2)
     
     # Kill any existing Chrome instances with remote debugging
     if sys.platform == "darwin":
@@ -81,11 +68,8 @@ def start_services():
         # Don't return False, just continue
     
     print("Starting Next.js server...")
-    subprocess.Popen(["npm", "start"])
-    
-    # Start Ollama server
-    print("Starting Ollama server...")
-    subprocess.Popen(["ollama", "serve"])
+    # Use the standalone server as recommended
+    subprocess.Popen(["node", ".next/standalone/server.js"])
     
     # Start Chrome with remote debugging
     print("Starting Chrome with remote debugging...")
@@ -107,52 +91,183 @@ def wait_for_service(port, timeout=30):
     start_time = time.time()
     while time.time() - start_time < timeout:
         if is_port_in_use(port):
-            return True
+            # Additional check to ensure service is responding
+            try:
+                if port == 11434:
+                    response = requests.get("http://localhost:11434/api/version")
+                    if response.status_code == 200:
+                        return True
+                elif port == 3000:
+                    response = requests.get("http://localhost:3000")
+                    if response.status_code == 200:
+                        return True
+            except requests.exceptions.ConnectionError:
+                pass
         time.sleep(1)
     return False
 
+def create_modelfile():
+    """Create the modelfile for the GGUF version"""
+    print("Creating Modelfile...")
+    try:
+        with open('Modelfile', 'w') as f:
+            f.write(MODELFILE_CONTENT)
+        return True
+    except Exception as e:
+        print(f"Error creating Modelfile: {e}")
+        return False
+
+def create_model():
+    """Create the model using the Modelfile"""
+    print("Creating model from Modelfile...")
+    try:
+        result = subprocess.run(
+            ['ollama', 'create', MODEL_NAME, '-f', 'Modelfile'],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("Model created successfully")
+            return True
+        else:
+            print(f"Error creating model: {result.stderr}")
+            return False
+    except Exception as e:
+        print(f"Error running ollama create: {e}")
+        return False
+
 def pull_model():
-    """Pull the phi-mini model"""
-    print("Pulling phi-mini model...")
+    """Pull the model"""
+    print(f"Setting up {MODEL_NAME} model...")
     # Wait for Ollama to be ready
     if not wait_for_service(11434):
         print("Ollama server not ready")
         return False
         
     try:
+        # First, check if model already exists
+        print("Checking existing models...")
+        response = requests.get("http://localhost:11434/api/tags")
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            print(f"Available models: {models}")
+            if any(MODEL_NAME in model.get("name", "") for model in models):
+                print("Model already exists")
+                return True
+        
+        # If model doesn't exist, pull it
+        print("Pulling model...")
         response = requests.post(
             "http://localhost:11434/api/pull",
-            json={"name": "phi-mini"}
+            json={"name": MODEL_NAME},
+            stream=True
         )
-        if response.status_code == 200:
-            print("Model pulled successfully")
-            return True
-        else:
+        
+        if response.status_code != 200:
             print(f"Error pulling model: {response.text}")
             return False
+            
+        # Process the stream
+        for line in response.iter_lines():
+            if line:
+                try:
+                    status = json.loads(line)
+                    if status.get("status") == "success":
+                        print("Model pulled successfully")
+                        time.sleep(5)  # Wait for model to be fully available
+                        return True
+                    elif status.get("error"):
+                        print(f"Error during pull: {status.get('error')}")
+                        return False
+                except json.JSONDecodeError:
+                    print(f"Failed to parse status line: {line}")
+                    continue
+                    
+        return True
+        
     except requests.exceptions.ConnectionError:
         print("Could not connect to Ollama server. Is it running?")
         return False
 
-def verify_model():
-    """Verify model availability"""
+def verify_model(max_retries=3):
+    """Verify model availability with retries"""
     print("Verifying model...")
+    for attempt in range(max_retries):
+        try:
+            response = requests.get("http://localhost:11434/api/tags")
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                print(f"Available models: {models}")  # Debug output
+                if any(MODEL_NAME in model.get("name", "") for model in models):
+                    print("Model verified successfully")
+                    return True
+                else:
+                    print(f"Model not found in available models (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:
+                        print("Waiting 5 seconds before retry...")
+                        time.sleep(5)
+            else:
+                print(f"Failed to get model list (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    print("Waiting 5 seconds before retry...")
+                    time.sleep(5)
+        except requests.exceptions.ConnectionError:
+            print(f"Connection error (attempt {attempt + 1}/{max_retries})")
+            if attempt < max_retries - 1:
+                print("Waiting 5 seconds before retry...")
+                time.sleep(5)
+    print("Model verification failed after all retries")
+    return False
+
+def delete_model():
+    """Delete the model if it exists"""
+    print(f"Deleting {MODEL_NAME} model...")
     try:
-        response = requests.get("http://localhost:11434/api/tags")
+        response = requests.delete(
+            "http://localhost:11434/api/delete",
+            json={"name": MODEL_NAME}
+        )
         if response.status_code == 200:
-            models = response.json().get("models", [])
-            if any("phi-mini" in model.get("name", "") for model in models):
-                print("Model verified successfully")
-                return True
-        print("Model verification failed")
-        return False
+            print("Model deleted successfully")
+            return True
+        else:
+            print(f"Error deleting model: {response.text}")
+            return False
     except requests.exceptions.ConnectionError:
-        print("Could not connect to Ollama server. Is it running?")
+        print("Could not connect to Ollama server")
         return False
 
 def test_offline():
     """Test offline functionality"""
     print("Testing offline functionality...")
+    
+    # First delete the model to ensure a clean state
+    if not delete_model():
+        print("Failed to delete model, but continuing...")
+    
+    # Pull the model fresh
+    if not pull_model():
+        print("Failed to setup model. Exiting...")
+        return
+    
+    # Verify the model
+    if not verify_model():
+        print("Model verification failed. Exiting...")
+        return
+    
+    # Test the model before going offline
+    print("Testing model before going offline...")
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/chat",
+            json={
+                "model": MODEL_NAME,
+                "messages": [{"role": "user", "content": "Hello, how are you?"}]
+            }
+        )
+        print(f"Pre-offline test response: {response.text}")
+    except Exception as e:
+        print(f"Error in pre-offline test: {e}")
     
     # Disable network
     if sys.platform == "darwin":  # macOS
@@ -164,16 +279,35 @@ def test_offline():
     
     # Try to use the model
     try:
+        print(f"Sending chat request to {MODEL_NAME}...")
+        
+        # Match the TypeScript implementation's parameters
+        payload = {
+            "model": MODEL_NAME,
+            "messages": [{"role": "user", "content": "Say hello"}],
+            "format": None,  # No format specified in TypeScript
+            "tools": [],    # Empty tools array in TypeScript
+            "temperature": 0.7,
+            "top_p": 0.1,
+            "num_predict": 1024,
+            "top_k": 20,
+            "repeat_penalty": 1.3,
+            "presence_penalty": 0.2
+        }
+        
+        print("Request payload:", json.dumps(payload, indent=2))
+        
         response = requests.post(
             "http://localhost:11434/api/chat",
-            json={
-                "model": "phi-mini",
-                "messages": [{"role": "user", "content": "Hello"}]
-            }
+            json=payload
         )
-        print(f"Offline test response: {response.text}")
+        print(f"Response status code: {response.status_code}")
+        print(f"Response headers: {response.headers}")
+        print(f"Response body: {response.text}")
     except requests.exceptions.ConnectionError:
         print("Connection error - offline mode working as expected")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
     
     # Re-enable network
     if sys.platform == "darwin":  # macOS
@@ -192,15 +326,7 @@ def main():
             print("Failed to start services. Exiting...")
             return
         
-        if not pull_model():
-            print("Failed to pull model. Exiting...")
-            return
-        
-        if not verify_model():
-            print("Model verification failed. Exiting...")
-            return
-        
-        test_offline()
+        test_offline()  # Now includes pull and verify
         
     except KeyboardInterrupt:
         print("\nTest interrupted by user")

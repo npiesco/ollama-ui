@@ -1,10 +1,15 @@
 // ollama-ui/src/setupTests.ts
 import React from 'react'
 import '@testing-library/jest-dom'
-import { cleanup } from '@testing-library/react'
+
+/// <reference types="jest" />
+/// <reference types="@testing-library/jest-dom" />
+
+type MediaQueryListListener = ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
 
 // Extend Jest matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeInTheDocument(): R
@@ -78,18 +83,20 @@ Object.defineProperty(window, 'ResizeObserver', {
 });
 
 // Mock window.matchMedia
+const createMatchMedia = (query: string): MediaQueryList => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: jest.fn(),
+  removeListener: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(() => true),
+});
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+  value: jest.fn(createMatchMedia),
 });
 
 // Mock window.scrollTo
@@ -160,25 +167,30 @@ Object.defineProperty(global, 'ReadableStream', {
   value: MockReadableStream
 });
 
-// Automatically cleanup after each test
 afterEach(() => {
-  cleanup()
-})
+  // Cleanup handled by Jest
+});
 
 // Mock window.fetch
-global.fetch = jest.fn()
+(global as any).fetch = jest.fn(() => 
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(""),
+    blob: () => Promise.resolve(new Blob()),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    formData: () => Promise.resolve(new FormData()),
+    headers: new Headers(),
+    status: 200,
+    statusText: "OK",
+    type: "basic" as ResponseType,
+    url: "",
+    clone: function() { return this },
+  } as Response)
+);
 
-// Mock window.matchMedia
+// Mock window.matchMedia (again)
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-}) 
+  value: jest.fn(createMatchMedia),
+}); 

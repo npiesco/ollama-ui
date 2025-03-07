@@ -44,7 +44,7 @@ source venv/bin/activate
 
 3. Install Python dependencies for the deployment script:
 ```bash
-pip install requests
+pip install -r requirements.txt
 ```
 
 ### Deployment Options
@@ -159,7 +159,6 @@ You can customize these settings by copying `.env.example` to `.env` and modifyi
   - GitHub-flavored markdown
 - **Testing:**
   - Jest
-  - React Testing Library
   - Coverage reporting
 - **Data Validation:** Zod schema validation
 - **Development Tools:**
