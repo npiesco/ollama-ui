@@ -6,6 +6,8 @@ A modern, feature-rich user interface for Ollama, providing a seamless experienc
 [![TypeScript](https://img.shields.io/badge/typescript-5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.1-38bdf8.svg)](https://tailwindcss.com)
 [![Docker](https://img.shields.io/badge/docker-24.0.7-2496ED.svg)](https://www.docker.com)
+[![ONNX Runtime](https://img.shields.io/badge/onnx--runtime--web-1.17.0-7931C3.svg)](https://onnxruntime.ai)
+[![PWA](https://img.shields.io/badge/PWA-ready-brightgreen.svg)](https://web.dev/progressive-web-apps/)
 
 ## 🎯 Why Ollama UI?
 
@@ -20,6 +22,13 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 - **Smart Caching**: Models and responses are cached in IndexedDB and Service Worker Cache
 - **Offline-First Design**: Continue using previously downloaded models without internet connectivity
 - **Progressive Enhancement**: Seamless transition between online and offline modes
+
+### 📱 Progressive Web App (PWA)
+- **Installable**: Add to your home screen on desktop or mobile devices
+- **App-Like Experience**: Full-screen mode and native-like interface
+- **Automatic Updates**: Always get the latest version
+- **Push Notifications**: Stay informed about model training and chat updates
+- **Background Sync**: Queue actions when offline and execute when back online
 
 ## Quick Start
 
@@ -56,6 +65,30 @@ python deploy.py --environment docker
 ```
 
 The UI will be available at `http://localhost:3000`
+
+## Installing as a PWA
+
+Ollama UI can be installed as a Progressive Web App on both desktop and mobile devices:
+
+### Desktop (Chrome, Edge, or other Chromium browsers)
+1. Open Ollama UI in your browser
+2. Look for the install icon (➕) in the address bar
+3. Click "Install" in the prompt
+4. The app will install and create a desktop shortcut
+
+### iOS
+1. Open Ollama UI in Safari
+2. Tap the Share button (📤)
+3. Select "Add to Home Screen"
+4. Tap "Add" to confirm
+
+### Android
+1. Open Ollama UI in Chrome
+2. Tap the menu (⋮)
+3. Select "Add to Home screen"
+4. Follow the prompts to install
+
+Once installed, Ollama UI will work like a native app with full offline capabilities.
 
 ## Environment Configuration
 
