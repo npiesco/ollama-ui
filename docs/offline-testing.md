@@ -225,12 +225,12 @@ npm run dev
 
 ### 2. Pre-Offline Setup
 1. Go to the Models page
-2. Make sure `phi3:mini` is installed
-   - If not, click "Install" next to phi3:mini
+2. Make sure `llama3.2:1b` is installed
+   - If not, click "Install" next to llama3.2:1b
    - Wait for installation to complete
 3. Test the model is working:
    - Go to Chat
-   - Select `phi3:mini` from the model dropdown
+   - Select `llama3.2:1b` from the model dropdown
    - Send a test message like "Hello"
    - Verify you get a response
 
@@ -241,7 +241,7 @@ npm run dev
 2. Test the following features:
    - Navigate between pages (Models, Chat, etc.)
    - Start a new chat
-   - Send messages using phi3:mini
+   - Send messages using llama3.2:1b
    - Check model settings
    - Try different prompts
 

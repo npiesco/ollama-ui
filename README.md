@@ -1,4 +1,4 @@
-# 🤖 Ollama UI
+# Ollama UI
 
 A modern, feature-rich user interface for Ollama, providing a seamless experience for interacting with local language models. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
@@ -13,385 +13,141 @@ AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistr
 
 Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone.
 
-## 🚀 Getting Started
+## Quick Start
 
-### Prerequisites
-- Python 3.8+ (for deployment script)
-- Node.js 20.x LTS (for local development)
-- npm/yarn (for local development)
-- Docker and docker-compose (for containerized deployment)
-- Ollama installed and running locally (for local development)
+There are two ways to run Ollama UI:
 
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd ollama-ui
-```
-
-2. Create and activate a Python virtual environment:
-```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-.\venv\Scripts\activate
-```
-
-3. Install Python dependencies for the deployment script:
-```bash
-pip install -r requirements.txt
-```
-
-### Deployment Options
-
-#### Option 1: Local Development
-This option is best for development and testing. It requires Ollama to be installed and running locally.
+### 1. Local Development
 
 1. Start Ollama:
 ```bash
 ollama serve
 ```
 
-2. Deploy the UI:
+2. Set up the development environment:
 ```bash
+# Create and activate a Python virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\\Scripts\\activate
+
+# Install dependencies
+npm install
+
+# Run the deployment script in local mode
 python deploy.py --environment local
 ```
 
-This will:
-- Create a local environment configuration
-- Verify Ollama is running locally
-- Start the Next.js development server
-- Open the UI at http://localhost:3000
+The UI will be available at `http://localhost:3001`
 
-#### Option 2: Docker Deployment
-This option is recommended for production and distribution. It packages both Ollama and the UI in containers, with automatic health checks and graceful startup handling.
+### 2. Docker Deployment
 
-1. Deploy with Docker:
+Run everything in containers:
+
 ```bash
 python deploy.py --environment docker
 ```
 
-This will:
-- Create a Docker-specific environment configuration
-- Check for GPU support (works on both GPU and non-GPU systems)
-- Pull and build Docker images
-- Start the containers with health checks
-- Open the UI at http://localhost:3000
-
-### Environment Configuration
-
-The application uses different environment configurations based on the deployment method. A `.env.example` file is provided as a template:
-
-```env
-# Ollama API Configuration
-OLLAMA_API_HOST=http://ollama:11434  # Use http://localhost:11434 for local development
-
-# Environment
-NODE_ENV=production
-
-# Authentication
-AUTH_ENABLED=false
-JWT_SECRET=change-this-to-a-secure-secret-key
-
-# Optional: Model Configuration
-DEFAULT_MODEL=llama2
-MODEL_CACHE_DIR=/root/.ollama/models
-
-# Optional: UI Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-You can customize these settings by copying `.env.example` to `.env` and modifying the values.
-
-## 🌟 Features
-
-### 🔐 Authentication
-- Secure login system
-- Protected routes and API endpoints
-- JWT-based authentication
-- Session management
-
-### 💬 Chat Interface
-- Real-time streaming responses
-- Customizable model parameters
-- Message history management
-- Responsive design with dark/light mode support
-- Mathematical formula rendering with KaTeX
-- Code syntax highlighting
-- GitHub-flavored markdown support
-
-### 🤖 Model Management
-- Browse and manage local models
-- Pull new models from repositories
-- Delete unused models
-- View detailed model information
-- Create and customize models
-- Push models to registry
-- Copy and modify existing models
-- Monitor running model instances
-
-## 🛠 Tech Stack
-
-- **Framework:** Next.js 15.1.7 with App Router and TurboPack
-- **Language:** TypeScript 5
-- **Authentication:** JSON Web Tokens (JWT)
-- **Styling:** 
-  - Tailwind CSS 3.4.1
-  - CSS Animations
-  - Dark/Light mode support
-- **UI Components:** 
-  - Radix UI primitives
-  - Framer Motion animations
-  - Sonner toast notifications
-  - shadcn/ui components
-- **State Management:** 
-  - Zustand
-  - SWR for data fetching
-- **Content Rendering:**
-  - React Markdown
-  - KaTeX for math formulas
-  - Syntax highlighting
-  - GitHub-flavored markdown
-- **Testing:**
-  - Jest
-  - Coverage reporting
-- **Data Validation:** Zod schema validation
-- **Development Tools:**
-  - ESLint
-  - TypeScript strict mode
-  - TurboPack
-- **Containerization:**
-  - Docker
-  - Docker Compose
-  - Health checks
-  - GPU support (optional)
-
-## 🧪 Testing
-
-The project includes comprehensive testing:
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode for development
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
-
-Test files are located in the `__tests__` directory and follow the `.test.ts(x)` naming convention.
-
-## 🛠 Troubleshooting
-
-### Local Development
-1. If Ollama isn't running:
-```bash
-ollama serve
-```
-
-2. If the UI isn't responding:
-```bash
-# Restart the Next.js server
-npm run dev
-```
-
-### Docker Deployment
-1. View container logs:
-```bash
-# View all container logs
-docker-compose logs -f
-
-# View specific service logs
-docker-compose logs -f ollama
-docker-compose logs -f ollama-ui
-```
-
-2. Check container health:
-```bash
-# View container status
-docker-compose ps
-
-# Check container health status
-docker inspect ollama-ui --format "{{.State.Health.Status}}"
-docker inspect ollama --format "{{.State.Health.Status}}"
-```
-
-3. Restart services:
-```bash
-# Restart all services
-docker-compose restart
-
-# Restart specific service
-docker-compose restart ollama
-docker-compose restart ollama-ui
-```
-
-4. Reset everything:
-```bash
-# Stop and remove all containers, networks, and volumes
-docker-compose down -v
-
-# Rebuild and start fresh
-python deploy.py --environment docker
-```
-
-5. Common Issues:
-   - If containers fail health checks, check the logs for specific error messages
-   - Ensure ports 3000 and 11434 are not in use by other applications
-   - For GPU support issues, verify NVIDIA drivers and nvidia-container-toolkit are installed
-   - If the UI can't connect to Ollama, verify the OLLAMA_API_HOST environment variable
-
-### Environment Issues
-
-1. "Failed to fetch models" error:
-   - Check if Ollama is running (`ollama serve`)
-   - Verify your environment configuration:
-     ```bash
-     # Check current settings
-     echo $NODE_ENV
-     echo $OLLAMA_API_HOST
-     echo $DOCKER_CONTAINER
-     ```
-   - For local development, ensure:
-     - `NODE_ENV=development`
-     - `OLLAMA_API_HOST=http://localhost:11434`
-     - `DOCKER_CONTAINER=false`
-
-2. Docker connection issues:
-   - If running in Docker, ensure:
-     - `DOCKER_CONTAINER=true`
-     - `OLLAMA_API_HOST=http://ollama:11434`
-     - Both services are on the same Docker network
-
-3. Build environment issues:
-   - The build process uses `NODE_ENV=production` by default
-   - Local builds will still use `localhost:11434` if `DOCKER_CONTAINER=false`
-   - Docker builds will use `ollama:11434` if `DOCKER_CONTAINER=true`
-
-4. Development server issues:
-   - Always use `npm run dev` for local development
-   - This ensures proper environment variable loading from:
-     - `.env.local`
-     - `.env.development`
-     - `.env`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the Business Source License 1.1 (BUSL). This is a source-available license that provides access to the source code while limiting certain commercial uses. Key points:
-
-- The source code is available for viewing, modification, and non-commercial use
-- Commercial use requires a commercial license
-- For commercial licensing inquiries, please contact the maintainer
-
-For full license terms, see the [LICENSE](LICENSE) file.
-
-## 🏗 Project Structure
-
-```
-ollama-ui/
-├── src/
-│   ├── app/                # Next.js app router pages
-│   │   ├── api/            # API routes
-│   │   ├── chat/           # Chat interface
-│   │   ├── models/         # Model management
-│   │   ├── settings/       # Application settings
-│   │   ├── blobs/          # Blob management
-│   │   ├── embeddings/     # Embeddings generation
-│   │   ├── version/        # Version information
-│   │   ├── list-models/    # Model listing
-│   │   ├── model-info/     # Model details
-│   │   ├── pull-model/     # Model pulling
-│   │   ├── push-model/     # Model pushing
-│   │   ├── copy-model/     # Model copying
-│   │   ├── create-model/   # Model creation
-│   │   ├── delete-model/   # Model deletion
-│   │   └── running-models/ # Running model instances
-│   ├── components/         # Reusable UI components
-│   │   ├── Chat.tsx        # Main chat interface
-│   │   ├── AnimatedMessage.tsx  # Animated message display
-│   │   ├── AdvancedParameters.tsx  # Model parameter controls
-│   │   └── MultimodalInput.tsx  # Text and image input handling
-│   ├── hooks/              # Custom React hooks   
-│   ├── lib/                # Utility functions
-│   ├── store/              # State management (Zustand)
-│   └── types/              # TypeScript definitions
-├── __tests__/              # Test files
-├── public/                 # Static assets
-├── .env.example           # Example environment configuration
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile            # UI container build configuration
-├── Dockerfile.ollama     # Ollama container build configuration
-├── deploy.py             # Deployment script
-├── next.config.ts        # Next.js configuration
-└── package.json          # Project dependencies and scripts
-```
-
----
-
-<div align="center">
-Made with ❤️ to lower the barrier for those wanting to learn and play with AI
-
-[Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
-</div>
+The UI will be available at `http://localhost:3000`
 
 ## Environment Configuration
 
-### Local Development
-```bash
-# .env.local or .env.development
-NODE_ENV=development
-OLLAMA_API_HOST=http://localhost:11434  # Always uses localhost in development
-DOCKER_CONTAINER=false
+The application uses two main environment files:
+
+### `.env` (Docker/Production)
+```env
+# Base Configuration
+NEXT_TELEMETRY_DISABLED=1
+MODEL_CACHE_DIR=/root/.ollama/models
+
+# Docker API Configuration
+OLLAMA_API_HOST=http://ollama:11434
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+PORT=3000
+
+# Authentication (optional)
+AUTH_ENABLED=false
+JWT_SECRET=your-secret-key-here
 ```
 
-### Production (Local)
-```bash
-NODE_ENV=production
-OLLAMA_API_HOST=http://localhost:11434  # Uses localhost when not in Docker
-DOCKER_CONTAINER=false
+### `.env.local` (Local Development)
+```env
+# Local Development Overrides
+PORT=3001
+OLLAMA_API_HOST=http://localhost:11434
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+
+# Optional Local Authentication
+# AUTH_ENABLED=true
+# JWT_SECRET=dev-secret-key
 ```
 
-### Production (Docker)
+## Development Commands
+
 ```bash
-NODE_ENV=production
-OLLAMA_API_HOST=http://ollama:11434  # Uses Docker network
-DOCKER_CONTAINER=true
-```
-
-The application automatically determines the correct Ollama API host based on:
-1. Environment (`development` vs `production`)
-2. Deployment context (Docker vs local)
-
-This ensures:
-- Development always uses `localhost:11434`
-- Local production builds use `localhost:11434`
-- Docker builds use `ollama:11434` (Docker network)
-
-### Quick Start
-
-1. Local Development:
-```bash
-npm install
+# Start in development mode
 npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run tests
+npm test
 ```
 
-2. Production Build (Local):
+## Docker Commands
+
 ```bash
-npm run build
-npm start
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build
 ```
+
+## Authentication
+
+Authentication is disabled by default. To enable it:
+
+1. Set `AUTH_ENABLED=true` in your environment file
+2. Set a secure `JWT_SECRET`
+3. Restart the application
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Ollama is not running"**
+   - Make sure `ollama serve` is running for local development
+   - For Docker, ensure the Ollama container is healthy
+
+2. **Port Conflicts**
+   - Local development uses port 3001
+   - Docker deployment uses port 3000
+   - Ensure these ports are available
+
+3. **Environment Issues**
+   - Check you're using the correct `.env` file for your deployment method
+   - For local development, ensure `.env.local` exists
+   - For Docker, ensure `.env` exists
+
+### Logs
+
+- Local development: Check the terminal output
+- Docker: Use `docker-compose logs -f`
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under a Business Source License - see the [LICENSE](LICENSE) file for details.
