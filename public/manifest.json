@@ -3,65 +3,38 @@
   "short_name": "Ollama",
   "description": "A modern UI for Ollama - Local AI Workbench",
   "start_url": "/",
-  "id": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay"],
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#0A0C10",
+  "theme_color": "#0A0C10",
   "orientation": "any",
-  "categories": ["ai", "productivity", "utilities"],
-  "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
-  },
+  "categories": ["artificial intelligence", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/llama.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/llama.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
       "src": "/screenshot-desktop.png",
-      "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Ollama UI Desktop Interface"
+      "sizes": "1920x1080",
+      "form_factor": "wide"
     },
     {
       "src": "/screenshot-mobile.png",
-      "sizes": "750x1334",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Ollama UI Mobile Interface"
+      "sizes": "390x844",
+      "form_factor": "narrow"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "New Chat",
-      "url": "/chat/new",
-      "description": "Start a new chat session"
-    },
-    {
-      "name": "Models",
-      "url": "/models",
-      "description": "Manage your AI models"
-    }
-  ],
-  "protocol_handlers": [
-    {
-      "protocol": "web+ollama",
-      "url": "/%s"
-    }
-  ],
-  "edge_side_panel": {
-    "preferred_width": 400
-  }
+  "prefer_related_applications": false
 } 

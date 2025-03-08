@@ -31,12 +31,12 @@ export function Chat({ isPopped = false }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
   const defaultParams = {
-    temperature: 0.2,
-    top_p: 0.1,
-    num_predict: 1024,
-    top_k: 20,
-    repeat_penalty: 1.3,
-    presence_penalty: 0.2
+    temperature: 0.7,
+    top_p: 0.9,
+    num_predict: 2048,
+    top_k: 40,
+    repeat_penalty: 1.8,
+    presence_penalty: 0.5
   }
   const [temperature, setTemperature] = useState(chatStore.parameters?.temperature ?? defaultParams.temperature)
   const [topP, setTopP] = useState(chatStore.parameters?.top_p ?? defaultParams.top_p)
@@ -174,28 +174,30 @@ export function Chat({ isPopped = false }: ChatProps) {
       return
     }
     
-    const userMessage: Message = {
-      role: 'user',
-      content: input,
-      ...(images.length > 0 && { images })
-    }
-
-    // Add user message immediately
-    chatStore.addMessage(userMessage)
-    setInput("")
-
-    // Force scroll to bottom when sending a new message
-    scrollToBottom(true);
-
-    const payload = {
-      model: chatStore.model,
-      messages: chatStore.getFormattedMessages(),
-      format,
-      tools,
-      ...advancedParams
-    }
+    setIsGenerating(true)
 
     try {
+      const userMessage: Message = {
+        role: 'user',
+        content: input,
+        ...(images.length > 0 && { images })
+      }
+
+      // Add user message immediately
+      chatStore.addMessage(userMessage)
+      setInput("")
+
+      // Force scroll to bottom when sending a new message
+      scrollToBottom(true);
+
+      const payload = {
+        model: chatStore.model,
+        messages: chatStore.getFormattedMessages(),
+        format,
+        tools,
+        ...advancedParams
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -261,6 +263,8 @@ export function Chat({ isPopped = false }: ChatProps) {
     } catch (err) {
       const error = err instanceof Error ? err.message : "An error occurred"
       toast.error(error)
+    } finally {
+      setIsGenerating(false)
     }
   }
 

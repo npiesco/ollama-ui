@@ -140,13 +140,13 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
               "Repeat Penalty",
               "repeat_penalty",
               "Penalize repetition: higher values = less repetitive responses",
-              { min: 1, max: 2, step: 0.1, defaultValue: 1.1 }
+              { min: 1, max: 2, step: 0.1, defaultValue: 1.8 }
             )}
             {renderParameter(
               "Presence Penalty",
               "presence_penalty",
               "Penalize new tokens based on their presence in the text so far",
-              { min: 0, max: 1, step: 0.1, defaultValue: 0 }
+              { min: 0, max: 1, step: 0.1, defaultValue: 0.5 }
             )}
           </div>
 
