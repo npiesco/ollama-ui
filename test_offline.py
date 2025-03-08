@@ -9,7 +9,7 @@ import signal
 import json
 
 # Model configuration
-MODEL_NAME = "phi3:mini"  # Use the official phi3:mini model
+MODEL_NAME = "llama3.2:1b"  # Use the llama3.2 1b model
 
 def is_port_in_use(port):
     """Check if a port is in use"""
