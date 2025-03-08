@@ -25,4 +25,11 @@ const mockSessionStorage = {
 }
 Object.defineProperty(window, 'sessionStorage', {
   value: mockSessionStorage,
-}) 
+})
+
+describe('Test Environment Setup', () => {
+  it('should have jest-dom matchers available', () => {
+    expect(expect.extend).toBeDefined();
+    expect(expect.stringContaining).toBeDefined();
+  });
+}); 

@@ -19,10 +19,17 @@ Object.defineProperty(global, 'window', {
 });
 
 // Define proper types for the service worker manager
+interface ModelData {
+  name: string;
+  size: number;
+  path?: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface ServiceWorkerManagerInstance {
   register: () => Promise<void>;
   getOnlineStatus: () => boolean;
-  cacheModel: (modelId: string, modelData: unknown) => Promise<void>;
+  cacheModel: (modelId: string, modelData: ModelData) => Promise<void>;
   getCachedModel: (modelId: string) => Promise<unknown | null>;
   initializeOfflineInference: (modelPath: string) => Promise<void>;
   performOfflineInference: (input: Float32Array) => Promise<Float32Array>;
@@ -31,20 +38,28 @@ interface ServiceWorkerManagerInstance {
 }
 
 // Mock the service worker manager
-jest.mock('@/lib/service-worker', () => ({
-  ServiceWorkerManager: {
-    getInstance: jest.fn().mockReturnValue({
-      register: jest.fn().mockResolvedValue(undefined),
-      getOnlineStatus: jest.fn().mockReturnValue(true),
-      cacheModel: jest.fn().mockResolvedValue(undefined),
-      getCachedModel: jest.fn().mockResolvedValue(null),
-      initializeOfflineInference: jest.fn().mockResolvedValue(undefined),
-      performOfflineInference: jest.fn().mockResolvedValue(new Float32Array([1, 2, 3])),
-      clearModelCache: jest.fn().mockResolvedValue(undefined),
-      cleanup: jest.fn().mockResolvedValue(undefined),
-    } as ServiceWorkerManagerInstance),
-  },
-}));
+jest.mock('@/lib/service-worker', () => {
+  const mockClearModelCache = jest.fn().mockResolvedValue(undefined);
+  const mockCleanup = jest.fn().mockImplementation(async () => {
+    await mockClearModelCache();
+    return Promise.resolve(undefined);
+  });
+
+  return {
+    ServiceWorkerManager: {
+      getInstance: jest.fn().mockReturnValue({
+        register: jest.fn().mockResolvedValue(undefined),
+        getOnlineStatus: jest.fn().mockReturnValue(true),
+        cacheModel: jest.fn().mockResolvedValue(undefined),
+        getCachedModel: jest.fn().mockResolvedValue(null),
+        initializeOfflineInference: jest.fn().mockResolvedValue(undefined),
+        performOfflineInference: jest.fn().mockResolvedValue(new Float32Array([1, 2, 3])),
+        clearModelCache: mockClearModelCache,
+        cleanup: mockCleanup,
+      } as ServiceWorkerManagerInstance),
+    },
+  };
+});
 
 // Mock the WASM initialization
 jest.mock('@/lib/wasm/offline-inference', () => ({

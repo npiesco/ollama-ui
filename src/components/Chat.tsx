@@ -68,7 +68,7 @@ export function Chat({ isPopped = false }: ChatProps) {
       const response = await fetch('/api/models')
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
-      setAvailableModels(data)
+      setAvailableModels(data.models || [])
     } catch {
       toast.error('Failed to fetch models')
     } finally {

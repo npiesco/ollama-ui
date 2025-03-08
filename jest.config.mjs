@@ -1,4 +1,4 @@
-const nextJest = require('next/jest')
+import nextJest from 'next/jest.js'
 
 const createJestConfig = nextJest({
   // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
@@ -18,7 +18,7 @@ const customJestConfig = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   transformIgnorePatterns: [
-    '/node_modules/(?!(lucide-react|@radix-ui|@babel/runtime)/)',
+    '/node_modules/(?!(react-markdown|vfile|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|@radix-ui|lucide-react|@babel/runtime)/)',
   ],
   testTimeout: 5000, // Set default timeout to 5 seconds
   maxWorkers: '50%', // Use half of available CPU cores
@@ -35,4 +35,4 @@ const customJestConfig = {
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig) 
+export default createJestConfig(customJestConfig) 
