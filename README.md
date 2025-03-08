@@ -13,6 +13,14 @@ AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistr
 
 Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone.
 
+## ✨ Key Features
+
+### 🔌 True Offline Support
+- **WebAssembly-Powered Inference**: Run models locally in your browser using ONNX Runtime Web
+- **Smart Caching**: Models and responses are cached in IndexedDB and Service Worker Cache
+- **Offline-First Design**: Continue using previously downloaded models without internet connectivity
+- **Progressive Enhancement**: Seamless transition between online and offline modes
+
 ## Quick Start
 
 There are two ways to run Ollama UI:
@@ -113,6 +121,22 @@ docker-compose down
 docker-compose up -d --build
 ```
 
+## Offline Mode
+
+Ollama UI features a robust offline mode that allows you to continue using the application even without internet connectivity:
+
+### How It Works
+1. **Model Caching**: Models are automatically cached in IndexedDB when first downloaded
+2. **Service Worker**: Static assets and API responses are cached for offline use
+3. **WebAssembly Inference**: Models run locally in your browser using ONNX Runtime Web
+4. **Smart Fallbacks**: Graceful degradation when resources aren't available offline
+
+### Testing Offline Mode
+1. Download and use models while online
+2. Disconnect from the internet
+3. Continue using previously downloaded models
+4. Check the offline testing guide in `docs/offline-testing.md` for detailed instructions
+
 ## Authentication
 
 Authentication is disabled by default. To enable it:
@@ -139,10 +163,16 @@ Authentication is disabled by default. To enable it:
    - For local development, ensure `.env.local` exists
    - For Docker, ensure `.env` exists
 
+4. **Offline Mode Issues**
+   - Verify that models were successfully cached while online
+   - Check browser console for IndexedDB or Service Worker errors
+   - Ensure sufficient storage space is available
+
 ### Logs
 
 - Local development: Check the terminal output
 - Docker: Use `docker-compose logs -f`
+- Browser console: Check for Service Worker and IndexedDB messages
 
 ## Contributing
 
