@@ -248,6 +248,40 @@ python deploy.py --environment docker
    - For GPU support issues, verify NVIDIA drivers and nvidia-container-toolkit are installed
    - If the UI can't connect to Ollama, verify the OLLAMA_API_HOST environment variable
 
+### Environment Issues
+
+1. "Failed to fetch models" error:
+   - Check if Ollama is running (`ollama serve`)
+   - Verify your environment configuration:
+     ```bash
+     # Check current settings
+     echo $NODE_ENV
+     echo $OLLAMA_API_HOST
+     echo $DOCKER_CONTAINER
+     ```
+   - For local development, ensure:
+     - `NODE_ENV=development`
+     - `OLLAMA_API_HOST=http://localhost:11434`
+     - `DOCKER_CONTAINER=false`
+
+2. Docker connection issues:
+   - If running in Docker, ensure:
+     - `DOCKER_CONTAINER=true`
+     - `OLLAMA_API_HOST=http://ollama:11434`
+     - Both services are on the same Docker network
+
+3. Build environment issues:
+   - The build process uses `NODE_ENV=production` by default
+   - Local builds will still use `localhost:11434` if `DOCKER_CONTAINER=false`
+   - Docker builds will use `ollama:11434` if `DOCKER_CONTAINER=true`
+
+4. Development server issues:
+   - Always use `npm run dev` for local development
+   - This ensures proper environment variable loading from:
+     - `.env.local`
+     - `.env.development`
+     - `.env`
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -314,3 +348,50 @@ Made with ❤️ to lower the barrier for those wanting to learn and play with A
 
 [Report Bug](https://github.com/username/ollama-ui/issues) · [Request Feature](https://github.com/username/ollama-ui/issues)
 </div>
+
+## Environment Configuration
+
+### Local Development
+```bash
+# .env.local or .env.development
+NODE_ENV=development
+OLLAMA_API_HOST=http://localhost:11434  # Always uses localhost in development
+DOCKER_CONTAINER=false
+```
+
+### Production (Local)
+```bash
+NODE_ENV=production
+OLLAMA_API_HOST=http://localhost:11434  # Uses localhost when not in Docker
+DOCKER_CONTAINER=false
+```
+
+### Production (Docker)
+```bash
+NODE_ENV=production
+OLLAMA_API_HOST=http://ollama:11434  # Uses Docker network
+DOCKER_CONTAINER=true
+```
+
+The application automatically determines the correct Ollama API host based on:
+1. Environment (`development` vs `production`)
+2. Deployment context (Docker vs local)
+
+This ensures:
+- Development always uses `localhost:11434`
+- Local production builds use `localhost:11434`
+- Docker builds use `ollama:11434` (Docker network)
+
+### Quick Start
+
+1. Local Development:
+```bash
+npm install
+npm run dev
+```
+
+2. Production Build (Local):
+```bash
+npm run build
+npm start
+```

@@ -5,6 +5,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { config } from '@/lib/config'
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 
 interface ModelDetails {
   format: string
@@ -52,66 +54,84 @@ export default function ListModels() {
   }
 
   return (
-    <div className="container mx-auto p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Available Models</h1>
-        <Button 
-          onClick={fetchModels} 
-          disabled={loading}
-        >
-          Refresh
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-8">Loading models...</div>
-      ) : models.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          No models found
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {models.map((model) => (
-            <div 
-              key={model.digest}
-              className="bg-gray-100 p-6 rounded-lg space-y-2"
-            >
-              <div className="flex justify-between items-start">
-                <h2 className="text-xl font-semibold">{model.name}</h2>
-                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {formatSize(model.size)}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">
-                    Modified: {new Date(model.modified_at).toLocaleString()}
-                  </p>
-                  <p className="text-gray-600">
-                    Digest: {model.digest.substring(0, 12)}...
-                  </p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p>
-                    <span className="font-medium">Format:</span> {model.details.format}
-                  </p>
-                  <p>
-                    <span className="font-medium">Family:</span> {model.details.family}
-                  </p>
-                  <p>
-                    <span className="font-medium">Parameters:</span> {model.details.parameter_size}
-                  </p>
-                  <p>
-                    <span className="font-medium">Quantization:</span> {model.details.quantization_level}
-                  </p>
-                </div>
-              </div>
+    <div className="container mx-auto p-4 space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold">Available Models</CardTitle>
+          <Button 
+            onClick={fetchModels} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Refresh'
+            )}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading models...
             </div>
-          ))}
-        </div>
-      )}
+          ) : models.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              No models found
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {models.map((model) => (
+                <Card key={model.digest} className="card-hover">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <h2 className="text-xl font-semibold">{model.name}</h2>
+                      <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">
+                        {formatSize(model.size)}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                      <div>
+                        <p className="text-muted-foreground">
+                          Modified: {new Date(model.modified_at).toLocaleString()}
+                        </p>
+                        <p className="text-muted-foreground">
+                          Digest: {model.digest.substring(0, 12)}...
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p>
+                          <span className="font-medium">Format:</span>{" "}
+                          <span className="text-muted-foreground">{model.details.format}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Family:</span>{" "}
+                          <span className="text-muted-foreground">{model.details.family}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Parameters:</span>{" "}
+                          <span className="text-muted-foreground">{model.details.parameter_size}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Quantization:</span>{" "}
+                          <span className="text-muted-foreground">{model.details.quantization_level}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 } 

@@ -53,6 +53,7 @@ export function Chat({ isPopped = false }: ChatProps) {
   const [format, setFormat] = useState<'json' | null>(null)
   const [availableModels, setAvailableModels] = useState<ModelResponse[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(true)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     if (!isPopped) {
@@ -414,11 +415,11 @@ export function Chat({ isPopped = false }: ChatProps) {
                 {chatStore.messages.map((message: Message, index: number) => (
                   <AnimatedMessage key={index} isUser={message.role === 'user'}>
                     {message.role === 'user' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+                      <div className={`message-user slide-in ${isGenerating ? 'opacity-50' : ''}`}>
                         {message.content}
                       </div>
                     ) : (
-                      <div className="bg-gray-200 dark:bg-gray-800 text-gray-950 dark:text-gray-100 px-4 py-2 rounded-lg">
+                      <div className={`message-assistant slide-in ${isGenerating ? 'opacity-50' : ''}`}>
                         <FormattedMessage content={message.content} />
                       </div>
                     )}
@@ -558,11 +559,11 @@ export function Chat({ isPopped = false }: ChatProps) {
                         {chatStore.messages.map((message: Message, index: number) => (
                           <AnimatedMessage key={index} isUser={message.role === 'user'}>
                             {message.role === 'user' ? (
-                              <div className="prose prose-sm dark:prose-invert max-w-none bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+                              <div className={`message-user slide-in ${isGenerating ? 'opacity-50' : ''}`}>
                                 {message.content}
                               </div>
                             ) : (
-                              <div className="bg-gray-200 dark:bg-gray-800 text-gray-950 dark:text-gray-100 px-4 py-2 rounded-lg">
+                              <div className={`message-assistant slide-in ${isGenerating ? 'opacity-50' : ''}`}>
                                 <FormattedMessage content={message.content} />
                               </div>
                             )}
