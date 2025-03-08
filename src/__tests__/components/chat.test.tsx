@@ -17,6 +17,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   images?: string[];
+  id?: string;
+  isEditing?: boolean;
 }
 
 interface Parameters {
@@ -38,6 +40,10 @@ interface MockStore {
   setModel: jest.Mock<void, [string]>;
   setParameters: jest.Mock<void, [Parameters]>;
   getFormattedMessages: jest.Mock<Message[]>;
+  editMessage: jest.Mock<void, [string, string]>;
+  setMessageEditing: jest.Mock<void, [string, boolean]>;
+  regenerateFromMessage: jest.Mock<void, [string]>;
+  setMessages: jest.Mock<void, [Message[]]>;
 }
 
 const createMockStore = (): MockStore => {
@@ -52,18 +58,14 @@ const createMockStore = (): MockStore => {
     get model() { return state.model; },
     get parameters() { return state.parameters; },
     addMessage: jest.fn((message: Message) => {
-      console.log('Adding message:', message);
-      state.messages = [...state.messages, { ...message }];
-      console.log('Messages after add:', state.messages);
+      state.messages = [...state.messages, { ...message, id: 'test-id-' + state.messages.length }];
     }),
     updateLastMessage: jest.fn((content: string) => {
-      console.log('Updating last message with content:', content);
       if (state.messages.length > 0) {
         const lastIndex = state.messages.length - 1;
         state.messages = state.messages.map((msg, idx) => 
           idx === lastIndex ? { ...msg, content } : msg
         );
-        console.log('Messages after update:', state.messages);
       }
     }),
     clearMessages: jest.fn(() => {
@@ -75,7 +77,26 @@ const createMockStore = (): MockStore => {
     setParameters: jest.fn((params: Parameters) => {
       state.parameters = { ...state.parameters, ...params };
     }),
-    getFormattedMessages: jest.fn(() => state.messages)
+    getFormattedMessages: jest.fn(() => state.messages),
+    editMessage: jest.fn((id: string, content: string) => {
+      state.messages = state.messages.map(msg =>
+        msg.id === id ? { ...msg, content, isEditing: false } : msg
+      );
+    }),
+    setMessageEditing: jest.fn((id: string, isEditing: boolean) => {
+      state.messages = state.messages.map(msg =>
+        msg.id === id ? { ...msg, isEditing } : { ...msg, isEditing: false }
+      );
+    }),
+    regenerateFromMessage: jest.fn((id: string) => {
+      const messageIndex = state.messages.findIndex(msg => msg.id === id);
+      if (messageIndex !== -1) {
+        state.messages = state.messages.slice(0, messageIndex + 1);
+      }
+    }),
+    setMessages: jest.fn((messages: Message[]) => {
+      state.messages = messages;
+    })
   };
 };
 
@@ -319,6 +340,88 @@ describe("Chat Component", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(errorMessage);
+    });
+  });
+
+  it("allows editing a user message", async () => {
+    render(<Chat />);
+    
+    // Wait for model to be selected
+    await waitFor(() => {
+      expect(mockStore.model).toBe("Mistral");
+    });
+
+    // Send initial message
+    const input = screen.getByPlaceholderText(/message/i);
+    const sendButton = screen.getByRole("button", { name: /send/i });
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "Initial message" } });
+      fireEvent.click(sendButton);
+    });
+
+    // Verify message was added
+    await waitFor(() => {
+      expect(mockStore.messages[0]).toMatchObject({
+        role: "user",
+        content: "Initial message"
+      });
+    });
+
+    // Start editing
+    const editButton = screen.getByRole("button", { name: /edit/i });
+    fireEvent.click(editButton);
+
+    // Verify edit mode is active
+    await waitFor(() => {
+      expect(mockStore.setMessageEditing).toHaveBeenCalledWith("test-id-0", true);
+    });
+
+    // Edit the message
+    const editTextarea = screen.getByDisplayValue("Initial message");
+    fireEvent.change(editTextarea, { target: { value: "Edited message" } });
+
+    // Save and regenerate
+    const saveButton = screen.getByRole("button", { name: /save & regenerate/i });
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    // Verify message was edited and regeneration was triggered
+    await waitFor(() => {
+      expect(mockStore.editMessage).toHaveBeenCalledWith("test-id-0", "Edited message");
+      expect(mockStore.regenerateFromMessage).toHaveBeenCalledWith("test-id-0");
+    });
+  });
+
+  it("allows canceling message edit", async () => {
+    render(<Chat />);
+    
+    // Wait for model to be selected
+    await waitFor(() => {
+      expect(mockStore.model).toBe("Mistral");
+    });
+
+    // Send message
+    const input = screen.getByPlaceholderText(/message/i);
+    const sendButton = screen.getByRole("button", { name: /send/i });
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "Test message" } });
+      fireEvent.click(sendButton);
+    });
+
+    // Start editing
+    const editButton = screen.getByRole("button", { name: /edit/i });
+    fireEvent.click(editButton);
+
+    // Cancel editing
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    fireEvent.click(cancelButton);
+
+    // Verify edit mode was canceled
+    await waitFor(() => {
+      expect(mockStore.setMessageEditing).toHaveBeenCalledWith("test-id-0", false);
     });
   });
 })

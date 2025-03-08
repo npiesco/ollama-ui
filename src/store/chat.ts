@@ -7,6 +7,8 @@ export interface Message {
   role: 'user' | 'assistant';  // Restrict roles to user/assistant
   content: string;
   images?: string[];  // Make images an array and optional
+  id?: string;  // Add unique identifier for messages
+  isEditing?: boolean;  // Add editing state
 }
 
 interface ChatState {
@@ -19,6 +21,10 @@ interface ChatState {
   setModel: (model: string) => void;
   setParameters: (params: AdvancedParameters) => void;
   getFormattedMessages: () => Message[];  // Add new function to get formatted messages
+  editMessage: (id: string, content: string) => void;  // Add edit function
+  setMessageEditing: (id: string, isEditing: boolean) => void;  // Add edit state function
+  regenerateFromMessage: (id: string) => void;  // Add regeneration function
+  setMessages: (messages: Message[]) => void;  // Add new function
 }
 
 // Clear any existing storage on app load
@@ -41,7 +47,7 @@ export const useChatStore = create<ChatState>()(
       },
       addMessage: (message) =>
         set((state) => ({
-          messages: [...state.messages, message],
+          messages: [...state.messages, { ...message, id: crypto.randomUUID() }],
         })),
       updateLastMessage: (content) =>
         set((state) => ({
@@ -55,6 +61,32 @@ export const useChatStore = create<ChatState>()(
       setModel: (model) => set({ model }),
       setParameters: (params) => set({ parameters: params }),
       getFormattedMessages: () => get().messages,  // Return properly formatted messages
+      editMessage: (id, content) =>
+        set((state) => ({
+          messages: state.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, content, isEditing: false }
+              : msg
+          ),
+        })),
+      setMessageEditing: (id, isEditing) =>
+        set((state) => ({
+          messages: state.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, isEditing }
+              : { ...msg, isEditing: false }
+          ),
+        })),
+      regenerateFromMessage: (id) =>
+        set((state) => {
+          const messageIndex = state.messages.findIndex(msg => msg.id === id);
+          if (messageIndex === -1) return state;
+          
+          // Keep messages up to and including the edited message
+          const messages = state.messages.slice(0, messageIndex + 1);
+          return { messages };
+        }),
+      setMessages: (messages) => set({ messages }),  // Add new function implementation
     }),
     {
       name: 'chat-store',

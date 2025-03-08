@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, MessageSquare, Maximize2, Minimize2, X } from 'lucide-react'
+import { AlertCircle, MessageSquare, Maximize2, Minimize2, X, Pencil } from 'lucide-react'
 import { useChatStore } from '@/store/chat'
 import type { Message } from '@/store/chat'
 import { FormattedMessage } from "@/components/FormattedMessage"
@@ -108,18 +108,16 @@ export function Chat({ isPopped = false }: ChatProps) {
   // Scroll on new messages
   useEffect(() => {
     if (chatStore.messages.length > 0) {
-      // Only scroll on new messages
       const lastMessage = chatStore.messages[chatStore.messages.length - 1];
-      if (lastMessage.content === '') {  // New empty message = new response starting
+      // Only force scroll on brand new empty messages (start of streaming)
+      // or when the last message is from the assistant and is actively being updated
+      if (lastMessage.content === '' || (lastMessage.role === 'assistant' && isGenerating)) {
         scrollToBottom(true);
-      } else {
-        // Also scroll when content is updated
-        scrollToBottom(false);
       }
     }
-  }, [chatStore.messages, scrollToBottom]);
+  }, [chatStore.messages, scrollToBottom, isGenerating]);
 
-  // Scroll on initial load and in popup
+  // Remove the initial scroll effect as it's handled by the above
   useEffect(() => {
     if (isPopped) {
       const element = messagesEndRef.current;
@@ -132,17 +130,15 @@ export function Chat({ isPopped = false }: ChatProps) {
     }
   }, [isPopped]);
 
-  // Update scroll during streaming
+  // Update scroll during streaming - only when actively generating
   useEffect(() => {
     let scrollInterval: NodeJS.Timeout;
     
-    if (chatStore.messages.length > 0) {
+    if (isGenerating && chatStore.messages.length > 0) {
       const lastMessage = chatStore.messages[chatStore.messages.length - 1];
       if (lastMessage.role === 'assistant') {
-        // Auto-scroll during any content updates from assistant
+        // Auto-scroll during active generation
         scrollInterval = setInterval(() => scrollToBottom(false), 100);
-        
-        // Clear interval when content stops changing
         return () => clearInterval(scrollInterval);
       }
     }
@@ -150,7 +146,7 @@ export function Chat({ isPopped = false }: ChatProps) {
     return () => {
       if (scrollInterval) clearInterval(scrollInterval);
     };
-  }, [chatStore.messages, scrollToBottom]);
+  }, [chatStore.messages, scrollToBottom, isGenerating]);
 
   const handleModelNotFound = () => {
     toast.error(
@@ -420,6 +416,108 @@ export function Chat({ isPopped = false }: ChatProps) {
     }
   };
 
+  const handleRegenerateFromEdit = async (messageId: string) => {
+    chatStore.editMessage(messageId, chatStore.messages.find(msg => msg.id === messageId)?.content || '');
+    chatStore.regenerateFromMessage(messageId);
+    
+    try {
+      setIsGenerating(true);
+      abortControllerRef.current = new AbortController();
+
+      const payload = {
+        model: chatStore.model,
+        messages: chatStore.getFormattedMessages(),
+        format,
+        tools,
+        ...advancedParams
+      };
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.error?.includes('not found')) {
+          handleModelNotFound();
+          return;
+        }
+        throw new Error(errorData.error || "Chat request failed");
+      }
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: ''
+      };
+      chatStore.addMessage(assistantMessage);
+      
+      const reader = response.body?.getReader();
+      let assistantMessageContent = "";
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader!.read();
+          if (done) break;
+
+          buffer += new TextDecoder().decode(value);
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.message?.content) {
+                  const content = parsed.message.content;
+                  assistantMessageContent += content;
+                  chatStore.updateLastMessage(assistantMessageContent);
+                }
+              } catch (error) {
+                console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error');
+              }
+            }
+          }
+        }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          chatStore.updateLastMessage(assistantMessageContent + "\n\n[Response terminated by user]");
+        } else {
+          throw error;
+        }
+      } finally {
+        reader?.releaseLock();
+      }
+
+      if (buffer.trim()) {
+        try {
+          const parsed = JSON.parse(buffer);
+          if (parsed.message?.content) {
+            assistantMessageContent += parsed.message.content;
+            chatStore.updateLastMessage(assistantMessageContent);
+          }
+        } catch (error) {
+          console.error("Failed to parse final buffer:", buffer, error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Chat error:", error);
+        toast.error(error.message);
+      } else {
+        console.error("Unknown chat error:", error);
+        toast.error("Failed to send message");
+      }
+    } finally {
+      setIsGenerating(false);
+      abortControllerRef.current = null;
+      scrollToBottom();
+    }
+  };
+
   if (isPopped) {
     return (
       <div className="h-full flex flex-col">
@@ -444,14 +542,61 @@ export function Chat({ isPopped = false }: ChatProps) {
             ) : (
               <div className="space-y-2">
                 {chatStore.messages.map((message: Message, index: number) => (
-                  <AnimatedMessage key={index} isUser={message.role === 'user'}>
-                    {message.role === 'user' ? (
-                      <div className={`message-user slide-in ${isGenerating ? 'opacity-50' : ''}`}>
-                        {message.content}
+                  <AnimatedMessage key={message.id ?? index} isUser={message.role === 'user'}>
+                    {message.isEditing ? (
+                      <div className="flex flex-col gap-2">
+                        <Textarea
+                          value={message.content}
+                          onChange={(e) => {
+                            const newMessages = chatStore.messages.map(msg =>
+                              msg.id === message.id ? { ...msg, content: e.target.value } : msg
+                            );
+                            chatStore.setMessages(newMessages);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleRegenerateFromEdit(message.id!);
+                            }
+                          }}
+                          className="w-full font-mono min-h-[80px]"
+                          autoFocus
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => chatStore.setMessageEditing(message.id!, false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleRegenerateFromEdit(message.id!)}
+                          >
+                            Save & Regenerate
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className={`message-assistant slide-in ${isGenerating ? 'opacity-50' : ''}`}>
-                        <FormattedMessage content={message.content} />
+                      <div className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}>
+                        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {message.role === 'user' && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => chatStore.setMessageEditing(message.id!, true)}
+                              className="h-6 w-6"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        {message.role === 'user' ? (
+                          message.content
+                        ) : (
+                          <FormattedMessage content={message.content} />
+                        )}
                       </div>
                     )}
                   </AnimatedMessage>
@@ -600,14 +745,61 @@ export function Chat({ isPopped = false }: ChatProps) {
                     ) : (
                       <div className="space-y-2">
                         {chatStore.messages.map((message: Message, index: number) => (
-                          <AnimatedMessage key={index} isUser={message.role === 'user'}>
-                            {message.role === 'user' ? (
-                              <div className={`message-user slide-in ${isGenerating ? 'opacity-50' : ''}`}>
-                                {message.content}
+                          <AnimatedMessage key={message.id ?? index} isUser={message.role === 'user'}>
+                            {message.isEditing ? (
+                              <div className="flex flex-col gap-2">
+                                <Textarea
+                                  value={message.content}
+                                  onChange={(e) => {
+                                    const newMessages = chatStore.messages.map(msg =>
+                                      msg.id === message.id ? { ...msg, content: e.target.value } : msg
+                                    );
+                                    chatStore.setMessages(newMessages);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleRegenerateFromEdit(message.id!);
+                                    }
+                                  }}
+                                  className="w-full font-mono min-h-[80px]"
+                                  autoFocus
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => chatStore.setMessageEditing(message.id!, false)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleRegenerateFromEdit(message.id!)}
+                                  >
+                                    Save & Regenerate
+                                  </Button>
+                                </div>
                               </div>
                             ) : (
-                              <div className={`message-assistant slide-in ${isGenerating ? 'opacity-50' : ''}`}>
-                                <FormattedMessage content={message.content} />
+                              <div className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}>
+                                <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {message.role === 'user' && (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => chatStore.setMessageEditing(message.id!, true)}
+                                      className="h-6 w-6"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                                {message.role === 'user' ? (
+                                  message.content
+                                ) : (
+                                  <FormattedMessage content={message.content} />
+                                )}
                               </div>
                             )}
                           </AnimatedMessage>
