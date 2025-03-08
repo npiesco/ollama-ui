@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, MessageSquare, Maximize2, Minimize2 } from 'lucide-react'
+import { AlertCircle, MessageSquare, Maximize2, Minimize2, X } from 'lucide-react'
 import { useChatStore } from '@/store/chat'
 import type { Message } from '@/store/chat'
 import { FormattedMessage } from "@/components/FormattedMessage"
@@ -54,6 +54,7 @@ export function Chat({ isPopped = false }: ChatProps) {
   const [availableModels, setAvailableModels] = useState<ModelResponse[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!isPopped) {
@@ -166,29 +167,39 @@ export function Chat({ isPopped = false }: ChatProps) {
     )
   }
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    
-    if (!availableModels.some(m => m.name === chatStore.model)) {
-      handleModelNotFound()
-      return
+  const handleTerminate = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+      setIsGenerating(false)
     }
-    
-    setIsGenerating(true)
+  }, [])
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!input.trim() || isGenerating) return
 
     try {
+      setIsGenerating(true)
+      abortControllerRef.current = new AbortController()
+
       const userMessage: Message = {
-        role: 'user',
-        content: input,
-        ...(images.length > 0 && { images })
+        role: 'user' as const,
+        content: input
       }
 
-      // Add user message immediately
-      chatStore.addMessage(userMessage)
       setInput("")
-
-      // Force scroll to bottom when sending a new message
-      scrollToBottom(true);
+      chatStore.addMessage(userMessage)
+      scrollToBottom(true)
 
       const payload = {
         model: chatStore.model,
@@ -202,6 +213,7 @@ export function Chat({ isPopped = false }: ChatProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: abortControllerRef.current.signal
       })
 
       if (!response.ok) {
@@ -213,7 +225,6 @@ export function Chat({ isPopped = false }: ChatProps) {
         throw new Error(errorData.error || "Chat request failed")
       }
 
-      // Add initial empty assistant message
       const assistantMessage: Message = {
         role: 'assistant',
         content: ''
@@ -224,28 +235,38 @@ export function Chat({ isPopped = false }: ChatProps) {
       let assistantMessageContent = ""
       let buffer = ""
 
-      while (true) {
-        const { done, value } = await reader!.read()
-        if (done) break
+      try {
+        while (true) {
+          const { done, value } = await reader!.read()
+          if (done) break
 
-        buffer += new TextDecoder().decode(value)
-        const lines = buffer.split("\n")
-        buffer = lines.pop() || ""
+          buffer += new TextDecoder().decode(value)
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
 
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const parsed = JSON.parse(line)
-              if (parsed.message?.content) {
-                const content = parsed.message.content
-                assistantMessageContent += content
-                chatStore.updateLastMessage(assistantMessageContent)
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const parsed = JSON.parse(line)
+                if (parsed.message?.content) {
+                  const content = parsed.message.content
+                  assistantMessageContent += content
+                  chatStore.updateLastMessage(assistantMessageContent)
+                }
+              } catch (error) {
+                console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error')
               }
-            } catch (error) {
-              console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error')
             }
           }
         }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          chatStore.updateLastMessage(assistantMessageContent + "\n\n[Response terminated by user]")
+        } else {
+          throw error
+        }
+      } finally {
+        reader?.releaseLock()
       }
 
       if (buffer.trim()) {
@@ -259,12 +280,18 @@ export function Chat({ isPopped = false }: ChatProps) {
           console.error("Failed to parse final buffer:", buffer, error instanceof Error ? error.message : 'Unknown error')
         }
       }
-
-    } catch (err) {
-      const error = err instanceof Error ? err.message : "An error occurred"
-      toast.error(error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Chat error:", error)
+        toast.error(error.message)
+      } else {
+        console.error("Unknown chat error:", error)
+        toast.error("Failed to send message")
+      }
     } finally {
       setIsGenerating(false)
+      abortControllerRef.current = null
+      scrollToBottom()
     }
   }
 
@@ -443,13 +470,25 @@ export function Chat({ isPopped = false }: ChatProps) {
                 onKeyDown={handleKeyDown}
                 placeholder={`Message ${chatStore.model}`}
                 className="w-full font-mono min-h-[80px] placeholder:text-muted-foreground"
+                disabled={isGenerating}
               />
               <span className="absolute left-[14px] top-[38px] text-xs text-muted-foreground italic pointer-events-none md:static md:mt-1 md:ml-2">
                 (Enter to send, Shift+Enter for new line)
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <Button type="submit" disabled={!input.trim()}>Send</Button>
+              {isGenerating ? (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={handleTerminate}
+                  title="Stop generating"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={!input.trim()}>Send</Button>
+              )}
               <Button 
                 type="button"
                 variant="outline" 
@@ -586,13 +625,25 @@ export function Chat({ isPopped = false }: ChatProps) {
                       onKeyDown={handleKeyDown}
                       placeholder={`Message ${chatStore.model}`}
                       className="w-full font-mono min-h-[80px] placeholder:text-muted-foreground"
+                      disabled={isGenerating}
                     />
                     <span className="absolute left-[14px] top-[38px] text-xs text-muted-foreground italic pointer-events-none md:static md:mt-1 md:ml-2">
                       (Enter to send, Shift+Enter for new line)
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <Button type="submit" disabled={!input.trim()}>Send</Button>
+                    {isGenerating ? (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={handleTerminate}
+                        title="Stop generating"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button type="submit" disabled={!input.trim()}>Send</Button>
+                    )}
                     <Button 
                       type="button"
                       variant="outline" 
