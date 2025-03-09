@@ -8,8 +8,8 @@ const envSchema = z.object({
 type EnvSchema = z.infer<typeof envSchema>
 
 function determineOllamaHost(): string {
-  // In development, always use localhost
-  if (process.env.NODE_ENV === 'development') {
+  // In development or test, always use localhost
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     return 'http://localhost:11434'
   }
 

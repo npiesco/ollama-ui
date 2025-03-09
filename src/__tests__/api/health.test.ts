@@ -1,6 +1,5 @@
 // src/__tests__/api/health.test.ts
 import { GET } from '@/app/api/health/route';
-import { NextResponse } from 'next/server';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
