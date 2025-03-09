@@ -67,12 +67,12 @@ describe('Health API', () => {
       status: 'healthy',
       environment: {
         nodeEnv: 'test',
-        ollamaHost: 'http://ollama:11434',
+        ollamaHost: 'http://localhost:11434',
       },
       ollama: {
         status: 'connected',
         version: '1.0.0',
-        host: 'http://ollama:11434'
+        host: 'http://localhost:11434'
       }
     });
   });
@@ -140,12 +140,12 @@ describe('Health API', () => {
       status: 'healthy',
       environment: {
         nodeEnv: 'test',
-        ollamaHost: 'http://ollama:11434',
+        ollamaHost: 'http://localhost:11434',
       },
       ollama: {
         status: 'connected',
         version: '1.0.0',
-        host: 'http://ollama:11434'
+        host: 'http://localhost:11434'
       }
     });
   });

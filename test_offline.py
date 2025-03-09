@@ -284,6 +284,27 @@ def test_offline():
     except Exception as e:
         print(f"Error in pre-offline test: {e}")
     
+    # Test embeddings page behavior
+    print("Testing embeddings page behavior...")
+    try:
+        # First, verify embeddings page shows model as installed
+        response = requests.get("http://localhost:3000/embeddings")
+        if "Generate Embeddings" not in response.text:
+            print("Error: Embeddings page not showing model as installed")
+        
+        # Delete model
+        delete_model()
+        time.sleep(2)  # Wait for deletion to complete
+        
+        # Verify embeddings page shows model as not installed
+        response = requests.get("http://localhost:3000/embeddings")
+        if "Model Required" not in response.text:
+            print("Error: Embeddings page not detecting model deletion")
+        
+        print("Embeddings page behavior test completed")
+    except Exception as e:
+        print(f"Error testing embeddings page behavior: {e}")
+    
     # Disable network
     if sys.platform == "darwin":  # macOS
         run_command("sudo ifconfig en0 down")

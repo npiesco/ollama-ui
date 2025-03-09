@@ -195,4 +195,37 @@ describe('Embeddings Page', () => {
 
     expect(screen.getByText('Model Required')).toBeInTheDocument()
   })
+
+  it('should recheck model installation when window gains focus', async () => {
+    // Mock models API to initially return nomic-embed-text
+    global.fetch = jest.fn()
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: [{ name: 'nomic-embed-text' }]
+        })
+      }))
+      // Mock second call when focus event triggers to return no models
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: []
+        })
+      }))
+
+    await act(async () => {
+      render(<Embeddings />)
+    })
+
+    // Initially, embeddings interface should be shown
+    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument()
+
+    // Simulate window focus event
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'))
+    })
+
+    // After focus event, model required message should be shown
+    expect(screen.getByText('Model Required')).toBeInTheDocument()
+  })
 }) 

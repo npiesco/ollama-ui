@@ -22,6 +22,16 @@ export default function Embeddings() {
 
   useEffect(() => {
     checkModelInstallation()
+
+    // Check model installation when page gains focus
+    const handleFocus = () => {
+      checkModelInstallation()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   const checkModelInstallation = async () => {
