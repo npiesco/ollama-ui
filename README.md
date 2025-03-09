@@ -1,6 +1,6 @@
 # Ollama UI
 
-A modern, feature-rich user interface for Ollama, providing a seamless experience for interacting with local language models. Built with Next.js 15, TypeScript, and Tailwind CSS.
+A modern, feature-rich user interface for Ollama with true offline capabilities, providing a seamless experience for interacting with local language models. Powered by WebAssembly, ONNX Runtime, and Progressive Web App technology, it works both online and offline. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
 [![Next.js](https://img.shields.io/badge/next.js-15.1.7-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0.0-blue.svg)](https://www.typescriptlang.org)
@@ -13,7 +13,9 @@ A modern, feature-rich user interface for Ollama, providing a seamless experienc
 
 AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistral, and Phi now capable of running on consumer-grade GPUs. Tools like Ollama make this possible, but there's still a significant barrier to entry - command line interfaces, AI terminology, and complex model parameters can be intimidating for newcomers.
 
-Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone.
+Ollama UI bridges this gap by providing an intuitive, user-friendly interface that serves as a playground for both beginners and experts. What sets it apart is its true offline capabilities - powered by WebAssembly and ONNX Runtime Web, you can run models directly in your browser without an internet connection. As a Progressive Web App, it can be installed on any device and functions like a native application while maintaining full offline functionality.
+
+Whether you're running models locally on your machine or hosting in the cloud to share with others, our goal is to make AI exploration accessible to everyone - online or offline, desktop or mobile.
 
 ## ✨ Key Features
 
@@ -30,11 +32,13 @@ Ollama UI bridges this gap by providing an intuitive, user-friendly interface th
 - **Push Notifications**: Stay informed about model training and chat updates
 - **Background Sync**: Queue actions when offline and execute when back online
 
-## Quick Start
+## 🚀 Getting Started
+
+### Quick Start Options
 
 There are two ways to run Ollama UI:
 
-### 1. Local Development
+#### 1. Local Development
 
 1. Start Ollama:
 ```bash
@@ -56,7 +60,7 @@ python deploy.py --environment local
 
 The UI will be available at `http://localhost:3001`
 
-### 2. Docker Deployment
+#### 2. Docker Deployment
 
 Run everything in containers:
 
@@ -66,23 +70,23 @@ python deploy.py --environment docker
 
 The UI will be available at `http://localhost:3000`
 
-## Installing as a PWA
+### Installing as a PWA
 
 Ollama UI can be installed as a Progressive Web App on both desktop and mobile devices:
 
-### Desktop (Chrome, Edge, or other Chromium browsers)
+#### Desktop (Chrome, Edge, or other Chromium browsers)
 1. Open Ollama UI in your browser
 2. Look for the install icon (➕) in the address bar
 3. Click "Install" in the prompt
 4. The app will install and create a desktop shortcut
 
-### iOS
+#### iOS
 1. Open Ollama UI in Safari
 2. Tap the Share button (📤)
 3. Select "Add to Home Screen"
 4. Tap "Add" to confirm
 
-### Android
+#### Android
 1. Open Ollama UI in Chrome
 2. Tap the menu (⋮)
 3. Select "Add to Home screen"
@@ -90,11 +94,13 @@ Ollama UI can be installed as a Progressive Web App on both desktop and mobile d
 
 Once installed, Ollama UI will work like a native app with full offline capabilities.
 
-## Environment Configuration
+## ⚙️ Configuration
+
+### Environment Configuration
 
 The application uses two main environment files:
 
-### `.env` (Docker/Production)
+#### `.env` (Docker/Production)
 ```env
 # Base Configuration
 NEXT_TELEMETRY_DISABLED=1
@@ -110,7 +116,7 @@ AUTH_ENABLED=false
 JWT_SECRET=your-secret-key-here
 ```
 
-### `.env.local` (Local Development)
+#### `.env.local` (Local Development)
 ```env
 # Local Development Overrides
 PORT=3001
@@ -122,7 +128,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 # JWT_SECRET=dev-secret-key
 ```
 
-## Development Commands
+### Authentication
+
+Authentication is disabled by default. To enable it:
+
+1. Set `AUTH_ENABLED=true` in your environment file
+2. Set a secure `JWT_SECRET`
+3. Restart the application
+
+## 💻 Development
+
+### Development Commands
 
 ```bash
 # Start in development mode
@@ -138,7 +154,7 @@ npm start
 npm test
 ```
 
-## Docker Commands
+### Docker Commands
 
 ```bash
 # Start services
@@ -154,7 +170,78 @@ docker-compose down
 docker-compose up -d --build
 ```
 
-## Offline Mode
+## 🧪 Testing
+
+### Test Structure
+
+The project uses Jest for testing and follows a centralized test organization pattern. All tests are located in the `src/__tests__` directory:
+
+```
+src/__tests__/
+├── api/                         # API endpoint tests
+│   └── health.test.ts
+├── app/                        # App-specific tests
+│   ├── chat.offline.test.tsx
+│   └── offline.test.tsx
+├── components/                 # Component tests
+│   ├── chat.test.tsx
+│   ├── CopyModel.test.tsx
+│   ├── CreateModel.test.tsx
+│   └── FormattedMessage.test.tsx
+├── lib/                       # Library tests
+│   ├── service-worker.test.ts
+│   └── wasm/
+│       └── offline-inference.test.ts
+├── deploy.test.ts            # Deployment tests
+└── setup.ts                  # Global test setup
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run specific test file
+npm test -- path/to/test.test.ts
+
+# Run tests matching a pattern
+npm test -- -t "pattern"
+```
+
+### Test Categories
+
+1. **Component Tests**: UI component testing using React Testing Library
+2. **API Tests**: Backend API endpoint testing
+3. **Integration Tests**: Service worker and offline functionality
+4. **Unit Tests**: Utility functions and helpers
+5. **E2E Tests**: Deployment and system integration
+
+### Mocking
+
+The project uses Jest's mocking capabilities for:
+- Service Worker API
+- IndexedDB
+- ONNX Runtime
+- Network requests
+- Browser APIs
+
+### Best Practices
+
+1. Tests are colocated with source code in the `__tests__` directory
+2. Each test file corresponds to a source file
+3. Use descriptive test names and proper grouping
+4. Mock external dependencies appropriately
+5. Test both success and error cases
+6. Include offline functionality testing
+
+## 🔌 Offline Mode
 
 Ollama UI features a robust offline mode that allows you to continue using the application even without internet connectivity:
 
@@ -170,15 +257,7 @@ Ollama UI features a robust offline mode that allows you to continue using the a
 3. Continue using previously downloaded models
 4. Check the offline testing guide in `docs/offline-testing.md` for detailed instructions
 
-## Authentication
-
-Authentication is disabled by default. To enable it:
-
-1. Set `AUTH_ENABLED=true` in your environment file
-2. Set a secure `JWT_SECRET`
-3. Restart the application
-
-## Troubleshooting
+## ❓ Troubleshooting
 
 ### Common Issues
 
@@ -207,10 +286,10 @@ Authentication is disabled by default. To enable it:
 - Docker: Use `docker-compose logs -f`
 - Browser console: Check for Service Worker and IndexedDB messages
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## License
+## 📄 License
 
 This project is licensed under a Business Source License - see the [LICENSE](LICENSE) file for details.

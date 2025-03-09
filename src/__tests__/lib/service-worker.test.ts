@@ -1,5 +1,5 @@
 // ollama-ui/src/lib/__tests__/service-worker.test.ts
-import { ServiceWorkerManager } from '../service-worker';
+import { ServiceWorkerManager } from '@/lib/service-worker';
 
 // Mock the navigator.serviceWorker
 const mockRegister = jest.fn();
