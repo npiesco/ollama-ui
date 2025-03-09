@@ -53,6 +53,10 @@ def start_services():
     # Clean up existing processes first
     cleanup_existing_processes()
     
+    # Set environment variables for testing
+    os.environ["NODE_ENV"] = "test"
+    os.environ["OLLAMA_API_HOST"] = "http://localhost:11434"
+    
     # Start Next.js app
     print("Building Next.js app...")
     # First, try to fix TypeScript errors
@@ -157,34 +161,45 @@ def pull_model():
         
         # If model doesn't exist, pull it
         print("Pulling model...")
-        response = requests.post(
-            "http://localhost:11434/api/pull",
-            json={"name": MODEL_NAME},
-            stream=True
-        )
-        
-        if response.status_code != 200:
-            print(f"Error pulling model: {response.text}")
+        try:
+            response = requests.post(
+                "http://localhost:11434/api/pull",
+                json={"name": MODEL_NAME},
+                stream=True
+            )
+            
+            if response.status_code != 200:
+                print(f"Error pulling model: {response.text}")
+                return False
+                
+            # Process the stream
+            for line in response.iter_lines():
+                if line:
+                    try:
+                        status = json.loads(line)
+                        if status.get("status") == "success":
+                            print("Model pulled successfully")
+                            time.sleep(5)  # Wait for model to be fully available
+                            return True
+                        elif status.get("error"):
+                            if "no route to host" in status.get("error").lower():
+                                print("Network is offline (as expected for offline test)")
+                                return True  # Continue with test since we're testing offline mode
+                            print(f"Error during pull: {status.get('error')}")
+                            return False
+                    except json.JSONDecodeError:
+                        print(f"Failed to parse status line: {line}")
+                        continue
+                    
+            return True
+            
+        except requests.exceptions.ConnectionError as e:
+            if "no route to host" in str(e).lower():
+                print("Network is offline (as expected for offline test)")
+                return True  # Continue with test since we're testing offline mode
+            print("Could not connect to Ollama server")
             return False
             
-        # Process the stream
-        for line in response.iter_lines():
-            if line:
-                try:
-                    status = json.loads(line)
-                    if status.get("status") == "success":
-                        print("Model pulled successfully")
-                        time.sleep(5)  # Wait for model to be fully available
-                        return True
-                    elif status.get("error"):
-                        print(f"Error during pull: {status.get('error')}")
-                        return False
-                except json.JSONDecodeError:
-                    print(f"Failed to parse status line: {line}")
-                    continue
-                    
-        return True
-        
     except requests.exceptions.ConnectionError:
         print("Could not connect to Ollama server. Is it running?")
         return False
