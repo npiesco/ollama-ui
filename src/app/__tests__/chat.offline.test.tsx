@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  */
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { Chat } from '@/components/Chat';
-import { useChatStore } from '@/store/chat';
 import React from 'react';
+import { useChatStore } from '@/store/chat';
 
 // Mock essential dependencies
 jest.mock("sonner", () => ({
@@ -81,7 +81,11 @@ describe('Chat Offline Functionality', () => {
     // Mock network failure
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
     
-    render(<Chat />);
+    await act(async () => {
+      render(<Chat />);
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     // Verify component doesn't crash
     expect(document.body).toBeInTheDocument();
@@ -94,7 +98,11 @@ describe('Chat Offline Functionality', () => {
     // Mock network failure
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
     
-    render(<Chat />);
+    await act(async () => {
+      render(<Chat />);
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     // Verify model selection is preserved
     expect(store.model).toBe('model1');
@@ -107,7 +115,11 @@ describe('Chat Offline Functionality', () => {
       json: async () => ({ models: [] })
     });
 
-    render(<Chat />);
+    await act(async () => {
+      render(<Chat />);
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     // Verify null model state
     expect(store.model).toBeNull();
