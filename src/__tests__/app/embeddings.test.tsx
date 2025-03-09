@@ -3,6 +3,12 @@ import { toast } from 'sonner'
 import Embeddings from '@/app/embeddings/page'
 import { useRouter } from 'next/navigation'
 
+// Mock lucide-react icons
+jest.mock('lucide-react', () => ({
+  AlertCircle: () => <div data-testid="alert-circle-icon" />,
+  Binary: () => <div data-testid="binary-icon" />
+}))
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn()
@@ -68,7 +74,8 @@ describe('Embeddings Page', () => {
       render(<Embeddings />)
     })
 
-    expect(screen.getByText('Generate Embeddings')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Generate Embeddings' })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/Enter text to generate embeddings/)).toBeInTheDocument()
   })
 
@@ -107,7 +114,7 @@ describe('Embeddings Page', () => {
     })
 
     const input = screen.getByPlaceholderText(/Enter text to generate embeddings/)
-    const submitButton = screen.getByText('Generate Embeddings')
+    const submitButton = screen.getByRole('button', { name: 'Generate Embeddings' })
 
     fireEvent.change(input, { target: { value: 'test text' } })
     await act(async () => {
@@ -148,7 +155,7 @@ describe('Embeddings Page', () => {
     })
 
     const input = screen.getByPlaceholderText(/Enter text to generate embeddings/)
-    const submitButton = screen.getByText('Generate Embeddings')
+    const submitButton = screen.getByRole('button', { name: 'Generate Embeddings' })
 
     fireEvent.change(input, { target: { value: 'test text' } })
     await act(async () => {
@@ -179,7 +186,7 @@ describe('Embeddings Page', () => {
     })
 
     const input = screen.getByPlaceholderText(/Enter text to generate embeddings/)
-    const submitButton = screen.getByText('Generate Embeddings')
+    const submitButton = screen.getByRole('button', { name: 'Generate Embeddings' })
 
     fireEvent.change(input, { target: { value: 'test text' } })
     await act(async () => {

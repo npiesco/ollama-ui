@@ -1,12 +1,14 @@
 // src/__tests__/api/embeddings.test.ts
 import { POST } from '@/app/api/embeddings/route'
 import { config } from '@/lib/config'
-import { NextResponse } from 'next/server'
-
 // Mock NextResponse
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: jest.fn((data, init) => ({ ...data, status: init?.status }))
+    json: jest.fn((data, init) => ({
+      ...data,
+      status: init?.status || 200,
+      json: async () => data
+    }))
   }
 }))
 
