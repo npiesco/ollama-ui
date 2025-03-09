@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     const data = await response.json();
-    return NextResponse.json(data.models);
+    return NextResponse.json({ models: data.models });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
     return NextResponse.json(

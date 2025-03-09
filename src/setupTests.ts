@@ -39,6 +39,65 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
+// Mock Request and Response for Next.js API routes
+class MockRequest {
+  private url: string;
+  private options: RequestInit;
+
+  constructor(input: string | URL | Request, init?: RequestInit) {
+    this.url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : 'http://localhost';
+    this.options = init || {};
+  }
+
+  get method() {
+    return this.options.method || 'GET';
+  }
+
+  async json() {
+    return this.options.body ? JSON.parse(this.options.body as string) : {};
+  }
+}
+
+class MockResponse {
+  private body: any;
+  private init: ResponseInit;
+
+  constructor(body?: BodyInit | null, init?: ResponseInit) {
+    this.body = body;
+    this.init = init || {};
+  }
+
+  get ok() {
+    return (this.init.status || 200) >= 200 && (this.init.status || 200) < 300;
+  }
+
+  get status() {
+    return this.init.status || 200;
+  }
+
+  get headers() {
+    return new Headers(this.init.headers);
+  }
+
+  async json() {
+    return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+  }
+
+  clone() {
+    return new MockResponse(this.body, this.init);
+  }
+}
+
+Object.defineProperty(global, 'Request', {
+  writable: true,
+  value: MockRequest
+})
+
+Object.defineProperty(global, 'Response', {
+  writable: true,
+  value: MockResponse
+})
+
 // Mock lucide-react icons globally
 jest.mock('lucide-react', () => {
   const icons = [

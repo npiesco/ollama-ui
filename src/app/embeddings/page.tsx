@@ -29,7 +29,7 @@ export default function Embeddings() {
       const response = await fetch('/api/models')
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
-      setIsModelInstalled(data.some((model: { name: string }) => {
+      setIsModelInstalled((data.models || []).some((model: { name: string }) => {
         const modelName = model.name.toLowerCase();
         return modelName === 'nomic-embed-text' || modelName.startsWith('nomic-embed-text:');
       }))

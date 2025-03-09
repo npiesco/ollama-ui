@@ -222,7 +222,7 @@ export default function ModelsPage() {
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
       console.log('Fetched models:', data)
-      setModels(data || [])
+      setModels(data.models || [])
     } catch (error) {
       console.error('Error fetching models:', error)
       toast.error('Failed to fetch models')
