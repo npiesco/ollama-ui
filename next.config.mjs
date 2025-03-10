@@ -1,26 +1,17 @@
-import withPWA from 'next-pwa';
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  // Service worker configuration
+  swSrc: "src/lib/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  // Serwist configuration
+  cacheOnNavigation: true,
+  reloadOnOnline: true
+});
 
 /** @type {import('next').NextConfig} */
-const config = withPWA({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: false,
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/api\.ollama\.ai\/.*$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'ollama-api-cache',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60 // 24 hours
-        },
-        networkTimeoutSeconds: 10
-      }
-    }
-  ]
-})({
+const config = withSerwist({
   reactStrictMode: true,
   experimental: {
     serverActions: {

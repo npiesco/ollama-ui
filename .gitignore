@@ -42,3 +42,8 @@ next-env.d.ts
 
 # python
 .venv
+
+# Serwist
+public/sw*
+public/swe-worker*
+public/workbox-*
