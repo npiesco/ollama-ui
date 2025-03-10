@@ -1,5 +1,26 @@
+import withPWA from 'next-pwa';
+
 /** @type {import('next').NextConfig} */
-const config = {
+const config = withPWA({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: false,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/api\.ollama\.ai\/.*$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'ollama-api-cache',
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 24 hours
+        },
+        networkTimeoutSeconds: 10
+      }
+    }
+  ]
+})({
   reactStrictMode: true,
   experimental: {
     serverActions: {
@@ -28,6 +49,6 @@ const config = {
   publicRuntimeConfig: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   }
-};
+});
 
 export default config;
