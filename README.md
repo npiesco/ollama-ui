@@ -108,6 +108,7 @@ MODEL_CACHE_DIR=/root/.ollama/models
 
 # Docker API Configuration
 OLLAMA_API_HOST=http://ollama:11434
+DOCKER_CONTAINER=true
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 PORT=3000
 
@@ -127,6 +128,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 # AUTH_ENABLED=true
 # JWT_SECRET=dev-secret-key
 ```
+
+### Environment Detection
+
+The application intelligently detects the environment it's running in:
+
+1. **Local Development**: Uses `http://localhost:11434` for the Ollama API host
+2. **Docker Environment**: Uses `http://ollama:11434` for the Ollama API host
+3. **Custom Configuration**: Environment variables can override the defaults
+
+The `DOCKER_CONTAINER` environment variable is used to explicitly identify Docker environments, ensuring proper host configuration.
 
 ### Authentication
 
@@ -168,7 +179,24 @@ docker-compose down
 
 # Rebuild and restart
 docker-compose up -d --build
+
+# Start with custom environment variables
+OLLAMA_API_HOST=http://custom-host:11434 AUTH_ENABLED=true docker-compose up -d
 ```
+
+### Docker Environment Variables
+
+When running with Docker, you can customize the environment by setting variables before the `docker-compose` command:
+
+```bash
+# Example: Enable authentication
+AUTH_ENABLED=true JWT_SECRET=my-secure-secret docker-compose up -d
+
+# Example: Use a custom Ollama host
+OLLAMA_API_HOST=http://my-custom-ollama:11434 docker-compose up -d
+```
+
+The `DOCKER_CONTAINER=true` variable is automatically set in the docker-compose.yml file to ensure proper environment detection.
 
 ## 🧪 Testing
 
@@ -273,9 +301,15 @@ Ollama UI features a robust offline mode that allows you to continue using the a
 3. **Environment Issues**
    - Check you're using the correct `.env` file for your deployment method
    - For local development, ensure `.env.local` exists
-   - For Docker, ensure `.env` exists
+   - For Docker, ensure `.env` exists and `DOCKER_CONTAINER=true` is set
+   - If the application can't connect to Ollama, verify the `OLLAMA_API_HOST` is correctly set
 
-4. **Offline Mode Issues**
+4. **Environment Detection Problems**
+   - In Docker: Ensure `DOCKER_CONTAINER=true` is set in your environment
+   - In local development: The application should automatically use localhost
+   - If manually overriding hosts, ensure the URLs are correctly formatted with protocol (http://)
+
+5. **Offline Mode Issues**
    - Verify that models were successfully cached while online
    - Check browser console for IndexedDB or Service Worker errors
    - Ensure sufficient storage space is available

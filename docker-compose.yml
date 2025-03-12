@@ -8,6 +8,7 @@ services:
     environment:
       - OLLAMA_API_HOST=http://ollama:11434
       - NODE_ENV=production
+      - DOCKER_CONTAINER=true
       - AUTH_ENABLED=${AUTH_ENABLED:-false}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
     depends_on:
