@@ -1,8 +1,8 @@
 // /ollama-ui/src/components/FormattedMessage.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import * as shiki from 'shiki';
+import type { BundledLanguage, BundledTheme } from 'shiki';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -20,7 +20,26 @@ interface CodeProps {
   children?: React.ReactNode;
 }
 
+// Initialize shiki highlighter
+let highlighterPromise: Promise<shiki.Highlighter>;
+
+async function initHighlighter() {
+  if (!highlighterPromise) {
+    highlighterPromise = shiki.createHighlighter({
+      themes: ['github-dark'],
+      langs: ['typescript', 'javascript', 'python', 'bash', 'json', 'markdown', 'yaml', 'shell', 'jsx', 'tsx']
+    });
+  }
+  return highlighterPromise;
+}
+
 export function FormattedMessage({ content }: FormattedMessageProps) {
+  const [highlighter, setHighlighter] = useState<shiki.Highlighter | null>(null);
+
+  useEffect(() => {
+    initHighlighter().then(setHighlighter);
+  }, []);
+
   // Pre-process the content to clean up code blocks and ensure proper line breaks
   const processedContent = content
     // First, handle code blocks with text immediately after closing backticks
@@ -37,41 +56,31 @@ export function FormattedMessage({ content }: FormattedMessageProps) {
       const match = /language-(\w+)/.exec(className || '');
       const language = match ? match[1] : '';
       
-      if (!inline && language) {
+      if (!inline && language && highlighter) {
         const codeContent = String(children || '').trim();
-        
-        return (
-          <div className="rounded-md my-4 w-full bg-black overflow-hidden">
-            <SyntaxHighlighter
-              language={language}
-              style={vscDarkPlus}
-              PreTag="div"
-              showLineNumbers={false}
-              wrapLongLines={true}
-              customStyle={{
-                margin: 0,
-                padding: '1rem',
-                borderRadius: '0.375rem',
-                backgroundColor: 'transparent',
-                width: '100%',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
-                display: 'block'
-              } as CSSProperties}
-              codeTagProps={{
-                style: {
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  display: 'block'
-                }
-              }}
-              {...props}
-            >
+        try {
+          const html = highlighter.codeToHtml(codeContent, {
+            lang: language as BundledLanguage,
+            themes: {
+              light: 'github-dark',
+              dark: 'github-dark'
+            }
+          });
+          
+          return (
+            <div 
+              className="rounded-md my-4 w-full overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          );
+        } catch (error) {
+          console.warn('Failed to highlight code:', error);
+          return (
+            <code className="block p-4 bg-muted rounded-md whitespace-pre-wrap" {...props}>
               {codeContent}
-            </SyntaxHighlighter>
-          </div>
-        );
+            </code>
+          );
+        }
       }
       
       return (
