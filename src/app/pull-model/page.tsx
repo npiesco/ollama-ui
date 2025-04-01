@@ -1,7 +1,7 @@
 // /ollama-ui/src/app/pull-model/page.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -29,49 +29,15 @@ interface PullStatus {
   completed?: number
 }
 
-// Import the recommended models from the models page
-const RECOMMENDED_MODELS = [
-  {
-    name: 'deepseek-r1',
-    description: "DeepSeek's first-generation of reasoning models",
-    parameterSizes: ['1.5b', '7b', '8b', '14b', '32b', '70b', '671b']
-  },
-  {
-    name: 'phi4-mini',
-    description: 'Phi-4-mini with function calling support',
-    parameterSizes: ['3.8b']
-  },
-  {
-    name: 'llama3.2',
-    description: "Meta's Llama 3.2 small models",
-    parameterSizes: ['1b', '3b']
-  },
-  {
-    name: 'llama3.1',
-    description: 'Llama 3.1 from Meta',
-    parameterSizes: ['8b', '70b', '405b']
-  },
-  {
-    name: 'nomic-embed-text',
-    description: 'High-performing open embedding model',
-    parameterSizes: ['default']
-  },
-  {
-    name: 'mistral',
-    description: 'The 7B model from Mistral AI',
-    parameterSizes: ['7b']
-  },
-  {
-    name: 'qwen2.5',
-    description: 'Qwen2.5 models from Alibaba',
-    parameterSizes: ['0.5b', '1.5b', '3b', '7b', '14b', '32b', '72b']
-  },
-  {
-    name: 'gemma',
-    description: 'Lightweight model from Google DeepMind',
-    parameterSizes: ['2b']
-  }
-]
+interface LibraryModel {
+  name: string
+  description: string
+  parameterSizes: string[]
+  capabilities: string[]
+  pullCount: string
+  tagCount: string
+  lastUpdated: string
+}
 
 export default function PullModel() {
   const [modelName, setModelName] = useState("")
@@ -80,10 +46,33 @@ export default function PullModel() {
   const [open, setOpen] = useState(false)
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedSize, setSelectedSize] = useState("")
+  const [libraryModels, setLibraryModels] = useState<LibraryModel[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [inputValue, setInputValue] = useState("")
+
+  useEffect(() => {
+    fetchLibraryModels()
+  }, [])
+
+  const fetchLibraryModels = async () => {
+    try {
+      const response = await fetch('/api/models/library')
+      if (!response.ok) throw new Error('Failed to fetch library models')
+      const data = await response.json()
+      setLibraryModels(data.models || [])
+    } catch (error) {
+      console.error('Error fetching library models:', error)
+      toast.error('Failed to fetch library models')
+      setLibraryModels([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleModelSelect = (model: string) => {
     setSelectedModel(model)
-    const modelInfo = RECOMMENDED_MODELS.find(m => m.name === model)
+    const modelInfo = libraryModels.find(m => m.name === model)
     if (modelInfo) {
       if (modelInfo.parameterSizes.length === 1) {
         // If there's only one size, automatically select it
@@ -160,13 +149,49 @@ export default function PullModel() {
     return Math.round((status.completed / status.total) * 100)
   }
 
+  const filteredModels = libraryModels.filter(model => {
+    if (!inputValue) return true // Show all models when input is empty
+    const searchTerm = inputValue.toLowerCase()
+    const modelName = model.name.toLowerCase()
+    
+    // Only show models that start with the search term
+    return modelName.startsWith(searchTerm)
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setInputValue(value)
+    setModelName(value)
+    setShowSuggestions(true)
+  }
+
+  // Add click outside handler to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.suggestions-container')) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleSuggestionSelect = (model: LibraryModel, size?: string) => {
+    const fullModelName = size ? `${model.name}:${size}` : model.name
+    setModelName(fullModelName)
+    setInputValue(fullModelName)
+    setShowSuggestions(false)
+  }
+
   return (
     <div className="container mx-auto p-8 space-y-6">
       <h1 className="text-2xl font-bold">Pull Model</h1>
       
       <div className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Select from Popular Models</label>
+          <label className="text-sm font-medium">Select from Available Models</label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -176,7 +201,7 @@ export default function PullModel() {
                 className="w-full justify-between"
               >
                 {selectedModel
-                  ? RECOMMENDED_MODELS.find((model) => model.name === selectedModel)?.name
+                  ? libraryModels.find((model) => model.name === selectedModel)?.name
                   : "Select a model..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -187,7 +212,7 @@ export default function PullModel() {
                 <CommandList>
                   <CommandEmpty>No model found.</CommandEmpty>
                   <CommandGroup>
-                    {RECOMMENDED_MODELS.map((model) => (
+                    {libraryModels.map((model) => (
                       <CommandItem
                         key={model.name}
                         value={model.name}
@@ -213,7 +238,7 @@ export default function PullModel() {
         </div>
 
         {selectedModel && (() => {
-          const model = RECOMMENDED_MODELS.find(m => m.name === selectedModel)
+          const model = libraryModels.find(m => m.name === selectedModel)
           return model && model.parameterSizes.length > 1 && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Model Size</label>
@@ -258,45 +283,76 @@ export default function PullModel() {
           )
         })()}
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Or Enter Model Name Manually</label>
-          <form onSubmit={handlePull} className="space-y-4">
-            <Input
-              placeholder="Enter model name (e.g., llama2:latest)"
-              value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              disabled={loading}
-            />
-            <Button type="submit" disabled={loading || !modelName.trim()}>
-              {loading ? "Pulling..." : "Pull Model"}
-            </Button>
-          </form>
-        </div>
-      </div>
-
-      {status && (
-        <div className="space-y-4">
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <p className="font-semibold">Status: {status.status}</p>
-            {status.digest && <p className="text-sm text-gray-600">Digest: {status.digest}</p>}
-            {status.total && status.completed && (
-              <div className="mt-2">
-                <div className="h-2 bg-gray-200 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-500 rounded-full transition-all duration-300"
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  />
+        <form onSubmit={handlePull} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Or Enter Model Name Manually</label>
+            <div className="relative suggestions-container">
+              <Input
+                value={inputValue}
+                onChange={handleInputChange}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder="e.g., llama2:7b"
+                disabled={loading}
+              />
+              {showSuggestions && (
+                <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-1">
+                    {filteredModels.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        No models found
+                      </div>
+                    ) : (
+                      filteredModels.map((model) => (
+                        <div key={model.name} className="space-y-1">
+                          <button
+                            className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm"
+                            onClick={() => handleSuggestionSelect(model)}
+                          >
+                            <div className="font-medium">{model.name}</div>
+                            <div className="text-xs text-muted-foreground">{model.description}</div>
+                          </button>
+                          {model.parameterSizes.length > 0 && (
+                            <div className="ml-4 space-y-1">
+                              {model.parameterSizes.map((size) => (
+                                <button
+                                  key={size}
+                                  className="w-full text-left px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground rounded-sm"
+                                  onClick={() => handleSuggestionSelect(model, size)}
+                                >
+                                  {size === 'default' ? model.name : `${model.name}:${size}`}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  {getProgressPercentage()}% - 
-                  {(status.completed / 1024 / 1024).toFixed(2)}MB / 
-                  {(status.total / 1024 / 1024).toFixed(2)}MB
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+
+          {status && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Downloading...</span>
+                <span>{getProgressPercentage()}%</span>
+              </div>
+              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <Button type="submit" disabled={loading || !modelName}>
+            {loading ? "Pulling..." : "Pull Model"}
+          </Button>
+        </form>
+      </div>
     </div>
   )
 } 
