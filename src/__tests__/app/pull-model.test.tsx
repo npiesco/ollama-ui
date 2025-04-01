@@ -1,7 +1,6 @@
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { toast } from 'sonner'
 import PullModel from '@/app/pull-model/page'
-import { config } from '@/lib/config'
 
 jest.mock('sonner', () => ({
   toast: {

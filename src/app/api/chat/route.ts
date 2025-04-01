@@ -3,85 +3,47 @@ import { NextResponse } from 'next/server';
 
 import { config } from '@/lib/config';
 
-export async function POST(request: Request) {
+interface Message {
+  role: "user" | "assistant"
+  content: string
+}
+
+interface RequestBody {
+  messages: Message[]
+}
+
+interface ChatResponse {
+  message: Message;
+  done: boolean;
+}
+
+export async function POST(request: Request): Promise<NextResponse<ChatResponse | { error: string }>> {
   try {
-    const body = await request.json();
-    console.log('Request body:', body);
-    
+    const body: RequestBody = await request.json();
+    const { messages } = body;
+
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: "llama2",
+        messages,
+        stream: false,
+      }),
     });
 
-    console.log('Ollama response status:', response.status);
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Ollama error response:', errorText);
-      throw new Error(errorText || 'Chat request failed');
+      throw new Error('Failed to get response from Ollama');
     }
 
-    // Get the response stream
-    const stream = response.body;
-    if (!stream) {
-      throw new Error('No response stream available');
-    }
-
-    // Create a TransformStream to intercept and log the data
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        // Convert the chunk to text
-        const text = new TextDecoder().decode(chunk);
-        const lines = text.split('\n');
-        
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const parsed = JSON.parse(line);
-              
-              // Format and log the JSON response
-              if (parsed.message?.content) {
-                // For regular messages
-                process.stdout.write(parsed.message.content);
-              } else if (parsed.done) {
-                console.log('\n[Response Complete]');
-              } else {
-                // For JSON responses, pretty print them
-                const formatted = JSON.stringify(parsed, null, 2);
-                console.log('\nJSON Response:');
-                console.log(formatted);
-                console.log(); // Extra newline for readability
-              }
-            } catch (e) {
-              console.error('Error parsing line:', e);
-            }
-          }
-        }
-        
-        // Forward the chunk
-        controller.enqueue(chunk);
-      }
-    });
-
-    // Pipe through our transform stream
-    const loggedStream = stream.pipeThrough(transformStream);
-
-    // Return the transformed stream
-    return new Response(loggedStream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
-  } catch (err) {
-    console.error('Chat API error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in chat API:', error);
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to process chat request' },
       { status: 500 }
     );
   }

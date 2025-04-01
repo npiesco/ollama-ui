@@ -3,15 +3,25 @@ import { NextResponse } from 'next/server';
 
 import { config } from '@/lib/config';
 
-export async function POST(request: Request) {
+interface EmbeddingsRequest {
+  model: string;
+  prompt: string;
+}
+
+interface EmbeddingsResponse {
+  embedding: number[];
+}
+
+export async function POST(request: Request): Promise<NextResponse<EmbeddingsResponse | { error: string }>> {
   try {
     // Parse request body
-    const body = await request.json();
+    const body: EmbeddingsRequest = await request.json();
+    const { model, prompt } = body;
     
     // Validate required fields
-    if (!body || !body.model || !body.input) {
+    if (!model || !prompt) {
       return NextResponse.json(
-        { error: 'Missing required fields: model and input' },
+        { error: 'Missing required fields: model and prompt' },
         { status: 400 }
       );
     }
@@ -22,7 +32,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ model, prompt }),
     });
 
     if (!response.ok) {

@@ -23,7 +23,7 @@ interface ChatProps {
   isPopped?: boolean
 }
 
-export function Chat({ isPopped = false }: ChatProps) {
+export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
   const router = useRouter()
   const chatStore = useChatStore()
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -231,7 +231,10 @@ export function Chat({ isPopped = false }: ChatProps) {
 
       try {
         while (true) {
-          const { done, value } = await reader!.read()
+          if (!reader) {
+            throw new Error('Failed to read response stream')
+          }
+          const { done, value } = await reader.read()
           if (done) break
 
           buffer += new TextDecoder().decode(value)
@@ -248,19 +251,17 @@ export function Chat({ isPopped = false }: ChatProps) {
                   chatStore.updateLastMessage(assistantMessageContent)
                 }
               } catch (error) {
-                console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error')
+                console.error("Failed to parse message:", error)
               }
             }
           }
         }
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          chatStore.updateLastMessage(assistantMessageContent + "\n\n[Response terminated by user]")
-        } else {
-          throw error
+          chatStore.updateLastMessage(assistantMessageContent + "\n[Message generation terminated]")
+          return
         }
-      } finally {
-        reader?.releaseLock()
+        throw error
       }
 
       if (buffer.trim()) {
@@ -458,7 +459,10 @@ export function Chat({ isPopped = false }: ChatProps) {
 
       try {
         while (true) {
-          const { done, value } = await reader!.read();
+          if (!reader) {
+            throw new Error('Failed to read response stream')
+          }
+          const { done, value } = await reader.read();
           if (done) break;
 
           buffer += new TextDecoder().decode(value);
@@ -475,19 +479,17 @@ export function Chat({ isPopped = false }: ChatProps) {
                   chatStore.updateLastMessage(assistantMessageContent);
                 }
               } catch (error) {
-                console.error("Failed to parse line:", line, error instanceof Error ? error.message : 'Unknown error');
+                console.error("Failed to parse message:", error);
               }
             }
           }
         }
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          chatStore.updateLastMessage(assistantMessageContent + "\n\n[Response terminated by user]");
-        } else {
-          throw error;
+          chatStore.updateLastMessage(assistantMessageContent + "\n[Message generation terminated]");
+          return;
         }
-      } finally {
-        reader?.releaseLock();
+        throw error;
       }
 
       if (buffer.trim()) {

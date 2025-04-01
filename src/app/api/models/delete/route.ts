@@ -3,10 +3,22 @@ import { NextResponse } from 'next/server';
 
 import { config } from '@/lib/config';
 
-export async function POST(request: Request) {
+interface DeleteModelResponse {
+  status: string;
+}
+
+export async function DELETE(request: Request): Promise<NextResponse<DeleteModelResponse | { error: string }>> {
   try {
-    const { name } = await request.json();
-    
+    const { searchParams } = new URL(request.url);
+    const name = searchParams.get('name');
+
+    if (!name) {
+      return NextResponse.json(
+        { error: 'Model name is required' },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/delete`, {
       method: 'DELETE',
       headers: {
@@ -16,15 +28,14 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error);
+      throw new Error('Failed to delete model');
     }
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Failed to delete model';
+    return NextResponse.json({ status: 'success' });
+  } catch (error) {
+    console.error('Error deleting model:', error);
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to delete model' },
       { status: 500 }
     );
   }

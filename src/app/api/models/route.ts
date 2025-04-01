@@ -2,7 +2,22 @@
 import { NextResponse } from 'next/server';
 import { config } from '@/lib/config'
 
-export async function GET() {
+interface ModelResponse {
+  models: Array<{
+    name: string;
+    size: number;
+    digest: string;
+    modified_at: string;
+    details: {
+      format: string;
+      family: string;
+      parameter_size: string;
+      quantization_level: string;
+    };
+  }>;
+}
+
+export async function GET(_request: Request): Promise<NextResponse<ModelResponse | { error: string }>> {
   try {
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`, {
       method: 'GET',
@@ -13,11 +28,11 @@ export async function GET() {
     }
 
     const data = await response.json();
-    return NextResponse.json({ models: data.models });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching models:', error);
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to fetch models' },
       { status: 500 }
     );
   }

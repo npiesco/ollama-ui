@@ -3,40 +3,59 @@ import { NextResponse } from 'next/server';
 
 import { config } from '@/lib/config';
 
-export async function POST(request: Request) {
+interface PullModelRequest {
+  name: string;
+  tag?: string;
+}
+
+interface PullModelResponse {
+  status: string;
+  digest?: string;
+  total?: number;
+  completed?: number;
+}
+
+export async function POST(request: Request): Promise<NextResponse<PullModelResponse | { error: string }> | Response> {
   try {
-    const { name } = await request.json();
-    
+    const body: PullModelRequest = await request.json();
+    const { name, tag } = body;
+
+    if (!name) {
+      return NextResponse.json(
+        { error: 'Model name is required' },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/pull`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, tag }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error);
+      throw new Error('Failed to pull model');
     }
 
-    // Stream the response
-    const stream = response.body;
-    if (!stream) {
-      throw new Error('No response stream available');
+    // If the response is a stream, return it directly
+    if (response.headers.get('content-type')?.includes('text/event-stream')) {
+      return new Response(response.body, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
     }
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Failed to pull model';
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error pulling model:', error);
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Failed to pull model' },
       { status: 500 }
     );
   }

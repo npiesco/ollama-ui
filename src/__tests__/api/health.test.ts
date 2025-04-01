@@ -1,5 +1,4 @@
 // src/__tests__/api/health.test.ts
-import { NextResponse } from 'next/server';
 import { GET } from '@/app/api/health/route';
 import { config } from '@/lib/config';
 

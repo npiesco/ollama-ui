@@ -1,19 +1,45 @@
 // /ollama-ui/src/app/api/login/route.ts
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 
-import { generateToken } from '@/lib/auth';
+interface LoginRequest {
+  username: string;
+  password: string;
+}
 
-export async function POST(request: Request) {
-  const { username, password } = await request.json();
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    username: string;
+  };
+}
 
-  // In a real application, you would validate the username and password against a database
-  if (username === 'admin' && password === 'password') {
-    const token = generateToken(username);
-    const response = NextResponse.json({ success: true });
-    response.cookies.set('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    return response;
+export async function POST(request: Request): Promise<NextResponse<LoginResponse | { error: string }>> {
+  try {
+    const body: LoginRequest = await request.json();
+    const { username, password } = body;
+
+    const response = await fetch(`${config.OLLAMA_API_HOST}/api/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Invalid credentials');
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json(
+      { error: 'Invalid credentials' },
+      { status: 401 }
+    );
   }
-
-  return NextResponse.json({ success: false }, { status: 401 });
 }
 

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import ModelsPage from '@/app/models/page'
+import { act } from 'react-dom/test-utils'
+import Models from '@/app/models/page'
 import { toast } from 'sonner'
-import { api } from '@/lib/api'
 
 // Mock fetch
 global.fetch = jest.fn()
@@ -132,7 +132,9 @@ describe('ModelsPage', () => {
   })
 
   it('fetches and displays models on mount', async () => {
-    render(<ModelsPage />)
+    await act(async () => {
+      render(<Models />)
+    })
 
     // Wait for data to be loaded
     await waitFor(() => {
@@ -152,7 +154,9 @@ describe('ModelsPage', () => {
     // Mock API error
     ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch models'))
 
-    render(<ModelsPage />)
+    await act(async () => {
+      render(<Models />)
+    })
 
     // Verify error handling
     await waitFor(() => {
@@ -161,7 +165,9 @@ describe('ModelsPage', () => {
   })
 
   it('installs a model successfully', async () => {
-    render(<ModelsPage />)
+    await act(async () => {
+      render(<Models />)
+    })
 
     // Wait for data to be loaded and model cards to be rendered
     await waitFor(() => {
@@ -174,8 +180,12 @@ describe('ModelsPage', () => {
     const installButton = buttons.find(button => 
       button.closest('[data-model="codellama"]')
     )
-    expect(installButton).toBeTruthy()
-    fireEvent.click(installButton!)
+    if (!installButton) {
+      throw new Error('Install button not found')
+    }
+    await act(async () => {
+      fireEvent.click(installButton)
+    })
 
     // Verify success message
     await waitFor(() => {
@@ -184,7 +194,9 @@ describe('ModelsPage', () => {
   })
 
   it('deletes a model successfully', async () => {
-    render(<ModelsPage />)
+    await act(async () => {
+      render(<Models />)
+    })
 
     // Wait for data to be loaded and model cards to be rendered
     await waitFor(() => {
@@ -194,8 +206,12 @@ describe('ModelsPage', () => {
 
     // Find and click delete button for llama2
     const deleteButton = screen.getByLabelText('Delete')
-    expect(deleteButton).toBeTruthy()
-    fireEvent.click(deleteButton)
+    if (!deleteButton) {
+      throw new Error('Delete button not found')
+    }
+    await act(async () => {
+      fireEvent.click(deleteButton)
+    })
 
     // Verify success message
     await waitFor(() => {
@@ -207,7 +223,7 @@ describe('ModelsPage', () => {
     // Mock sessionStorage to return a focused model
     window.sessionStorage.getItem = jest.fn().mockReturnValue('mistral')
 
-    render(<ModelsPage />)
+    render(<Models />)
 
     // Wait for data to be loaded
     await waitFor(() => {

@@ -1,5 +1,4 @@
 // src/__tests__/api/models.test.ts
-import { NextResponse } from 'next/server';
 import { GET } from '@/app/api/models/route';
 
 // Mock NextResponse

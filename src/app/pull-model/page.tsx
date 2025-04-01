@@ -42,12 +42,13 @@ interface LibraryModel {
 export default function PullModel() {
   const [modelName, setModelName] = useState("")
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<PullStatus | null>(null)
   const [open, setOpen] = useState(false)
-  const [selectedModel, setSelectedModel] = useState("")
+  const [selectedModel, setSelectedModel] = useState<string>('')
   const [selectedSize, setSelectedSize] = useState("")
   const [libraryModels, setLibraryModels] = useState<LibraryModel[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isPulling, setIsPulling] = useState(false)
+  const [progress, setProgress] = useState<number>(0)
+  const [error, setError] = useState<string | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [inputValue, setInputValue] = useState("")
 
@@ -65,8 +66,6 @@ export default function PullModel() {
       console.error('Error fetching library models:', error)
       toast.error('Failed to fetch library models')
       setLibraryModels([])
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -100,6 +99,9 @@ export default function PullModel() {
   const handlePull = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setIsPulling(true)
+    setError(null)
+    setProgress(0)
     
     try {
       const response = await fetch(`${config.OLLAMA_API_HOST}/api/pull`, {
@@ -124,29 +126,30 @@ export default function PullModel() {
         for (const line of lines) {
           try {
             const status: PullStatus = JSON.parse(line)
-            setStatus(status)
+            
+            if (status.total && status.completed) {
+              setProgress(Math.round((status.completed / status.total) * 100))
+            }
             
             if (status.status === "success") {
               toast.success("Model pulled successfully")
-              setStatus(null)
+              setProgress(100)
               break
             }
           } catch (e) {
             console.error("Failed to parse status:", e)
+            setError("Failed to parse model pull status")
           }
         }
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : "Failed to pull model"
+      setError(error)
       toast.error(error)
     } finally {
       setLoading(false)
+      setIsPulling(false)
     }
-  }
-
-  const getProgressPercentage = () => {
-    if (!status?.total || !status?.completed) return 0
-    return Math.round((status.completed / status.total) * 100)
   }
 
   const filteredModels = libraryModels.filter(model => {
@@ -333,18 +336,24 @@ export default function PullModel() {
             </div>
           </div>
 
-          {status && (
+          {isPulling && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Downloading...</span>
-                <span>{getProgressPercentage()}%</span>
+                <span>{progress}%</span>
               </div>
               <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${getProgressPercentage()}%` }}
+                  style={{ width: `${progress}%` }}
                 />
               </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-sm text-destructive">
+              {error}
             </div>
           )}
 

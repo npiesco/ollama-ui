@@ -43,6 +43,9 @@ const config = withSerwist({
   eslint: {
     ignoreDuringBuilds: false,
     dirs: ['src'],
+  },
+  typescript: {
+    ignoreBuildErrors: false,
   }
 });
 

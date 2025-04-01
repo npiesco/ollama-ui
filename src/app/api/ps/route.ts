@@ -3,21 +3,35 @@ import { NextResponse } from 'next/server';
 
 import { config } from '@/lib/config';
 
-export async function GET() {
+interface Process {
+  id: string;
+  name: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PsResponse {
+  processes: Process[];
+}
+
+export async function GET(_request: Request): Promise<NextResponse<PsResponse | { error: string }>> {
   try {
-    const response = await fetch(`${config.OLLAMA_API_HOST}/api/ps`);
+    const response = await fetch(`${config.OLLAMA_API_HOST}/api/ps`, {
+      method: 'GET',
+    });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch running models');
+      throw new Error('Failed to fetch processes');
     }
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (err) {
-    console.error('PS API error:', err);
+  } catch (error) {
+    console.error('Error fetching processes:', error);
     return NextResponse.json(
-      { error: 'Failed to connect to Ollama server' },
-      { status: 503 }
+      { error: 'Failed to fetch processes' },
+      { status: 500 }
     );
   }
 } 
