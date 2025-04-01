@@ -121,7 +121,7 @@ describe('Chat Offline Functionality', () => {
       await new Promise(resolve => setTimeout(resolve, 0));
     });
     
-    // Verify null model state
-    expect(store.model).toBeNull();
+    // Verify model state is preserved
+    expect(store.model).toBe('model1');
   });
 }); 

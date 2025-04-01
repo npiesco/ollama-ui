@@ -1,74 +1,71 @@
 // src/__tests__/api/health.test.ts
+import { NextResponse } from 'next/server';
 import { GET } from '@/app/api/health/route';
+import { config } from '@/lib/config';
 
-interface MockResponse extends Response {
-  json: () => Promise<{ status: string }>;
-}
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextResponse: {
+    json: jest.fn((data, options) => ({
+      json: () => Promise.resolve(data),
+      status: options?.status || 200
+    }))
+  }
+}));
 
-interface MockErrorResponse extends Response {
-  json: () => Promise<{ error: string }>;
-}
-
-const setupTestEnv = () => {
-  // Mock fetch
-  const mockResponse: MockResponse = {
-    status: 200,
-    json: async () => ({ status: 'ok' }),
-  } as MockResponse;
-
-  const mockErrorResponse: MockErrorResponse = {
-    status: 500,
-    json: async () => ({ error: 'Internal Server Error' }),
-  } as MockErrorResponse;
-
-  global.fetch = jest.fn().mockImplementation((url: string) => {
-    if (url.includes('health')) {
-      return Promise.resolve(mockResponse);
-    }
-    return Promise.resolve(mockErrorResponse);
-  });
-
-  // Mock Headers
-  global.Headers = jest.fn().mockImplementation(() => ({
-    append: jest.fn(),
-    delete: jest.fn(),
-    get: jest.fn(),
-    has: jest.fn(),
-    set: jest.fn(),
-    forEach: jest.fn(),
-    entries: jest.fn(),
-    keys: jest.fn(),
-    values: jest.fn(),
-  }));
-};
+// Mock fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
 describe('Health API', () => {
   beforeEach(() => {
-    setupTestEnv();
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
   it('should return 200 and status ok when Ollama is healthy', async () => {
+    // Mock successful response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ version: '1.0.0' })
+    });
+
     const response = await GET();
-    expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data).toEqual({ status: 'ok' });
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({
+      status: 'healthy',
+      environment: {
+        nodeEnv: config.NODE_ENV,
+        ollamaHost: config.OLLAMA_API_HOST,
+      },
+      ollama: {
+        status: 'connected',
+        version: '1.0.0',
+        host: config.OLLAMA_API_HOST
+      }
+    });
   });
 
-  it('should return 500 when Ollama is not healthy', async () => {
-    global.fetch = jest.fn().mockImplementation(() => 
-      Promise.resolve({
-        status: 500,
-        json: async () => ({ error: 'Internal Server Error' }),
-      } as MockErrorResponse)
-    );
+  it('should return 503 when Ollama is not healthy', async () => {
+    // Mock failed response
+    mockFetch.mockRejectedValueOnce(new Error('Ollama API returned non-200 status'));
 
     const response = await GET();
-    expect(response.status).toBe(500);
     const data = await response.json();
-    expect(data).toEqual({ error: 'Failed to check health' });
+
+    expect(response.status).toBe(503);
+    expect(data).toEqual({
+      status: 'unhealthy',
+      environment: {
+        nodeEnv: config.NODE_ENV,
+        ollamaHost: config.OLLAMA_API_HOST,
+      },
+      ollama: {
+        status: 'disconnected',
+        error: 'Ollama API returned non-200 status',
+        host: config.OLLAMA_API_HOST
+      }
+    });
   });
 }); 
