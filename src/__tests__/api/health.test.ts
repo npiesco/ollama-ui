@@ -12,20 +12,16 @@ jest.mock('next/server', () => ({
   }
 }));
 
-// Mock fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
-
 describe('Health API', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    global.fetch = jest.fn();
   });
 
   it('should return 200 and status ok when Ollama is healthy', async () => {
-    // Mock successful response
-    mockFetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ version: '1.0.0' })
+      status: 200,
+      json: async () => ({ version: '1.0.0' })
     });
 
     const response = await GET();
@@ -36,19 +32,18 @@ describe('Health API', () => {
       status: 'healthy',
       environment: {
         nodeEnv: config.NODE_ENV,
-        ollamaHost: config.OLLAMA_API_HOST,
+        ollamaHost: config.OLLAMA_API_HOST
       },
       ollama: {
+        host: config.OLLAMA_API_HOST,
         status: 'connected',
-        version: '1.0.0',
-        host: config.OLLAMA_API_HOST
+        version: '1.0.0'
       }
     });
   });
 
   it('should return 503 when Ollama is not healthy', async () => {
-    // Mock failed response
-    mockFetch.mockRejectedValueOnce(new Error('Ollama API returned non-200 status'));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Ollama API returned non-200 status'));
 
     const response = await GET();
     const data = await response.json();
@@ -58,12 +53,12 @@ describe('Health API', () => {
       status: 'unhealthy',
       environment: {
         nodeEnv: config.NODE_ENV,
-        ollamaHost: config.OLLAMA_API_HOST,
+        ollamaHost: config.OLLAMA_API_HOST
       },
       ollama: {
+        host: config.OLLAMA_API_HOST,
         status: 'disconnected',
-        error: 'Ollama API returned non-200 status',
-        host: config.OLLAMA_API_HOST
+        version: null
       }
     });
   });

@@ -27,7 +27,7 @@ describe('Models API', () => {
       json: () => Promise.resolve({ models: [] })
     });
 
-    const response = await GET();
+    const response = await GET(new Request('http://localhost/api/models'));
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -38,7 +38,7 @@ describe('Models API', () => {
     // Mock failed response
     mockFetch.mockRejectedValueOnce(new Error('Failed to fetch models'));
 
-    const response = await GET();
+    const response = await GET(new Request('http://localhost/api/models'));
     const data = await response.json();
 
     expect(response.status).toBe(500);
