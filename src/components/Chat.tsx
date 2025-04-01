@@ -1,25 +1,23 @@
 // /ollama-ui/src/components/Chat.tsx
 "use client"
 
-import type React from "react"
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "sonner"
-import { AnimatedMessage } from "@/components/AnimatedMessage"
-import { AdvancedParametersControl } from '@/components/AdvancedParameters'
-import { MultimodalInput } from '@/components/MultimodalInput'
-import { AdvancedParameters, Tool, ModelResponse } from '@/types/ollama'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from 'next/navigation'
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { toast } from "sonner"
+import { AlertCircle, MessageSquare, Maximize2, Minimize2, X } from 'lucide-react'
+
+import { AdvancedParametersControl } from '@/components/AdvancedParameters'
+import { AnimatedMessage } from "@/components/AnimatedMessage"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, MessageSquare, Maximize2, Minimize2, X, Pencil } from 'lucide-react'
-import { useChatStore } from '@/store/chat'
-import type { Message } from '@/store/chat'
-import { FormattedMessage } from "@/components/FormattedMessage"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Label } from '@/components/ui/label'
+import { MultimodalInput } from '@/components/MultimodalInput'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from "@/components/ui/textarea"
+import type { AdvancedParameters, Tool, ModelResponse } from '@/types/ollama'
+import { useChatStore, type Message } from '@/store/chat'
 
 interface ChatProps {
   isPopped?: boolean
@@ -542,64 +540,12 @@ export function Chat({ isPopped = false }: ChatProps) {
             ) : (
               <div className="space-y-2">
                 {chatStore.messages.map((message: Message, index: number) => (
-                  <AnimatedMessage key={message.id ?? index} isUser={message.role === 'user'}>
-                    {message.isEditing ? (
-                      <div className="flex flex-col gap-2">
-                        <Textarea
-                          value={message.content}
-                          onChange={(e) => {
-                            const newMessages = chatStore.messages.map(msg =>
-                              msg.id === message.id ? { ...msg, content: e.target.value } : msg
-                            );
-                            chatStore.setMessages(newMessages);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleRegenerateFromEdit(message.id!);
-                            }
-                          }}
-                          className="w-full font-mono min-h-[80px]"
-                          autoFocus
-                        />
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => chatStore.setMessageEditing(message.id!, false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleRegenerateFromEdit(message.id!)}
-                          >
-                            Save & Regenerate
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}>
-                        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {message.role === 'user' && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => chatStore.setMessageEditing(message.id!, true)}
-                              className="h-6 w-6"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                        {message.role === 'user' ? (
-                          message.content
-                        ) : (
-                          <FormattedMessage content={message.content} />
-                        )}
-                      </div>
-                    )}
-                  </AnimatedMessage>
+                  <AnimatedMessage 
+                    key={message.id ?? index} 
+                    message={message}
+                    onRegenerate={handleRegenerateFromEdit}
+                    isGenerating={isGenerating}
+                  />
                 ))}
               </div>
             )}
@@ -745,64 +691,12 @@ export function Chat({ isPopped = false }: ChatProps) {
                     ) : (
                       <div className="space-y-2">
                         {chatStore.messages.map((message: Message, index: number) => (
-                          <AnimatedMessage key={message.id ?? index} isUser={message.role === 'user'}>
-                            {message.isEditing ? (
-                              <div className="flex flex-col gap-2">
-                                <Textarea
-                                  value={message.content}
-                                  onChange={(e) => {
-                                    const newMessages = chatStore.messages.map(msg =>
-                                      msg.id === message.id ? { ...msg, content: e.target.value } : msg
-                                    );
-                                    chatStore.setMessages(newMessages);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                      e.preventDefault();
-                                      handleRegenerateFromEdit(message.id!);
-                                    }
-                                  }}
-                                  className="w-full font-mono min-h-[80px]"
-                                  autoFocus
-                                />
-                                <div className="flex gap-2 justify-end">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => chatStore.setMessageEditing(message.id!, false)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleRegenerateFromEdit(message.id!)}
-                                  >
-                                    Save & Regenerate
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}>
-                                <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  {message.role === 'user' && (
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => chatStore.setMessageEditing(message.id!, true)}
-                                      className="h-6 w-6"
-                                    >
-                                      <Pencil className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                {message.role === 'user' ? (
-                                  message.content
-                                ) : (
-                                  <FormattedMessage content={message.content} />
-                                )}
-                              </div>
-                            )}
-                          </AnimatedMessage>
+                          <AnimatedMessage 
+                            key={message.id ?? index} 
+                            message={message}
+                            onRegenerate={handleRegenerateFromEdit}
+                            isGenerating={isGenerating}
+                          />
                         ))}
                       </div>
                     )}

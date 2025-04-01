@@ -2,13 +2,13 @@
  * @jest-environment jsdom
  */
 import '@testing-library/jest-dom';
-import { render, act } from '@testing-library/react';
-import { Chat } from '@/components/Chat';
 import React from 'react';
-import { useChatStore } from '@/store/chat';
+import { render, act } from '@testing-library/react';
+
+import { Chat } from '@/components/Chat';
 
 // Mock essential dependencies
-jest.mock("sonner", () => ({
+jest.mock('sonner', () => ({
   toast: {
     error: jest.fn()
   }
@@ -20,7 +20,7 @@ jest.mock('react-markdown', () => ({
 }));
 
 // Mock FormattedMessage component
-jest.mock("@/components/FormattedMessage", () => ({
+jest.mock('@/components/FormattedMessage', () => ({
   FormattedMessage: ({ content }: { content: string }) => <div>{content}</div>
 }));
 
@@ -48,9 +48,15 @@ const createStore = () => {
   };
 
   return {
-    get messages() { return state.messages; },
-    get model() { return state.model; },
-    get parameters() { return state.parameters; },
+    get messages() {
+      return state.messages; 
+    },
+    get model() {
+      return state.model; 
+    },
+    get parameters() {
+      return state.parameters; 
+    },
     setModel: jest.fn((model) => {
       state.model = model;
     }),
@@ -60,21 +66,15 @@ const createStore = () => {
   };
 };
 
-let store = createStore();
+const store = createStore();
 
-jest.mock("@/store/chat", () => ({
+jest.mock('@/store/chat', () => ({
   useChatStore: () => store
 }));
 
 describe('Chat Offline Functionality', () => {
-  const mockModels = [
-    { name: 'model1' },
-    { name: 'model2' }
-  ];
-
   beforeEach(() => {
     jest.clearAllMocks();
-    store = createStore();
   });
 
   it('should handle offline mode gracefully', async () => {

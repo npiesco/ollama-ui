@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-default-secret"
 
@@ -12,8 +12,9 @@ export function verifyToken(token: string): boolean {
   }
 }
 
-interface TokenPayload {
-  [key: string]: unknown
+interface TokenPayload extends JwtPayload {
+  userId: string;
+  email: string;
 }
 
 export function createToken(payload: TokenPayload): string {

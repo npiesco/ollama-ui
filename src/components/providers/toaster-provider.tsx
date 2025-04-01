@@ -1,8 +1,8 @@
 // src/components/providers/toaster-provider.tsx
-'use client'
+'use client';
 
-import { Toaster } from 'sonner'
+import { Toaster } from 'sonner';
 
 export function ToasterProvider() {
-  return <Toaster richColors position="bottom-right" />
+  return <Toaster richColors position="bottom-right" />;
 } 

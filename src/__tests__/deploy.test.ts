@@ -1,8 +1,8 @@
 // /ollama-ui/src/__tests__/deploy.test.ts
 import { spawn } from 'child_process';
 import { existsSync, readFileSync, unlinkSync, writeFileSync, renameSync } from 'fs';
-import { join } from 'path';
 import * as os from 'os';
+import { join } from 'path';
 
 jest.setTimeout(10000); // Set timeout to 10 seconds
 

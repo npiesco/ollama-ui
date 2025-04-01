@@ -1,9 +1,7 @@
 // /ollama-ui/src/app/push-model/page.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -13,7 +11,7 @@ export default function PushModel() {
   const [name, setName] = useState("")
   const [insecure, setInsecure] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       const response = await fetch(`${config.OLLAMA_API_HOST}/api/push`, {

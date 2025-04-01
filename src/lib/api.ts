@@ -1,8 +1,9 @@
 // ollama-ui/src/lib/api.ts
-import { config } from './config'
-import type { Message } from '@/store/chat'
+import type { Message } from '@/store/chat';
 
-const BASE_URL = config.OLLAMA_API_HOST
+import { config } from './config';
+
+const BASE_URL = config.OLLAMA_API_HOST;
 
 type JsonBody = Record<string, unknown>
 
@@ -33,27 +34,27 @@ interface CreateModelRequest extends JsonBody {
 }
 
 async function fetchApi(endpoint: string, options: FetchOptions = {}) {
-  const url = `${BASE_URL}${endpoint}`
+  const url = `${BASE_URL}${endpoint}`;
   
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
-  }
+  };
 
   const config: RequestInit = {
     ...options,
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
-  }
+  };
 
-  const response = await fetch(url, config)
+  const response = await fetch(url, config);
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(error || 'API request failed')
+    const error = await response.text();
+    throw new Error(error || 'API request failed');
   }
 
-  return response
+  return response;
 }
 
 export const api = {
@@ -76,4 +77,4 @@ export const api = {
   
   // Running Models
   getRunningModels: () => fetchApi('/api/ps'),
-} 
+}; 

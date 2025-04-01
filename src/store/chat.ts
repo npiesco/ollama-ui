@@ -1,7 +1,8 @@
 // /ollama-ui/src/store/chat.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AdvancedParameters } from '@/types/ollama';
+
+import { type AdvancedParameters } from '@/types/ollama';
 
 export interface Message {
   role: 'user' | 'assistant';  // Restrict roles to user/assistant
@@ -80,7 +81,9 @@ export const useChatStore = create<ChatState>()(
       regenerateFromMessage: (id) =>
         set((state) => {
           const messageIndex = state.messages.findIndex(msg => msg.id === id);
-          if (messageIndex === -1) return state;
+          if (messageIndex === -1) {
+            return state;
+          }
           
           // Keep messages up to and including the edited message
           const messages = state.messages.slice(0, messageIndex + 1);
@@ -93,7 +96,9 @@ export const useChatStore = create<ChatState>()(
       storage: {
         getItem: (name) => {
           const str = sessionStorage.getItem(name);
-          if (!str) return null;
+          if (!str) {
+            return null;
+          }
           try {
             return JSON.parse(str);
           } catch {

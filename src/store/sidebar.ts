@@ -1,6 +1,6 @@
 // ollama-ui/src/store/sidebar.ts
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface SidebarState {
   isManagementOpen: boolean
@@ -21,4 +21,4 @@ export const useSidebarStore = create<SidebarState>()(
       name: 'sidebar-storage', // unique name for localStorage
     }
   )
-) 
+); 

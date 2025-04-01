@@ -1,8 +1,8 @@
 // /ollama-ui/src/__tests__/components/FormattedMessage.test.tsx
-import React from 'react';
+import React, { type JSX } from 'react';
 import { render, screen } from '@testing-library/react';
-import { FormattedMessage } from '@/components/FormattedMessage';
-import type { JSX } from 'react';
+import FormattedMessage from '@/components/FormattedMessage';
+import { Message } from '@/store/chat';
 
 // Mock all external markdown-related modules
 jest.mock('react-markdown', () => {
@@ -41,18 +41,26 @@ jest.mock('remark-math', () => ({}));
 jest.mock('rehype-katex', () => ({}));
 
 describe('FormattedMessage', () => {
+  const createMessage = (content: string): Message => ({
+    id: '1',
+    role: 'assistant',
+    content,
+    images: [],
+    isEditing: false
+  });
+
   it('renders plain text correctly', () => {
-    render(<FormattedMessage content="Hello, world!" />);
+    render(<FormattedMessage message={createMessage("Hello, world!")} />);
     expect(screen.getByTestId('formatted-message')).toHaveTextContent('Hello, world!');
   });
 
   it('renders markdown headings correctly', () => {
-    render(<FormattedMessage content="# Heading 1" />);
+    render(<FormattedMessage message={createMessage("# Heading 1")} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
   it('renders lists correctly', () => {
-    render(<FormattedMessage content="- Item 1\n- Item 2" />);
+    render(<FormattedMessage message={createMessage("- Item 1\n- Item 2")} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
@@ -62,7 +70,7 @@ fn main() {
     println!("Hello World!");
 }
 \`\`\``;
-    render(<FormattedMessage content={codeBlock} />);
+    render(<FormattedMessage message={createMessage(codeBlock)} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toHaveTextContent('fn main()');
     expect(container).toHaveTextContent('println!("Hello World!")');
@@ -71,7 +79,7 @@ fn main() {
   it('handles code blocks without trailing newlines correctly', () => {
     const codeBlock = `\`\`\`js
 const x = 1;\`\`\``;
-    render(<FormattedMessage content={codeBlock} />);
+    render(<FormattedMessage message={createMessage(codeBlock)} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
@@ -81,17 +89,17 @@ const x = 1;
 
 
 \`\`\``;
-    render(<FormattedMessage content={codeBlock} />);
+    render(<FormattedMessage message={createMessage(codeBlock)} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
   it('renders inline code correctly', () => {
-    render(<FormattedMessage content="`const x = 1;`" />);
+    render(<FormattedMessage message={createMessage("`const x = 1;`")} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
   it('renders blockquotes correctly', () => {
-    render(<FormattedMessage content="> Quote" />);
+    render(<FormattedMessage message={createMessage("> Quote")} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
@@ -99,27 +107,27 @@ const x = 1;
     const content = `| Header 1 | Header 2 |
 |----------|----------|
 | Cell 1   | Cell 2   |`;
-    render(<FormattedMessage content={content} />);
+    render(<FormattedMessage message={createMessage(content)} />);
     expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
   it('preserves whitespace in paragraphs', () => {
     const content = 'Line 1\nLine 2';
-    render(<FormattedMessage content={content} />);
+    render(<FormattedMessage message={createMessage(content)} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toHaveTextContent('Line 1');
     expect(container).toHaveTextContent('Line 2');
   });
 
   it('handles empty content gracefully', () => {
-    render(<FormattedMessage content="" />);
+    render(<FormattedMessage message={createMessage("")} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toBeInTheDocument();
     expect(container.textContent).toBe('');
   });
 
   it('applies dark mode classes', () => {
-    render(<FormattedMessage content="Test content" />);
+    render(<FormattedMessage message={createMessage("Test content")} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toHaveClass('dark:prose-invert');
   });
@@ -131,7 +139,7 @@ fn main() {
 }
 \`\`\`
 Some text after the code block`;
-    render(<FormattedMessage content={content} />);
+    render(<FormattedMessage message={createMessage(content)} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toHaveTextContent('fn main()');
     expect(container).toHaveTextContent('println!("Hello World!")');
@@ -144,7 +152,7 @@ fn main() {
     println!("Hello World!");
 }
 \`\`\` This text should be on a new line`;
-    render(<FormattedMessage content={content} />);
+    render(<FormattedMessage message={createMessage(content)} />);
     const container = screen.getByTestId('formatted-message');
     expect(container).toHaveTextContent('fn main()');
     expect(container).toHaveTextContent('println!("Hello World!")');

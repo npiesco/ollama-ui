@@ -1,9 +1,7 @@
 // /ollama-ui/src/app/login/page.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       const response = await fetch("/api/login", {

@@ -1,17 +1,19 @@
 // /ollama-ui/src/components/FormattedMessage.tsx
 import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import * as shiki from 'shiki';
-import type { BundledLanguage, BundledTheme } from 'shiki';
+import ReactMarkdown, { Components } from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import type { Components } from 'react-markdown';
-import type { CSSProperties } from 'react';
+import * as shiki from 'shiki';
+import type { BundledLanguage, Highlighter } from 'shiki';
+
 import 'katex/dist/katex.min.css';
 
+import type { Message } from '@/store/chat';
+
 interface FormattedMessageProps {
-  content: string;
+  message: Message;
+  className?: string;
 }
 
 interface CodeProps {
@@ -33,15 +35,15 @@ async function initHighlighter() {
   return highlighterPromise;
 }
 
-export function FormattedMessage({ content }: FormattedMessageProps) {
-  const [highlighter, setHighlighter] = useState<shiki.Highlighter | null>(null);
+export default function FormattedMessage({ message, className }: FormattedMessageProps) {
+  const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
 
   useEffect(() => {
     initHighlighter().then(setHighlighter);
   }, []);
 
   // Pre-process the content to clean up code blocks and ensure proper line breaks
-  const processedContent = content
+  const processedContent = message.content
     // First, handle code blocks with text immediately after closing backticks
     .replace(/```([\w-]*)\n([\s\S]*?)```\s*([^\n])/g, (match, lang, code, rest) => {
       return `\`\`\`${lang || ''}\n${code.trim()}\n\`\`\`\n\n${rest}`;
@@ -138,11 +140,11 @@ export function FormattedMessage({ content }: FormattedMessageProps) {
   };
 
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" data-testid="formatted-message">
+    <div className={`prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap ${className || ''}`} data-testid="formatted-message">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
         components={components}
+        rehypePlugins={[rehypeKatex]}
+        remarkPlugins={[remarkGfm, remarkMath]}
       >
         {processedContent}
       </ReactMarkdown>

@@ -1,8 +1,9 @@
 // src/components/MultimodalInput.tsx
 import { useRef } from 'react';
+import Image from 'next/image';
+
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import Image from 'next/image'
 
 interface MultimodalInputProps {
   onImageSelect: (image: File | null) => void;
@@ -14,18 +15,20 @@ export function MultimodalInput({ onImageSelect, imagePreview }: MultimodalInput
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
     onImageSelect(file);
   };
 
   return (
     <div className="space-y-4">
       <Input 
-        type="file" 
-        ref={fileInputRef}
-        accept="image/*"
-        onChange={handleFileSelect}
+        accept="image/*" 
         className="hidden"
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileSelect}
       />
       
       <Button onClick={() => fileInputRef.current?.click()}>
@@ -35,11 +38,11 @@ export function MultimodalInput({ onImageSelect, imagePreview }: MultimodalInput
       {imagePreview && (
         <div className="relative w-32 h-32">
           <Image
-            src={imagePreview}
-            alt="Preview"
             fill
+            alt="Preview"
             className="object-contain"
             sizes="(max-width: 128px) 100vw, 128px"
+            src={imagePreview}
           />
         </div>
       )}

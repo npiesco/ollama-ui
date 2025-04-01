@@ -1,6 +1,7 @@
 // /ollama-ui/src/app/api/chat/route.ts
 import { NextResponse } from 'next/server';
-import { config } from '@/lib/config'
+
+import { config } from '@/lib/config';
 
 export async function POST(request: Request) {
   try {

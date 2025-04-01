@@ -1,9 +1,7 @@
 // /ollama-ui/src/app/create-model/page.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,7 +12,7 @@ export default function CreateModel() {
   const [name, setName] = useState("")
   const [modelfile, setModelfile] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       await api.createModel({ name, modelfile })

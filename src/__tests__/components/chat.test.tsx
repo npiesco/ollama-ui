@@ -1,18 +1,19 @@
 // /ollama-ui/src/__tests__/components/chat.test.tsx
-import { render, screen, act } from "@testing-library/react"
-import { Chat } from "@/components/Chat"
-import type { Message } from "@/store/chat"
+import { render, act } from '@testing-library/react';
+
+import { Chat } from '@/components/Chat';
+import type { Message } from '@/store/chat';
 
 // Mock essential dependencies
 jest.mock('react-markdown', () => ({
   __esModule: true,
   default: ({ children }: { children: string }) => <div>{children}</div>
-}))
+}));
 
 // Mock FormattedMessage component
-jest.mock("@/components/FormattedMessage", () => ({
+jest.mock('@/components/FormattedMessage', () => ({
   FormattedMessage: ({ content }: { content: string }) => <div>{content}</div>
-}))
+}));
 
 // Mock lucide-react icons
 jest.mock('lucide-react', () => ({
@@ -26,7 +27,7 @@ jest.mock('lucide-react', () => ({
   Settings2: () => <div data-testid="settings2-icon" />,
   ChevronUp: () => <div data-testid="chevron-up-icon" />,
   Check: () => <div data-testid="check-icon" />
-}))
+}));
 
 // Mock chat store
 interface StoreState {
@@ -43,11 +44,17 @@ const createMockStore = () => {
   };
 
   return {
-    get messages() { return state.messages; },
-    get model() { return state.model; },
-    get parameters() { return state.parameters; },
+    get messages() {
+      return state.messages; 
+    },
+    get model() {
+      return state.model; 
+    },
+    get parameters() {
+      return state.parameters; 
+    },
     addMessage: jest.fn((message: Message) => {
-      state.messages = [...state.messages, { ...message, id: 'test-id-' + state.messages.length }];
+      state.messages = [...state.messages, { ...message, id: `test-id-${  state.messages.length}` }];
     }),
     setModel: jest.fn((model: string) => {
       state.model = model;
@@ -61,14 +68,14 @@ const createMockStore = () => {
 
 let mockStore = createMockStore();
 
-jest.mock("@/store/chat", () => ({
+jest.mock('@/store/chat', () => ({
   useChatStore: () => mockStore
 }));
 
 // Mock fetch for model loading
 const mockModels = [
-  { name: "test-model-1" },
-  { name: "test-model-2" }
+  { name: 'test-model-1' },
+  { name: 'test-model-2' }
 ];
 
 global.fetch = jest.fn(() => 
@@ -78,13 +85,13 @@ global.fetch = jest.fn(() =>
   } as Response)
 );
 
-describe("Chat Component", () => {
+describe('Chat Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockStore = createMockStore();
   });
 
-  it("loads available models on mount", async () => {
+  it('loads available models on mount', async () => {
     await act(async () => {
       render(<Chat />);
       // Wait for state updates to complete
@@ -95,7 +102,7 @@ describe("Chat Component", () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/models');
   });
 
-  it("handles model not found error", async () => {
+  it('handles model not found error', async () => {
     // Mock error response
     global.fetch = jest.fn().mockImplementation((url) => {
       if (url === '/api/models') {
@@ -117,7 +124,7 @@ describe("Chat Component", () => {
     expect(mockStore.model).toBeNull();
   });
 
-  it("preserves chat state", async () => {
+  it('preserves chat state', async () => {
     // Set initial state
     mockStore.setModel('test-model-1');
     mockStore.addMessage({ role: 'user', content: 'test message' });

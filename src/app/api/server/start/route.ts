@@ -1,18 +1,20 @@
 // /ollama-ui/src/app/api/server/start/route.ts
-import { NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import { config } from '@/lib/config'
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-const execAsync = promisify(exec)
+import { NextResponse } from 'next/server';
+
+import { config } from '@/lib/config';
+
+const execAsync = promisify(exec);
 
 export async function POST() {
   try {
     // Check if server is already running
     try {
-      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`);
       if (response.ok) {
-        return NextResponse.json({ success: true, message: 'Server is already running' })
+        return NextResponse.json({ success: true, message: 'Server is already running' });
       }
     } catch {
       // Server is not running, continue with start
@@ -20,33 +22,33 @@ export async function POST() {
 
     // On macOS, use launchctl if available
     if (process.platform === 'darwin') {
-      await execAsync('launchctl start com.ollama.ollama')
+      await execAsync('launchctl start com.ollama.ollama');
     } else {
       // Fallback to direct command
-      await execAsync('ollama serve > /dev/null 2>&1 &')
+      await execAsync('ollama serve > /dev/null 2>&1 &');
     }
     
     // Wait for server to start
-    let attempts = 0
+    let attempts = 0;
     while (attempts < 10) {
       try {
-        const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
+        const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`);
         if (response.ok) {
-          return NextResponse.json({ success: true })
+          return NextResponse.json({ success: true });
         }
       } catch {
         // Keep trying
       }
-      await new Promise(resolve => setTimeout(resolve, 500))
-      attempts++
+      await new Promise(resolve => setTimeout(resolve, 500));
+      attempts++;
     }
     
-    throw new Error('Server failed to start after multiple attempts')
+    throw new Error('Server failed to start after multiple attempts');
   } catch (error) {
-    console.error('Failed to start Ollama server:', error)
+    console.error('Failed to start Ollama server:', error);
     return NextResponse.json(
       { error: 'Failed to start Ollama server' },
       { status: 500 }
-    )
+    );
   }
 } 

@@ -50,24 +50,24 @@ export function EditableValue({ value, min, max, step, onChange }: EditableValue
   if (isEditing) {
     return (
       <input
-        ref={inputRef}
-        type="number"
         className="w-16 text-sm text-right bg-transparent border rounded px-1"
-        value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        min={min}
         max={max}
+        min={min}
+        ref={inputRef}
         step={step}
+        type="number"
+        value={editValue}
+        onBlur={handleBlur}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
     );
   }
 
   return (
     <button
-      onClick={() => setIsEditing(true)}
       className="w-16 text-sm text-right border border-input rounded px-1 hover:bg-accent transition-colors"
+      onClick={() => setIsEditing(true)}
     >
       {value}
     </button>

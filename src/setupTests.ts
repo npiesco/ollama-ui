@@ -5,11 +5,8 @@ import '@testing-library/jest-dom'
 /// <reference types="jest" />
 /// <reference types="@testing-library/jest-dom" />
 
-type MediaQueryListListener = ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
-
 // Extend Jest matchers
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeInTheDocument(): R
@@ -59,7 +56,7 @@ class MockRequest {
 }
 
 class MockResponse {
-  private body: any;
+  private body: BodyInit | null | undefined;
   private init: ResponseInit;
 
   constructor(body?: BodyInit | null, init?: ResponseInit) {
@@ -142,20 +139,23 @@ Object.defineProperty(window, 'ResizeObserver', {
 });
 
 // Mock window.matchMedia
-const createMatchMedia = (query: string): MediaQueryList => ({
+interface MockMatchMedia {
+  matches: boolean;
+  addEventListener: (type: string, listener: EventListener) => void;
+  removeEventListener: (type: string, listener: EventListener) => void;
+  dispatchEvent: (event: Event) => boolean;
+}
+
+const mockMatchMedia = (): MockMatchMedia => ({
   matches: false,
-  media: query,
-  onchange: null,
-  addListener: jest.fn(),
-  removeListener: jest.fn(),
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
-  dispatchEvent: jest.fn(() => true),
+  dispatchEvent: jest.fn(),
 });
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn(createMatchMedia),
+  value: jest.fn(mockMatchMedia),
 });
 
 // Mock window.scrollTo
@@ -231,7 +231,7 @@ afterEach(() => {
 });
 
 // Mock window.fetch
-(global as any).fetch = jest.fn(() => 
+(global as unknown as { fetch: jest.Mock }).fetch = jest.fn(() => 
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),
@@ -246,10 +246,4 @@ afterEach(() => {
     url: "",
     clone: function() { return this },
   } as Response)
-);
-
-// Mock window.matchMedia (again)
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn(createMatchMedia),
-}); 
+); 

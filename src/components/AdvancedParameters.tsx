@@ -1,12 +1,10 @@
 // /ollama-ui/src/components/AdvancedParameters.tsx
 import { useState } from 'react';
-import { Label } from '@/components/ui/label';
-import { Slider } from './ui/slider';
-import { Switch } from './ui/switch';
-import { AdvancedParameters } from '@/types/ollama';
-import { Button } from '@/components/ui/button';
 import { Settings2 } from 'lucide-react';
-import { EditableValue } from './EditableValue';
+
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
   SheetContent,
@@ -15,8 +13,13 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/sheet';
+import { type AdvancedParameters } from '@/types/ollama';
+
+import { EditableValue } from './EditableValue';
+import { Slider } from './ui/slider';
+import { Switch } from './ui/switch';
+
 
 interface AdvancedParamsProps {
   temperature: number;
@@ -55,18 +58,18 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
         <EditableValue
-          value={params[key] as number || config.defaultValue}
-          min={config.min}
           max={config.max}
+          min={config.min}
           step={config.step}
+          value={params[key] as number || config.defaultValue}
           onChange={(value) => handleChange(key, value)}
         />
       </div>
       <Slider
-        value={[params[key] as number || config.defaultValue]}
-        min={config.min}
         max={config.max}
+        min={config.min}
         step={config.step}
+        value={[params[key] as number || config.defaultValue]}
         onValueChange={([value]) => handleChange(key, value)}
       />
     </div>
@@ -76,9 +79,9 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button 
-          variant="outline" 
+          className="w-full group relative hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200" 
           size="sm" 
-          className="w-full group relative hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200"
+          variant="outline"
         >
           <div className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-accent text-accent-foreground text-[10px] px-2">
             <span className="line-clamp-1">Adjust model parameters</span>
@@ -101,15 +104,15 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           <div className="space-y-4">
             <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Core Parameters</h4>
             {renderParameter(
-              "Temperature",
-              "temperature",
-              "Controls randomness: lower values are more focused, higher values more creative",
+              'Temperature',
+              'temperature',
+              'Controls randomness: lower values are more focused, higher values more creative',
               { min: 0, max: 2, step: 0.1, defaultValue: 0.7 }
             )}
             {renderParameter(
-              "Number of Tokens",
-              "num_predict",
-              "Maximum number of tokens to generate",
+              'Number of Tokens',
+              'num_predict',
+              'Maximum number of tokens to generate',
               { min: 128, max: 4096, step: 128, defaultValue: 2048 }
             )}
           </div>
@@ -119,15 +122,15 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           <div className="space-y-4">
             <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Sampling Control</h4>
             {renderParameter(
-              "Top K",
-              "top_k",
-              "Limits token selection to K most probable tokens. Lower values (1-20) for more focused, predictable outputs",
+              'Top K',
+              'top_k',
+              'Limits token selection to K most probable tokens. Lower values (1-20) for more focused, predictable outputs',
               { min: 1, max: 100, step: 1, defaultValue: 40 }
             )}
             {renderParameter(
-              "Top P",
-              "top_p",
-              "Nucleus sampling: limits cumulative probability of selected tokens higher values (0.7-1.0) generate more creative and diverse responses",
+              'Top P',
+              'top_p',
+              'Nucleus sampling: limits cumulative probability of selected tokens higher values (0.7-1.0) generate more creative and diverse responses',
               { min: 0, max: 1, step: 0.05, defaultValue: 0.9 }
             )}
           </div>
@@ -137,15 +140,15 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
           <div className="space-y-4">
             <h4 className="text-sm font-medium group-hover:text-primary transition-colors">Quality Control</h4>
             {renderParameter(
-              "Repeat Penalty",
-              "repeat_penalty",
-              "Penalize repetition: higher values = less repetitive responses",
+              'Repeat Penalty',
+              'repeat_penalty',
+              'Penalize repetition: higher values = less repetitive responses',
               { min: 1, max: 2, step: 0.1, defaultValue: 1.8 }
             )}
             {renderParameter(
-              "Presence Penalty",
-              "presence_penalty",
-              "Penalize new tokens based on their presence in the text so far",
+              'Presence Penalty',
+              'presence_penalty',
+              'Penalize new tokens based on their presence in the text so far',
               { min: 0, max: 1, step: 0.1, defaultValue: 0.5 }
             )}
           </div>
@@ -168,8 +171,8 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
               </div>
               <Switch
                 checked={params.raw}
-                onCheckedChange={(checked) => handleChange('raw', checked)}
                 className="transition-transform duration-200 group-hover:scale-105"
+                onCheckedChange={(checked) => handleChange('raw', checked)}
               />
             </div>
           </div>
@@ -177,9 +180,9 @@ export function AdvancedParametersControl({ temperature, topP, onParamsChange }:
 
         <SheetFooter>
           <Button 
-            variant="outline" 
+            className="hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200" 
+            variant="outline"
             onClick={() => setOpen(false)}
-            className="hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all duration-200"
           >
             Close
           </Button>

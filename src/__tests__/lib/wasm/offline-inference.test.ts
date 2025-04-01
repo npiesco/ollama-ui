@@ -1,6 +1,7 @@
 // ollama-ui/src/lib/wasm/__tests__/offline-inference.test.ts
-import { OfflineInference } from '@/lib/wasm/offline-inference';
 import { InferenceSession } from 'onnxruntime-web';
+
+import { OfflineInference } from '@/lib/wasm/offline-inference';
 
 // Mock ONNX Runtime
 jest.mock('onnxruntime-web', () => ({

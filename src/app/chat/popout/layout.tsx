@@ -1,8 +1,8 @@
 // /ollama-ui/src/app/chat/popout/layout.tsx
-"use client"
+'use client';
 
-import { Toaster } from "sonner";
-import "../../globals.css";
+import { Toaster } from 'sonner';
+import '../../globals.css';
 
 export default function PopoutLayout({
   children,
@@ -14,5 +14,5 @@ export default function PopoutLayout({
       {children}
       <Toaster />
     </div>
-  )
+  );
 } 

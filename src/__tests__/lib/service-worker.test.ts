@@ -25,8 +25,11 @@ describe('ServiceWorkerManager', () => {
     // Reset mocks
     jest.clearAllMocks();
     
-    // Reset singleton instance
-    (ServiceWorkerManager as { instance: ServiceWorkerManager | null }).instance = null;
+    // Reset singleton instance by accessing private property
+    Object.defineProperty(ServiceWorkerManager, 'instance', {
+      value: null,
+      writable: true
+    });
     
     // Create new instance
     manager = ServiceWorkerManager.getInstance();

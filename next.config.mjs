@@ -39,6 +39,10 @@ const config = withSerwist({
   },
   publicRuntimeConfig: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+    dirs: ['src'],
   }
 });
 

@@ -1,8 +1,7 @@
 // /ollama-ui/src/app/copy-model/page.tsx
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -12,7 +11,7 @@ export default function CopyModel() {
   const [source, setSource] = useState("")
   const [destination, setDestination] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
       await api.copyModel({ source, destination })
