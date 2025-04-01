@@ -1,68 +1,96 @@
 import { GET } from '@/app/api/models/library/route'
-import { config } from '@/lib/config'
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: (data: any, init?: ResponseInit) => {
-      const response = new Response(JSON.stringify(data), init)
-      response.json = () => Promise.resolve(data)
-      return response
-    },
-  },
+    json: jest.fn((data, init) => ({
+      json: () => Promise.resolve(data),
+      status: init?.status || 200
+    }))
+  }
 }))
 
-describe('Library API', () => {
-  const mockRequest = new Request('http://localhost/api/models/library')
+// Mock fetch
+const mockFetch = jest.fn()
+global.fetch = mockFetch
 
+describe('Library Models API', () => {
   beforeEach(() => {
-    global.fetch = jest.fn()
+    jest.clearAllMocks()
   })
 
-  it('successfully fetches and parses library models', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+  it('should return 200 and empty models array when Ollama is healthy', async () => {
+    // Mock successful response with empty HTML
+    mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({
-        models: [
-          {
-            name: 'llama2',
-            description: 'Llama 2 is a collection of foundation language models.',
-            tags: ['base']
-          }
-        ]
-      })
+      text: () => Promise.resolve(`
+        <html>
+          <body>
+            <ul>
+              <!-- No model elements -->
+            </ul>
+          </body>
+        </html>
+      `)
     })
 
-    const response = await GET(mockRequest)
+    const response = await GET()
     const data = await response.json()
 
-    expect(data.models).toHaveLength(1)
-    expect(data.models[0]).toEqual({
-      name: 'llama2',
-      description: 'Llama 2 is a collection of foundation language models.',
-      tags: ['base']
-    })
+    expect(response.status).toBe(200)
+    expect(data).toEqual({ models: [] })
   })
 
-  it('handles API errors gracefully', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch library models'))
+  it('should return 500 when Ollama is not healthy', async () => {
+    // Mock failed response
+    mockFetch.mockRejectedValueOnce(new Error('Failed to fetch models from library'))
 
-    const response = await GET(mockRequest)
+    const response = await GET()
     const data = await response.json()
 
     expect(response.status).toBe(500)
-    expect(data.error).toBe('Failed to fetch library models')
+    expect(data).toEqual({
+      error: 'Failed to fetch models from library'
+    })
   })
 
-  it('handles empty model list', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+  it('should parse model data correctly', async () => {
+    // Mock successful response with a model
+    mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ models: [] })
+      text: () => Promise.resolve(`
+        <html>
+          <body>
+            <ul>
+              <li x-test-model>
+                <div x-test-model-title title="llama2">Llama 2</div>
+                <div class="text-neutral-800">A powerful language model</div>
+                <div x-test-size>7B</div>
+                <div x-test-capability>chat</div>
+                <div x-test-pull-count>1000</div>
+                <div x-test-tag-count>5</div>
+                <div x-test-updated>2024-03-20</div>
+              </li>
+            </ul>
+          </body>
+        </html>
+      `)
     })
 
-    const response = await GET(mockRequest)
+    const response = await GET()
     const data = await response.json()
 
-    expect(data.models).toHaveLength(0)
+    expect(response.status).toBe(200)
+    expect(data).toEqual({
+      models: [{
+        name: 'llama2',
+        description: 'A powerful language model',
+        parameterSizes: ['7B'],
+        capabilities: ['chat'],
+        pullCount: '1000',
+        tagCount: '5',
+        lastUpdated: '2024-03-20'
+      }]
+    })
   })
 }) 

@@ -69,6 +69,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       const response = await fetch('/api/models/library')
       if (!response.ok) throw new Error('Failed to fetch library models')
       const data = await response.json()
+      console.log('Library models capabilities:', data.models?.map((m: LibraryModel) => ({ name: m.name, capabilities: m.capabilities })))
       setLibraryModels(data.models || [])
     } catch (error) {
       console.error('Error fetching library models:', error)
@@ -191,7 +192,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   // Group models by capability
   const modelsByCapability = {
     all: libraryModels,
-    chat: libraryModels.filter(m => m.capabilities.includes('chat')),
+    chat: libraryModels.filter(m => m.capabilities.includes('chat') || m.capabilities.includes('tools')),
     code: libraryModels.filter(m => m.capabilities.includes('tools')),
     vision: libraryModels.filter(m => m.capabilities.includes('vision')),
   }

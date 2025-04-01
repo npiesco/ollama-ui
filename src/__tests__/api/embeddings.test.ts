@@ -1,5 +1,4 @@
 // src/__tests__/api/embeddings.test.ts
-import { NextResponse } from 'next/server';
 import { POST } from '@/app/api/embeddings/route';
 import { config } from '@/lib/config';
 // Mock NextResponse

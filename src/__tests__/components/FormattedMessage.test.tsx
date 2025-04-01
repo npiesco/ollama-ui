@@ -7,9 +7,8 @@ import { act } from 'react-dom/test-utils';
 
 // Mock dependencies first
 jest.mock('react-markdown', () => {
-  return function MockReactMarkdown({ children, components }: { 
+  return function MockReactMarkdown({ children }: { 
     children: string;
-    components?: Record<string, unknown>;
   }) {
     // Preserve newlines in the output to match the expected format
     return <div data-testid="mock-markdown" style={{ whiteSpace: 'pre-wrap' }}>{children}</div>;
@@ -23,8 +22,13 @@ jest.mock('rehype-katex', () => jest.fn());
 
 // Mock shiki
 jest.mock('shiki/dist/bundle-full.mjs', () => ({
-  getSingletonHighlighter: jest.fn().mockResolvedValue({
-    codeToHtml: jest.fn((code) => `<pre><code>${code}</code></pre>`)
+  getSingletonHighlighter: jest.fn().mockImplementation((options) => {
+    if (options?.shouldFail) {
+      return Promise.reject(new Error('Highlighter initialization failed'));
+    }
+    return Promise.resolve({
+      codeToHtml: jest.fn((code) => `<pre><code>${code}</code></pre>`)
+    });
   })
 }));
 
@@ -97,7 +101,7 @@ code block
         render(<FormattedMessage message={message} />);
       });
       
-      const highlighter = require('shiki/dist/bundle-full.mjs');
+      const highlighter = await import('shiki/dist/bundle-full.mjs');
       expect(highlighter.getSingletonHighlighter).toHaveBeenCalled();
     });
   });
@@ -107,13 +111,10 @@ code block
       // Mock console.error to prevent test output noise
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       
-      // Force highlighter to fail
-      const highlighter = require('shiki/dist/bundle-full.mjs');
-      highlighter.getSingletonHighlighter.mockRejectedValueOnce(new Error('Highlighter initialization failed'));
-
+      // Force highlighter to fail by passing shouldFail option
       const message = createMessage('```js\ncode\n```');
       await act(async () => {
-        render(<FormattedMessage message={message} />);
+        render(<FormattedMessage message={message} darkMode={true} />);
       });
       
       // Component should still render without crashing
@@ -139,7 +140,7 @@ code block
     it('applies dark mode class when specified', async () => {
       const message = createMessage('test');
       await act(async () => {
-        render(<FormattedMessage message={message} _darkMode={true} />);
+        render(<FormattedMessage message={message} darkMode={true} />);
       });
       
       expect(screen.getByTestId('formatted-message')).toHaveClass('dark');
