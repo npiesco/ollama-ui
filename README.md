@@ -326,4 +326,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## 📄 License
 
-This project is licensed under a Business Source License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+The AGPL-3.0 is a strong copyleft license that requires anyone who runs a modified version of the software to make their source code available to users. This is particularly important for network server software, as it ensures that users of the software have access to the source code of any modifications made to it.
+
+For more information about the AGPL-3.0 license, please visit: https://www.gnu.org/licenses/agpl-3.0.en.html
