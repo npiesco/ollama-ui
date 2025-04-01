@@ -19,15 +19,14 @@ export async function DELETE(request: Request): Promise<NextResponse<DeleteModel
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ model: name }),
     })
 
     if (!response.ok) {
       throw new Error("Failed to delete model")
     }
 
-    const data = await response.json()
-    return NextResponse.json(data)
+    return NextResponse.json({ status: 'success' })
   } catch (error) {
     console.error("Error deleting model:", error)
     return NextResponse.json(

@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useModelDownload } from '@/store/model-download'
 
 interface LibraryModel {
   name: string
@@ -38,16 +39,26 @@ interface LibraryModel {
 const ModelsPage: React.FC = (): React.ReactElement => {
   const [models, setModels] = React.useState<ModelResponse[]>([])
   const [libraryModels, setLibraryModels] = React.useState<LibraryModel[]>([])
-  const [isPulling, setPulling] = React.useState(false)
-  const [modelToPull, setModelToPull] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(true)
   const [selectedSizes, setSelectedSizes] = React.useState<Record<string, string>>({})
   const [focusedModel, setFocusedModel] = React.useState<string | null>(null)
   const [selectedTab, setSelectedTab] = React.useState("all")
   const [showAdvanced, setShowAdvanced] = React.useState<Record<string, boolean>>({})
   const [modelConfig, setModelConfig] = React.useState<Record<string, string>>({})
-  const [error, setError] = React.useState<string | null>(null)
+  const [pageError, setPageError] = React.useState<string | null>(null)
   const [newModelName, setNewModelName] = React.useState("")
+
+  const { 
+    isDownloading, 
+    currentModel, 
+    progress, 
+    status,
+    startDownload, 
+    updateProgress, 
+    setStatus, 
+    setError, 
+    reset 
+  } = useModelDownload()
 
   const fetchModels = React.useCallback(async () => {
     try {
@@ -58,7 +69,9 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       const data = await response.json()
       setModels(data.models)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch models")
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch models"
+      setPageError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -110,51 +123,88 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   const pullModel = async (modelName: string, parameterSize: string, config: string) => {
     // For models with 'default' size, don't append the size
     const fullModelName = parameterSize === 'default' ? modelName : `${modelName}:${parameterSize}`
-    if (!modelName || isModelInstalled(fullModelName)) return
+    if (!modelName || isModelInstalled(fullModelName)) {
+      toast.info(`${fullModelName} is already installed`)
+      return
+    }
     
-    setPulling(true)
-    setModelToPull(fullModelName)
-    toast.info(`Starting download of ${fullModelName}...`)
+    startDownload(fullModelName)
 
     try {
+      console.log(`Pulling model: ${fullModelName}`)
       const response = await fetch('/api/models/pull', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: fullModelName, config: config })
+        body: JSON.stringify({ name: fullModelName })
       })
 
-      if (!response.ok) throw new Error('Failed to pull model')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to pull model')
+      }
+
+      // Check if it's a non-streaming response (model already installed)
+      const contentType = response.headers.get('content-type')
+      if (!contentType?.includes('text/event-stream')) {
+        const data = await response.json()
+        if (data.status === 'success') {
+          setStatus('success')
+          await fetchModels() // Refresh the models list
+          return
+        }
+      }
 
       const reader = response.body?.getReader()
       if (!reader) throw new Error('Failed to read response stream')
 
+      let buffer = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        // Convert the received chunk to text and parse as JSON
+        // Convert the received chunk to text
         const chunk = new TextDecoder().decode(value)
-        const lines = chunk.split('\n').filter(line => line.trim())
-        
+        buffer += chunk
+
+        // Process complete lines
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep the last incomplete line in the buffer
+
         for (const line of lines) {
+          if (!line.trim()) continue
+
           try {
             const status = JSON.parse(line)
-            if (status.status === "success") {
-              toast.success(`Successfully downloaded ${fullModelName}`)
+            console.log('Pull status:', status)
+            
+            if (status.status === "error") {
+              throw new Error(status.error || 'Failed to pull model')
+            } else if (status.status === "success") {
+              setStatus('success')
               await fetchModels() // Refresh the models list
-              break
+              return
+            } else if (status.status.startsWith("pulling")) {
+              setStatus('pulling')
+              if (status.total && status.completed) {
+                const progress = Math.round((status.completed / status.total) * 100)
+                updateProgress(progress)
+              }
             }
           } catch (e) {
-            console.error("Failed to parse status:", e)
+            console.error("Failed to parse status:", e, "Raw line:", line)
+            throw new Error('Failed to parse model pull status')
           }
         }
       }
+
+      // If we get here without a success status, something went wrong
+      throw new Error('Model pull did not complete successfully')
     } catch (error) {
       console.error('Error pulling model:', error)
-      toast.error(`Failed to pull ${fullModelName}`)
+      setError(error instanceof Error ? error.message : `Failed to pull ${fullModelName}`)
+      setStatus('error')
     } finally {
-      setPulling(false)
-      setModelToPull("")
+      reset()
     }
   }
 
@@ -174,18 +224,30 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     if (!modelName || !isModelInstalled(modelName)) return
 
     try {
-      const response = await fetch('/api/models/delete', {
-        method: 'POST',
+      const response = await fetch('/api/delete-model', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: modelName })
       })
 
-      if (!response.ok) throw new Error('Failed to delete model')
-      toast.success(`Successfully deleted ${modelName}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete model')
+      }
+
+      toast.success(`Successfully deleted ${modelName}`, {
+        position: 'top-right',
+        duration: 3000,
+        dismissible: true
+      })
       await fetchModels() // Wait for models to refresh
     } catch (error) {
       console.error('Error deleting model:', error)
-      toast.error(`Failed to delete ${modelName}`)
+      toast.error(`Failed to delete ${modelName}`, {
+        position: 'top-right',
+        duration: 3000,
+        dismissible: true
+      })
     }
   }
 
@@ -216,8 +278,8 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     )
   }
 
-  if (error) {
-    return <div>Error: {error}</div>
+  if (pageError) {
+    return <div>Error: {pageError}</div>
   }
 
   return (
@@ -337,10 +399,10 @@ const ModelsPage: React.FC = (): React.ReactElement => {
                               selectedSizes[model.name] || model.parameterSizes[0],
                               modelConfig[model.name]
                             )}
-                            disabled={isPulling}
+                            disabled={isDownloading}
                             variant="outline"
                           >
-                            {modelToPull === `${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}` ? 'Pulling...' : 'Install Model'}
+                            {currentModel === `${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}` ? 'Pulling...' : 'Install Model'}
                           </Button>
                         )}
                       </div>

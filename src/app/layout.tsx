@@ -5,6 +5,8 @@ import { ClientLayout } from "@/components/ClientLayout";
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerManager } from "@/lib/service-worker";
 import { initWasm } from "@/lib/wasm/offline-inference";
+import { ProgressTracker } from '@/components/progress-tracker'
+import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -59,8 +61,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Ollama UI" />
         <link rel="apple-touch-icon" href="/llama.svg" />
       </head>
-      <body className={inter.className}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
         <ClientLayout>{children}</ClientLayout>
+        <ProgressTracker />
       </body>
     </html>
   );
