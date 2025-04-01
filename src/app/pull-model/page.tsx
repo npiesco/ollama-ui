@@ -105,7 +105,7 @@ export default function PullModel() {
       const response = await fetch(`${config.OLLAMA_API_HOST}/api/pull`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: modelName }),
+        body: JSON.stringify({ name: modelName }),
       })
 
       if (!response.ok) throw new Error("Failed to initiate model pull")
