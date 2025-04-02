@@ -6,10 +6,12 @@ import { config } from '@/lib/config';
 interface Message {
   role: "user" | "assistant"
   content: string
+  images?: string[]
 }
 
 interface RequestBody {
   messages: Message[]
+  model: string
 }
 
 interface ChatResponse {
@@ -29,7 +31,7 @@ export async function POST(request: Request): Promise<NextResponse<ChatResponse 
       );
     }
 
-    const { messages } = body;
+    const { messages, model } = body;
 
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/chat`, {
       method: 'POST',
@@ -37,7 +39,7 @@ export async function POST(request: Request): Promise<NextResponse<ChatResponse 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "llama2",
+        model,
         messages,
         stream: false,
       }),

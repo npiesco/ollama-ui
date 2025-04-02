@@ -53,6 +53,7 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
   const [availableModels, setAvailableModels] = useState<ModelResponse[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [modelCapabilities, setModelCapabilities] = useState<string[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -61,6 +62,32 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
       sessionStorage.removeItem('chatState');
     }
   }, [isPopped]);
+
+  const fetchModelCapabilities = useCallback(async (modelName: string) => {
+    try {
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/show`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: modelName })
+      });
+      if (!response.ok) throw new Error('Failed to fetch model capabilities');
+      const data = await response.json();
+      // Extract capabilities from model info
+      const capabilities: string[] = [];
+      if (data.model_info) {
+        // Simply check if any key contains 'vision'
+        const hasVision = Object.keys(data.model_info).some(key => key.toLowerCase().includes('vision'));
+        if (hasVision) {
+          capabilities.push('vision');
+        }
+      }
+      setModelCapabilities(capabilities);
+      console.log('Model capabilities:', capabilities, 'for model:', modelName); // Debug log
+    } catch (error) {
+      console.error('Error fetching model capabilities:', error);
+      setModelCapabilities([]);
+    }
+  }, []);
 
   const fetchModels = useCallback(async () => {
     try {
@@ -83,8 +110,16 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
     if (availableModels.length > 0 && !chatStore.model) {
       const firstModel = availableModels.sort((a, b) => a.name.localeCompare(b.name))[0].name;
       chatStore.setModel(firstModel);
+      fetchModelCapabilities(firstModel);
     }
-  }, [availableModels, chatStore]);
+  }, [availableModels, chatStore, fetchModelCapabilities]);
+
+  // Fetch model capabilities when model changes
+  useEffect(() => {
+    if (chatStore.model) {
+      fetchModelCapabilities(chatStore.model);
+    }
+  }, [chatStore.model, fetchModelCapabilities]);
 
   const scrollToBottom = useCallback((force: boolean = false) => {
     if (messagesEndRef.current) {
@@ -189,10 +224,12 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
 
       const userMessage: Message = {
         role: 'user' as const,
-        content: input
+        content: input,
+        images: images.length > 0 ? images : undefined
       }
 
       setInput("")
+      setImages([])
       chatStore.addMessage(userMessage)
       scrollToBottom(true)
 
@@ -519,6 +556,21 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
     }
   };
 
+  const onImageSelect = (file: File | null, index?: number) => {
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string
+        setImages(prev => [...prev, imageUrl])
+      }
+      reader.readAsDataURL(file)
+    } else if (typeof index === 'number') {
+      setImages(prev => prev.filter((_, i) => i !== index))
+    } else {
+      setImages([])
+    }
+  }
+
   if (isPopped) {
     return (
       <div className="h-full flex flex-col">
@@ -571,18 +623,31 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
               </span>
             </div>
             <div className="flex justify-between items-center">
-              {isGenerating ? (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={handleTerminate}
-                  title="Stop generating"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button type="submit" disabled={!input.trim()}>Send</Button>
-              )}
+              <div className="flex items-center gap-2">
+                {isGenerating ? (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={handleTerminate}
+                    title="Stop generating"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={!input.trim() && images.length === 0}>Send</Button>
+                )}
+              </div>
+              <div className="flex-1 flex justify-center">
+                {modelCapabilities.includes('vision') && (
+                  <div className="relative">
+                    <MultimodalInput 
+                      onImageSelect={(file, index) => onImageSelect(file, index)}
+                      imagePreview={null}
+                      images={images}
+                    />
+                  </div>
+                )}
+              </div>
               <Button 
                 type="button"
                 variant="outline" 
@@ -721,18 +786,31 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    {isGenerating ? (
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={handleTerminate}
-                        title="Stop generating"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button type="submit" disabled={!input.trim()}>Send</Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isGenerating ? (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={handleTerminate}
+                          title="Stop generating"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button type="submit" disabled={!input.trim() && images.length === 0}>Send</Button>
+                      )}
+                    </div>
+                    <div className="flex-1 flex justify-center">
+                      {modelCapabilities.includes('vision') && (
+                        <div className="relative">
+                          <MultimodalInput 
+                            onImageSelect={(file, index) => onImageSelect(file, index)}
+                            imagePreview={null}
+                            images={images}
+                          />
+                        </div>
+                      )}
+                    </div>
                     <Button 
                       type="button"
                       variant="outline" 
@@ -753,31 +831,6 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
                   onParamsChange={handleAdvancedParamsChange}
                 />
               </div>
-              
-              {chatStore.model === "llava" && (
-                <Card className="mt-2">
-                  <CardHeader className="p-2">
-                    <CardTitle className="text-sm">Image Input</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2">
-                    <MultimodalInput 
-                      onImageSelect={(img) => {
-                        if (img) {
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            const base64 = e.target?.result as string;
-                            if (base64) {
-                              setImages([...images, base64]);
-                            }
-                          };
-                          reader.readAsDataURL(img);
-                        }
-                      }}
-                      imagePreview={null}
-                    />
-                  </CardContent>
-                </Card>
-              )}
               
               <Card className="mt-2">
                 <CardHeader className="p-2">
