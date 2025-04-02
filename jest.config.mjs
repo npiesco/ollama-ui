@@ -12,15 +12,17 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^shiki$': '<rootDir>/node_modules/shiki/dist/bundle-full.mjs',
+    '^react-markdown$': '<rootDir>/node_modules/react-markdown/index.js',
   },
   transform: {
     '^.+\\.(t|j)sx?$': ['babel-jest', { presets: ['next/babel'] }],
     '^.+\\.mjs$': ['babel-jest', { presets: ['next/babel'] }],
+    '^.+\\.js$': ['babel-jest', { presets: ['next/babel'] }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'mjs'],
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   transformIgnorePatterns: [
-    '/node_modules/(?!(react-markdown|vfile|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|@radix-ui|lucide-react|@babel/runtime|shiki|@shikijs|remark-math|rehype-katex)/)',
+    '/node_modules/(?!((react-markdown|vfile|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|@radix-ui|lucide-react|@babel/runtime|shiki|@shikijs|remark-math|rehype-katex|hast-.*|mdast-.*|unist-.*|micromark-.*|decode-.*|character-.*|property-.*|space-.*|comma-.*|hast-util-.*|mdast-util-.*|unist-util-.*|micromark-util-.*|decode-.*|character-.*|property-.*|space-.*|comma-.*|hast-util-.*|mdast-util-.*|unist-util-.*|micromark-util-.*)/.*\\.(js|mjs)$))',
   ],
   testTimeout: 5000, // Set default timeout to 5 seconds
   maxWorkers: '50%', // Use half of available CPU cores

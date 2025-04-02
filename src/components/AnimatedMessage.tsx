@@ -4,11 +4,13 @@
 import type React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil } from 'lucide-react';
+import { useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { Message } from '@/store/chat';
 import { FormattedMessage } from '@/components/FormattedMessage';
+import { useChatStore } from '@/store/chat';
 
 interface AnimatedMessageProps {
   message: Message;
@@ -17,60 +19,75 @@ interface AnimatedMessageProps {
 }
 
 function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessageProps) {
+  const chatStore = useChatStore();
+  
+  console.debug('[AnimatedMessage] Component initialization:', {
+    messageId: message.id,
+    role: message.role,
+    contentLength: message.content.length,
+    isEditing: message.isEditing,
+    isGenerating,
+    contentPreview: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '')
+  });
+
+  const handleEditClick = useCallback(() => {
+    console.debug('[AnimatedMessage] Edit button clicked:', {
+      messageId: message.id,
+      currentContent: message.content
+    });
+    chatStore.setMessageEditing(message.id!, true);
+  }, [message.id, message.content, chatStore]);
+
+  const handleEditChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.debug('[AnimatedMessage] Edit content changed:', {
+      messageId: message.id,
+      newContentLength: e.target.value.length,
+      contentPreview: e.target.value.substring(0, 50) + (e.target.value.length > 50 ? '...' : '')
+    });
+    chatStore.editMessage(message.id!, e.target.value);
+  }, [message.id, chatStore]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.debug('[AnimatedMessage] Key pressed in edit mode:', {
+      messageId: message.id,
+      key: e.key,
+      ctrlKey: e.ctrlKey,
+      shiftKey: e.shiftKey
+    });
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveAndRegenerate();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  }, [message.id]);
+
+  const handleCancelEdit = useCallback(() => {
+    console.debug('[AnimatedMessage] Edit cancelled:', {
+      messageId: message.id,
+      originalContent: message.content
+    });
+    chatStore.setMessageEditing(message.id!, false);
+  }, [message.id, message.content, chatStore]);
+
+  const handleSaveAndRegenerate = useCallback(async () => {
+    console.debug('[AnimatedMessage] Saving and regenerating:', {
+      messageId: message.id,
+      contentLength: message.content.length,
+      contentPreview: message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '')
+    });
+    chatStore.setMessageEditing(message.id!, false);
+    await onRegenerate(message.id!);
+  }, [message.id, message.content, onRegenerate, chatStore]);
+
   console.debug('[AnimatedMessage] Rendering message:', {
-    id: message.id,
+    messageId: message.id,
     role: message.role,
     isEditing: message.isEditing,
     isGenerating,
-    contentLength: message.content.length
+    contentLength: message.content.length,
+    hasContent: !!message.content
   });
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.debug('[AnimatedMessage] Edit change:', {
-      id: message.id,
-      oldContent: message.content,
-      newContent: e.target.value
-    });
-    // Handle edit change
-  };
-
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    console.debug('[AnimatedMessage] Key down:', {
-      id: message.id,
-      key: e.key,
-      shiftKey: e.shiftKey
-    });
-
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      console.debug('[AnimatedMessage] Triggering regeneration from key press:', {
-        id: message.id
-      });
-      await onRegenerate(message.id || '');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    console.debug('[AnimatedMessage] Canceling edit:', {
-      id: message.id
-    });
-    // Handle cancel edit
-  };
-
-  const handleSaveAndRegenerate = async () => {
-    console.debug('[AnimatedMessage] Saving and regenerating:', {
-      id: message.id,
-      content: message.content
-    });
-    await onRegenerate(message.id || '');
-  };
-
-  const handleEditClick = () => {
-    console.debug('[AnimatedMessage] Entering edit mode:', {
-      id: message.id
-    });
-    // Handle edit mode
-  };
 
   return (
     <motion.div

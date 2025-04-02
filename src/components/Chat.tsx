@@ -56,8 +56,18 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
   const [modelCapabilities, setModelCapabilities] = useState<string[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  console.debug('[Chat] Component initialization:', {
+    isPopped,
+    messageCount: chatStore.messages.length,
+    selectedModel: chatStore.model,
+    parameters: chatStore.parameters,
+    isLoadingModels,
+    availableModelsCount: availableModels.length
+  });
+
   useEffect(() => {
     if (!isPopped) {
+      console.debug('[Chat] Clearing chat store');
       sessionStorage.removeItem('chat-store');
       sessionStorage.removeItem('chatState');
     }
@@ -454,6 +464,12 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
   };
 
   const handleRegenerateFromEdit = async (messageId: string) => {
+    console.debug('[Chat] Starting regeneration from edit:', {
+      messageId,
+      messageCount: chatStore.messages.length,
+      messageIndex: chatStore.messages.findIndex(msg => msg.id === messageId)
+    });
+
     chatStore.editMessage(messageId, chatStore.messages.find(msg => msg.id === messageId)?.content || '');
     chatStore.regenerateFromMessage(messageId);
     
@@ -469,6 +485,13 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
         ...advancedParams
       };
 
+      console.debug('[Chat] Sending regeneration request:', {
+        model: chatStore.model,
+        messageCount: payload.messages.length,
+        format,
+        parameters: advancedParams
+      });
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -478,6 +501,10 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[Chat] Regeneration request failed:', {
+          status: response.status,
+          error: errorData.error
+        });
         if (errorData.error?.includes('not found')) {
           handleModelNotFound();
           return;
@@ -495,64 +522,58 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
       let assistantMessageContent = "";
       let buffer = "";
 
-      try {
+      console.debug('[Chat] Starting to read response stream');
+
         while (true) {
-          if (!reader) {
-            throw new Error('Failed to read response stream')
-          }
-          const { done, value } = await reader.read();
+        const { done, value } = await reader!.read();
           if (done) break;
 
-          buffer += new TextDecoder().decode(value);
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+        const chunk = new TextDecoder().decode(value);
+        buffer += chunk;
+
+        try {
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.trim()) {
-              try {
-                const parsed = JSON.parse(line);
-                if (parsed.message?.content) {
-                  const content = parsed.message.content;
-                  assistantMessageContent += content;
+            if (line.startsWith('data: ')) {
+              const data = JSON.parse(line.slice(6));
+              console.debug('[Chat] Received chunk:', {
+                type: data.type,
+                contentLength: data.content?.length || 0,
+                contentPreview: data.content?.substring(0, 50) + (data.content?.length > 50 ? '...' : '')
+              });
+
+              if (data.type === 'content') {
+                assistantMessageContent += data.content;
                   chatStore.updateLastMessage(assistantMessageContent);
-                }
-              } catch (error) {
-                console.error("Failed to parse message:", error);
               }
             }
           }
+        } catch (error) {
+          console.error('[Chat] Error processing chunk:', {
+            error,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            chunkPreview: chunk.substring(0, 50) + (chunk.length > 50 ? '...' : '')
+          });
         }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          chatStore.updateLastMessage(assistantMessageContent + "\n[Message generation terminated]");
-          return;
-        }
-        throw error;
       }
 
-      if (buffer.trim()) {
-        try {
-          const parsed = JSON.parse(buffer);
-          if (parsed.message?.content) {
-            assistantMessageContent += parsed.message.content;
-            chatStore.updateLastMessage(assistantMessageContent);
-          }
-        } catch (error) {
-          console.error("Failed to parse final buffer:", buffer, error instanceof Error ? error.message : 'Unknown error');
-        }
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Chat error:", error);
-        toast.error(error.message);
-      } else {
-        console.error("Unknown chat error:", error);
-        toast.error("Failed to send message");
-      }
+      console.debug('[Chat] Regeneration complete:', {
+        messageId,
+        contentLength: assistantMessageContent.length,
+        contentPreview: assistantMessageContent.substring(0, 50) + (assistantMessageContent.length > 50 ? '...' : '')
+      });
+    } catch (error) {
+      console.error('[Chat] Regeneration failed:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
+      toast.error("Failed to regenerate response");
     } finally {
       setIsGenerating(false);
       abortControllerRef.current = null;
-      scrollToBottom();
     }
   };
 
@@ -570,6 +591,18 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
       setImages([])
     }
   }
+
+  console.debug('[Chat] Rendering component:', {
+    messageCount: chatStore.messages.length,
+    selectedModel: chatStore.model,
+    isGenerating,
+    isLoadingModels,
+    availableModelsCount: availableModels.length,
+    hasInput: !!input,
+    inputLength: input.length,
+    hasImages: images.length > 0,
+    imageCount: images.length
+  });
 
   if (isPopped) {
     return (
@@ -624,16 +657,16 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                {isGenerating ? (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={handleTerminate}
-                    title="Stop generating"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                ) : (
+              {isGenerating ? (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={handleTerminate}
+                  title="Stop generating"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : (
                   <Button type="submit" disabled={!input.trim() && images.length === 0}>Send</Button>
                 )}
               </div>
@@ -787,16 +820,16 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                      {isGenerating ? (
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={handleTerminate}
-                          title="Stop generating"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      ) : (
+                    {isGenerating ? (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={handleTerminate}
+                        title="Stop generating"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    ) : (
                         <Button type="submit" disabled={!input.trim() && images.length === 0}>Send</Button>
                       )}
                     </div>

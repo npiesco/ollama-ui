@@ -190,6 +190,12 @@ jest.mock('lucide-react', () => {
   return mockedIcons
 })
 
+// Mock react-markdown
+jest.mock('react-markdown', () => ({
+  __esModule: true,
+  default: ({ children }: { children: string }) => React.createElement('div', { 'data-testid': 'markdown' }, children),
+}))
+
 // Mock IntersectionObserver
 class MockIntersectionObserver {
   observe = jest.fn();

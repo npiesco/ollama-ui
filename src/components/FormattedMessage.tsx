@@ -24,28 +24,36 @@ interface CodeComponentProps {
 export function FormattedMessage({ message, darkMode: _darkMode = false }: FormattedMessageProps) {
   const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
 
-  console.debug('[FormattedMessage] Initializing component:', {
+  console.debug('[FormattedMessage] Component initialization:', {
     role: message.role,
     contentLength: message.content.length,
     darkMode: _darkMode,
-    hasHighlighter: !!highlighter
+    hasHighlighter: !!highlighter,
+    messageContent: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '')
   });
 
   useEffect(() => {
     const initHighlighter = async () => {
-      console.debug('[FormattedMessage] Initializing highlighter');
+      console.debug('[FormattedMessage] Starting highlighter initialization');
       try {
+        console.debug('[FormattedMessage] Importing shiki bundle');
         const { getSingletonHighlighter } = await import('shiki/dist/bundle-full.mjs');
+        console.debug('[FormattedMessage] Creating highlighter instance');
         const highlighter = await getSingletonHighlighter({
           themes: ['github-dark', 'github-light'],
           langs: ['typescript', 'javascript', 'python', 'bash', 'plaintext', 'rust', 'json', 'html', 'css']
         });
-        console.debug('[FormattedMessage] Highlighter initialized successfully');
+        console.debug('[FormattedMessage] Highlighter initialized successfully:', {
+          hasHighlighter: !!highlighter,
+          availableThemes: highlighter.getLoadedThemes(),
+          availableLanguages: highlighter.getLoadedLanguages()
+        });
         setHighlighter(highlighter);
       } catch (error) {
-        console.error('[FormattedMessage] Failed to initialize highlighter:', {
+        console.error('[FormattedMessage] Highlighter initialization failed:', {
           error,
-          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          errorStack: error instanceof Error ? error.stack : undefined
         });
       }
     };
@@ -55,17 +63,22 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
 
   const getTheme = () => {
     const theme = _darkMode ? 'github-dark' : 'github-light';
-    console.debug('[FormattedMessage] Selected theme:', theme);
+    console.debug('[FormattedMessage] Theme selection:', {
+      darkMode: _darkMode,
+      selectedTheme: theme,
+      hasHighlighter: !!highlighter
+    });
     return theme;
   };
 
   const components: Record<string, React.ComponentType<CodeComponentProps>> = {
     code: ({ inline, className, children, ...props }: CodeComponentProps) => {
-      console.debug('[FormattedMessage] Rendering code block:', {
+      console.debug('[FormattedMessage] Code block rendering:', {
         inline,
         className,
         hasHighlighter: !!highlighter,
-        codeLength: String(children || '').length
+        codeLength: String(children || '').length,
+        props: Object.keys(props)
       });
 
       if (!highlighter) {
@@ -84,7 +97,9 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
       console.debug('[FormattedMessage] Processing code block:', {
         language,
         codeLength: code.length,
-        theme: getTheme()
+        theme: getTheme(),
+        hasHighlighter: !!highlighter,
+        codePreview: code.substring(0, 50) + (code.length > 50 ? '...' : '')
       });
 
       try {
@@ -95,7 +110,9 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
 
         console.debug('[FormattedMessage] Code highlighting successful:', {
           language,
-          htmlLength: html.length
+          htmlLength: html.length,
+          hasHtml: !!html,
+          htmlPreview: html.substring(0, 100) + (html.length > 100 ? '...' : '')
         });
 
         if (inline) {
@@ -115,11 +132,13 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
           />
         );
       } catch (error) {
-        console.error('[FormattedMessage] Error highlighting code:', {
+        console.error('[FormattedMessage] Code highlighting failed:', {
           error,
           errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          errorStack: error instanceof Error ? error.stack : undefined,
           language,
-          codeLength: code.length
+          codeLength: code.length,
+          codePreview: code.substring(0, 50) + (code.length > 50 ? '...' : '')
         });
         return (
           <code className={className} {...props}>
@@ -129,6 +148,12 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
       }
     }
   };
+
+  console.debug('[FormattedMessage] Rendering markdown:', {
+    contentLength: message.content.length,
+    hasHighlighter: !!highlighter,
+    contentPreview: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '')
+  });
 
   return (
     <div data-testid="formatted-message" className={cn("prose dark:prose-invert max-w-none", _darkMode && "dark")}>

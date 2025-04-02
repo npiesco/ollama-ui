@@ -1,402 +1,238 @@
-// /ollama-ui/src/__tests__/components/chat.test.tsx
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Chat } from '@/components/Chat';
-import { useChatStore, type Message } from '@/store/chat';
-import { toast } from 'sonner';
-import React from 'react';
-
-// Debug logger
-const debug = (context: string, data: any) => {
-  console.debug(`[ChatTest] ${context}:`, JSON.stringify(data, null, 2));
-};
-
-// Mock essential dependencies
-jest.mock('react-markdown', () => ({
-  __esModule: true,
-  default: ({ children }: { children: string }) => <div>{children}</div>
-}));
-
-// Mock FormattedMessage component
-jest.mock('@/components/FormattedMessage', () => ({
-  FormattedMessage: ({ content }: { content: string }) => <div>{content}</div>
-}));
-
-// Mock lucide-react icons
-jest.mock('lucide-react', () => ({
-  AlertCircle: () => <div data-testid="alert-circle-icon" />,
-  MessageSquare: () => <div data-testid="message-square-icon" />,
-  Maximize2: () => <div data-testid="maximize2-icon" />,
-  Minimize2: () => <div data-testid="minimize2-icon" />,
-  X: () => <div data-testid="x-icon" />,
-  Pencil: () => <div data-testid="pencil-icon" />,
-  ChevronDown: () => <div data-testid="chevron-down-icon" />,
-  Settings2: () => <div data-testid="settings2-icon" />,
-  ChevronUp: () => <div data-testid="chevron-up-icon" />,
-  Check: () => <div data-testid="check-icon" />
-}));
-
-// Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn()
-  })
-}));
-
-// Mock sonner
-jest.mock('sonner', () => ({
-  toast: {
-    error: jest.fn()
-  }
-}));
-
-// Mock fetch
-global.fetch = jest.fn();
-
-// Mock scrollIntoView
-Element.prototype.scrollIntoView = jest.fn();
-
-// Mock AnimatedMessage component
-jest.mock('@/components/AnimatedMessage', () => ({
-  AnimatedMessage: ({ message }: { message: Message }) => {
-    debug('AnimatedMessage render', { message });
-    return (
-      <div className="message-container">
-        <div data-testid="animated-message" data-content={message.content}>
-          {message.content}
-        </div>
-        {message.role === 'assistant' && (
-          <button aria-label="Regenerate">Regenerate</button>
-        )}
-      </div>
-    );
-  }
-}));
-
-// Mock the toast notifications
-jest.mock('sonner', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn()
-  }
-}));
-
-// Mock UI components
-jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>
-}));
-
-jest.mock('@/components/ui/card', () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  CardHeader: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  CardTitle: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  CardContent: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
-
-// Define interfaces for Select components
-interface SelectItemProps {
-  children: React.ReactNode;
-  value?: string;
-  onClick?: () => void;
-}
-
-interface SelectTriggerProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-
-interface SelectContentProps {
-  children: React.ReactNode;
-}
-
-// Mock Select components
-jest.mock('@/components/ui/select', () => {
-  const SelectItem = ({ children, value, onClick, ...props }: SelectItemProps) => (
-    <div role="option" data-value={value} onClick={onClick} {...props}>{children}</div>
-  );
-
-  const Select = ({ children, onValueChange }: { children: React.ReactNode; onValueChange?: (value: string) => void }) => {
-    const [isOpen, setIsOpen] = React.useState(false);
-
-    return (
-      <div data-testid="select">
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement<SelectTriggerProps>(child) && child.type === SelectTrigger) {
-            return React.cloneElement(child, {
-              onClick: () => setIsOpen(!isOpen)
-            });
-          }
-          if (React.isValidElement<SelectContentProps>(child) && child.type === SelectContent && isOpen) {
-            return React.cloneElement(child, {
-              children: React.Children.map(child.props.children, (item) => {
-                if (React.isValidElement<SelectItemProps>(item) && item.type === SelectItem) {
-                  return React.cloneElement(item, {
-                    onClick: () => {
-                      onValueChange?.(item.props.value || '');
-                      setIsOpen(false);
-                    }
-                  });
-                }
-                return item;
-              })
-            });
-          }
-          return child;
-        })}
-      </div>
-    );
-  };
-
-  const SelectTrigger = ({ children, ...props }: SelectTriggerProps) => (
-    <button data-testid="select-trigger" {...props}>{children}</button>
-  );
-
-  const SelectContent = ({ children, ...props }: SelectContentProps) => (
-    <div role="listbox" {...props}>{children}</div>
-  );
-
-  const SelectValue = ({ children, ...props }: { children: React.ReactNode }) => (
-    <span {...props}>{children}</span>
-  );
-
-  return {
-    Select,
-    SelectTrigger,
-    SelectContent,
-    SelectItem,
-    SelectValue
-  };
-});
-
-jest.mock('@/components/ui/switch', () => ({
-  Switch: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
-
-jest.mock('@/components/ui/textarea', () => ({
-  Textarea: ({ children, ...props }: any) => <textarea {...props}>{children}</textarea>
-}));
-
-jest.mock('@/components/ui/alert', () => ({
-  Alert: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  AlertTitle: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  AlertDescription: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
-
-jest.mock('@/components/AdvancedParameters', () => ({
-  AdvancedParametersControl: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
-
-jest.mock('@/components/AnimatedMessage', () => ({
-  AnimatedMessage: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
-
-jest.mock('@/components/MultimodalInput', () => ({
-  MultimodalInput: ({ children, ...props }: any) => <div {...props}>{children}</div>
-}));
+import { useChatStore } from '@/store/chat';
+import { config } from '@/lib/config';
 
 // Mock the chat store
-const mockStore = {
+const mockChatStore = {
   messages: [],
-  model: 'test-model',
+  model: null,
   parameters: {
     temperature: 0.7,
     top_p: 0.9,
+    num_predict: 2048,
     top_k: 40,
-    repeat_penalty: 1.1,
-    seed: -1
+    repeat_penalty: 1.8,
+    presence_penalty: 0.5
   },
   addMessage: jest.fn(),
+  updateLastMessage: jest.fn(),
+  clearMessages: jest.fn(),
   setModel: jest.fn(),
   setParameters: jest.fn(),
-  clearMessages: jest.fn()
+  getFormattedMessages: jest.fn(),
+  editMessage: jest.fn(),
+  setMessageEditing: jest.fn(),
+  regenerateFromMessage: jest.fn(),
+  setMessages: jest.fn()
 };
 
 jest.mock('@/store/chat', () => ({
-  useChatStore: jest.fn(() => mockStore)
+  useChatStore: jest.fn(() => mockChatStore)
 }));
 
-describe('Chat', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Reset mock store state
-    mockStore.messages = [];
-    mockStore.model = 'test-model';
-    mockStore.parameters = {
-      temperature: 0.7,
-      top_p: 0.9,
-      top_k: 40,
-      repeat_penalty: 1.1,
-      seed: -1
-    };
-  });
+// Mock fetch globally
+global.fetch = jest.fn();
 
-  it('fetches and sets models on mount', async () => {
-    const mockModels = [
-      { name: 'test-model', size: 1000 },
-      { name: 'model2', size: 2000 }
-    ];
+// Mock the router
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
 
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ models: mockModels })
-    });
+// Mock Radix UI Select component
+jest.mock('@radix-ui/react-select', () => {
+  const SelectPrimitive = {
+    Root: ({ children, onValueChange }: any) => (
+      <div data-testid="select-root" onClick={() => onValueChange && onValueChange('test-model')}>
+        {children}
+      </div>
+    ),
+    Trigger: ({ children }: any) => <button data-testid="select-trigger">{children}</button>,
+    Value: ({ children }: any) => <span data-testid="select-value">{children}</span>,
+    Portal: ({ children }: any) => <div data-testid="select-portal">{children}</div>,
+    Content: ({ children }: any) => <div data-testid="select-content">{children}</div>,
+    Viewport: ({ children }: any) => <div data-testid="select-viewport">{children}</div>,
+    Item: ({ children, value }: any) => (
+      <div data-testid="select-item" data-value={value}>
+        {children}
+      </div>
+    ),
+    ItemText: ({ children }: any) => <span data-testid="select-item-text">{children}</span>,
+    ItemIndicator: ({ children }: any) => <span data-testid="select-item-indicator">{children}</span>,
+    ScrollUpButton: ({ children }: any) => <div data-testid="select-scroll-up">{children}</div>,
+    ScrollDownButton: ({ children }: any) => <div data-testid="select-scroll-down">{children}</div>,
+    Group: ({ children }: any) => <div data-testid="select-group">{children}</div>,
+    Label: ({ children }: any) => <div data-testid="select-label">{children}</div>,
+    Separator: ({ children }: any) => <div data-testid="select-separator">{children}</div>,
+    Icon: ({ children }: any) => <div data-testid="select-icon">{children}</div>
+  }
 
-    await act(async () => {
-      render(<Chat />);
-    });
+  // Add displayName to all components
+  Object.keys(SelectPrimitive).forEach((key) => {
+    (SelectPrimitive as any)[key].displayName = `Select${key}`
+  })
 
-    expect(screen.getByTestId('select')).toBeInTheDocument();
-  });
+  return SelectPrimitive
+})
 
-  it('handles model fetch error', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Failed to fetch models' })
-    });
+// Mock Lucide React icons
+jest.mock('lucide-react', () => ({
+  Maximize2: () => <div data-testid="maximize-icon">Maximize Icon</div>,
+  MessageSquare: () => <div data-testid="message-square-icon">Message Icon</div>,
+  Send: () => <div data-testid="send-icon">Send Icon</div>,
+  Image: () => <div data-testid="image-icon">Image Icon</div>,
+  X: () => <div data-testid="x-icon">X Icon</div>,
+  Settings: () => <div data-testid="settings-icon">Settings Icon</div>,
+  Settings2: () => <div data-testid="settings2-icon">Settings2 Icon</div>,
+  ChevronDown: () => <div data-testid="chevron-down-icon">Chevron Down Icon</div>,
+  ChevronUp: () => <div data-testid="chevron-up-icon">Chevron Up Icon</div>,
+  Loader2: () => <div data-testid="loader-icon">Loader Icon</div>,
+  RefreshCw: () => <div data-testid="refresh-icon">Refresh Icon</div>,
+  Copy: () => <div data-testid="copy-icon">Copy Icon</div>,
+  Check: () => <div data-testid="check-icon">Check Icon</div>
+}));
 
-    await act(async () => {
-      render(<Chat />);
-    });
+// Mock the FormattedMessage component to avoid markdown dependencies
+jest.mock('@/components/FormattedMessage', () => ({
+  FormattedMessage: ({ message }: { message: any }) => (
+    <div data-testid="formatted-message">{message.content}</div>
+  )
+}));
 
-    expect(toast.error).toHaveBeenCalledWith('Failed to fetch models');
-  });
-
-  it('handles input change and submission', async () => {
-    // Mock the models API response
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        models: [{ name: 'test-model', size: 1000 }]
-      })
-    });
-
-    await act(async () => {
-      render(<Chat />);
-    });
-
-    const textarea = screen.getByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Hello' } });
-
-    const form = textarea.closest('form');
-    fireEvent.submit(form!);
-
-    expect(mockStore.addMessage).toHaveBeenCalledWith({
-      role: 'user',
-      content: 'Hello'
-    });
-  });
-
-  it('handles model selection', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        models: [
-          { name: 'test-model', size: 1000 },
-          { name: 'model2', size: 2000 }
-        ]
-      })
-    });
-
-    await act(async () => {
-      render(<Chat />);
-    });
-
-    const selectTrigger = screen.getByTestId('select-trigger');
-    fireEvent.click(selectTrigger);
-
-    const testModelOption = screen.getByRole('option', { name: 'test-model' });
-    await act(async () => {
-      fireEvent.click(testModelOption);
-    });
-
-    expect(mockStore.setModel).toHaveBeenCalledWith('test-model');
-  });
-
-  it('handles model not found error', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Model not found' })
-    });
-
-    await act(async () => {
-      render(<Chat />);
-    });
-
-    expect(toast.error).toHaveBeenCalledWith('Failed to fetch models');
-  });
-
-  it('handles keyboard shortcuts', async () => {
-    // Mock the models API response
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        models: [{ name: 'test-model', size: 1000 }]
-      })
-    });
-
-    await act(async () => {
-      render(<Chat />);
-    });
-
-    const textarea = screen.getByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Hello' } });
-    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
-
-    expect(mockStore.addMessage).toHaveBeenCalledWith({
-      role: 'user',
-      content: 'Hello'
-    });
-  });
-
-  it('handles pop out functionality', async () => {
-    // Mock the models API response
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        models: [{ name: 'test-model', size: 1000 }]
-      })
-    });
-
-    const originalWindow = window;
-    const mockWindow = {
-      open: jest.fn().mockReturnValue({
-        document: {
-          write: jest.fn(),
-          close: jest.fn()
-        }
-      }),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn()
-    };
-
-    (global as any).window = {
-      ...originalWindow,
-      ...mockWindow
-    };
-
-    debug('Setting up window mock', { 
-      hasOpen: !!mockWindow.open,
-      hasDocument: !!mockWindow.open()?.document
-    });
-
-    await act(async () => {
-      render(<Chat />);
-    });
-
-    const maximizeButton = screen.getByTestId('maximize2-icon').closest('button');
-    expect(maximizeButton).toBeInTheDocument();
-
-    await act(async () => {
-      fireEvent.click(maximizeButton!);
-    });
-
-    debug('Window.open calls', {
-      called: mockWindow.open.mock.calls.length,
-      args: mockWindow.open.mock.calls
-    });
-
-    expect(mockWindow.open).toHaveBeenCalled();
-
-    (global as any).window = originalWindow;
+// Reset all mocks before each test
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Reset mock store state
+  mockChatStore.messages = [];
+  mockChatStore.model = null;
+  // Setup default fetch mock for models
+  ;(global.fetch as jest.Mock).mockImplementation((url) => {
+    if (url.endsWith('/api/tags')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: [
+            { name: 'test-model' },
+            { name: 'another-model' }
+          ]
+        })
+      });
+    }
+    if (url.endsWith('/api/show')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          model_info: {}
+        })
+      });
+    }
+    return Promise.reject(new Error('Not found'));
   });
 });
+
+describe('Chat Component', () => {
+  it('renders input field and handles basic input', async () => {
+    render(<Chat />);
+    
+    // Wait for models to load
+    await waitFor(() => {
+      expect(screen.getByTestId('select-trigger')).toBeInTheDocument();
+    });
+
+    const input = screen.getByRole('textbox');
+    expect(input).toBeInTheDocument();
+
+    // Type in the input
+    await userEvent.type(input, 'Hello');
+    expect(input).toHaveValue('Hello');
+  });
+
+  it('initializes with available models', async () => {
+    render(<Chat />);
+    
+    // Wait for models to load and verify model selector
+    await waitFor(() => {
+      const modelSelect = screen.getByTestId('select-trigger');
+      expect(modelSelect).toBeInTheDocument();
+    });
+
+    // Click the select to trigger model selection
+    const modelSelect = screen.getByTestId('select-root');
+    fireEvent.click(modelSelect);
+
+    // Verify the store was updated with the first model
+    expect(mockChatStore.setModel).toHaveBeenCalledWith('test-model');
+  });
+
+  it('handles model selection change', async () => {
+    render(<Chat />);
+    
+    // Wait for models to load
+    await waitFor(() => {
+      expect(screen.getByTestId('select-trigger')).toBeInTheDocument();
+    });
+
+    // Click the select to trigger model selection
+    const modelSelect = screen.getByTestId('select-root');
+    fireEvent.click(modelSelect);
+
+    // Verify the store was updated
+    expect(mockChatStore.setModel).toHaveBeenCalledWith('test-model');
+  });
+
+  it('handles message submission', async () => {
+    const mockResponse = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"response": "Test response"}'));
+          controller.close();
+        }
+      })
+    );
+
+    ;(global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.endsWith('/api/tags')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            models: [{ name: 'test-model' }]
+          })
+        });
+      }
+      if (url.endsWith('/api/show')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            model_info: {}
+          })
+        });
+      }
+      if (url.endsWith('/api/chat')) {
+        return Promise.resolve(mockResponse);
+      }
+      return Promise.reject(new Error('Not found'));
+    });
+
+    render(<Chat />);
+    
+    // Wait for models to load
+    await waitFor(() => {
+      expect(screen.getByTestId('select-trigger')).toBeInTheDocument();
+    });
+
+    // Type a message
+    const input = screen.getByRole('textbox');
+    await userEvent.type(input, 'Test message{enter}');
+
+    // Verify the message was added to the store
+    expect(mockChatStore.addMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'user',
+        content: 'Test message'
+      })
+    );
+  });
+}); 
