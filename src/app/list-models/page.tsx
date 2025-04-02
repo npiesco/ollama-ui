@@ -87,7 +87,7 @@ export default function ListModels() {
           ) : (
             <div className="grid gap-4">
               {models.map((model) => (
-                <Card key={model.digest} className="card-hover">
+                <Card key={`${model.name}-${model.digest}`} className="card-hover">
                   <CardContent className="pt-6">
                     <div className="flex justify-between items-start">
                       <h2 className="text-xl font-semibold">{model.name}</h2>
