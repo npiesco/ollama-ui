@@ -1,5 +1,5 @@
 // /ollama-ui/src/app/api/chat/stream/route.ts
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     const { model, messages, stream = true } = body;
 
     if (!model || !messages) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
+      return NextResponse.json(
+        { error: 'Invalid request body' },
         { status: 400 }
       );
     }
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.log('Chat stream route: Ollama response not ok');
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate response' }),
+      return NextResponse.json(
+        { error: 'Failed to generate response' },
         { status: 503 }
       );
     }
@@ -52,20 +52,20 @@ export async function POST(request: NextRequest) {
 
     console.log('Chat stream route: Setting response headers:', Object.fromEntries(headers.entries()));
 
-    return new Response(response.body, {
+    return new NextResponse(response.body, {
       status: 200,
       headers,
     });
   } catch (error) {
     console.log('Chat stream route: Error:', error);
     if (error instanceof SyntaxError) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
+      return NextResponse.json(
+        { error: 'Invalid request body' },
         { status: 400 }
       );
     }
-    return new Response(
-      JSON.stringify({ error: 'Failed to generate response' }),
+    return NextResponse.json(
+      { error: 'Failed to generate response' },
       { status: 503 }
     );
   }

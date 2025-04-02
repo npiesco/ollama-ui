@@ -20,7 +20,7 @@ const customJestConfig = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'mjs'],
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   transformIgnorePatterns: [
-    '/node_modules/(?!(react-markdown|vfile|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|@radix-ui|lucide-react|@babel/runtime|shiki|@shikijs)/)',
+    '/node_modules/(?!(react-markdown|vfile|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|@radix-ui|lucide-react|@babel/runtime|shiki|@shikijs|remark-math|rehype-katex)/)',
   ],
   testTimeout: 5000, // Set default timeout to 5 seconds
   maxWorkers: '50%', // Use half of available CPU cores
