@@ -8,7 +8,7 @@ import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { Message } from '@/store/chat';
-import FormattedMessage from '@/components/FormattedMessage';
+import { FormattedMessage } from '@/components/FormattedMessage';
 
 interface AnimatedMessageProps {
   message: Message;
@@ -16,7 +16,62 @@ interface AnimatedMessageProps {
   isGenerating: boolean;
 }
 
-export function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessageProps) {
+function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessageProps) {
+  console.debug('[AnimatedMessage] Rendering message:', {
+    id: message.id,
+    role: message.role,
+    isEditing: message.isEditing,
+    isGenerating,
+    contentLength: message.content.length
+  });
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.debug('[AnimatedMessage] Edit change:', {
+      id: message.id,
+      oldContent: message.content,
+      newContent: e.target.value
+    });
+    // Handle edit change
+  };
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.debug('[AnimatedMessage] Key down:', {
+      id: message.id,
+      key: e.key,
+      shiftKey: e.shiftKey
+    });
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      console.debug('[AnimatedMessage] Triggering regeneration from key press:', {
+        id: message.id
+      });
+      await onRegenerate(message.id || '');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    console.debug('[AnimatedMessage] Canceling edit:', {
+      id: message.id
+    });
+    // Handle cancel edit
+  };
+
+  const handleSaveAndRegenerate = async () => {
+    console.debug('[AnimatedMessage] Saving and regenerating:', {
+      id: message.id,
+      content: message.content
+    });
+    await onRegenerate(message.id || '');
+  };
+
+  const handleEditClick = () => {
+    console.debug('[AnimatedMessage] Entering edit mode:', {
+      id: message.id
+    });
+    // Handle edit mode
+  };
+
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
@@ -30,29 +85,20 @@ export function AnimatedMessage({ message, onRegenerate, isGenerating }: Animate
             autoFocus
             className="w-full font-mono min-h-[80px]"
             value={message.content}
-            onChange={() => {
-              // Handle edit change
-            }}
-            onKeyDown={(_e) => {
-              if (_e.key === 'Enter' && !_e.shiftKey) {
-                _e.preventDefault();
-                void onRegenerate(message.id || '');
-              }
-            }}
+            onChange={handleEditChange}
+            onKeyDown={handleKeyDown}
           />
           <div className="flex gap-2 justify-end">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                // Handle cancel edit
-              }}
+              onClick={handleCancelEdit}
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              onClick={() => void onRegenerate(message.id || '')}
+              onClick={handleSaveAndRegenerate}
             >
               Save & Regenerate
             </Button>
@@ -66,9 +112,7 @@ export function AnimatedMessage({ message, onRegenerate, isGenerating }: Animate
                 className="h-6 w-6"
                 size="icon"
                 variant="ghost"
-                onClick={() => {
-                  // Handle edit mode
-                }}
+                onClick={handleEditClick}
               >
                 <Pencil className="h-3 w-3" />
               </Button>
@@ -86,4 +130,6 @@ export function AnimatedMessage({ message, onRegenerate, isGenerating }: Animate
     </motion.div>
   );
 }
+
+export default AnimatedMessage;
 

@@ -14,12 +14,27 @@ export function EditableValue({ value, min, max, step, onChange }: EditableValue
   const [editValue, setEditValue] = useState(value.toString());
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debug: Log initial props
-  console.debug('[EditableValue] Initialized with:', { value, min, max, step });
+  // Debug: Log initial props and state
+  console.debug('[EditableValue] Component initialized:', {
+    props: { value, min, max, step },
+    state: { isEditing, editValue },
+    type: {
+      value: typeof value,
+      editValue: typeof editValue,
+      isEditing: typeof isEditing
+    }
+  });
 
   // Update editValue when value prop changes
   useEffect(() => {
-    console.debug('[EditableValue] Value prop changed:', value);
+    console.debug('[EditableValue] Value prop changed:', {
+      previous: editValue,
+      new: value,
+      type: {
+        previous: typeof editValue,
+        new: typeof value
+      }
+    });
     setEditValue(value.toString());
   }, [value]);
 
@@ -30,58 +45,162 @@ export function EditableValue({ value, min, max, step, onChange }: EditableValue
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      console.debug('[EditableValue] Entering edit mode, focusing input');
+      console.debug('[EditableValue] Entering edit mode:', {
+        previousState: { isEditing: false },
+        newState: { isEditing: true },
+        inputRef: {
+          exists: !!inputRef.current,
+          value: inputRef.current?.value,
+          type: inputRef.current?.type
+        }
+      });
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [isEditing]);
 
   const handleBlur = () => {
-    console.debug('[EditableValue] Handling blur. Current editValue:', editValue);
+    console.debug('[EditableValue] Starting blur handling:', {
+      currentState: {
+        isEditing,
+        editValue,
+        editValueType: typeof editValue
+      },
+      constraints: { min, max, step }
+    });
     
     try {
-      // Debug: Log the numeric conversion before validation
+      // Debug: Log the numeric conversion process
       const numericValue = Number(editValue);
-      console.debug('[EditableValue] Converted to number:', { 
-        raw: editValue,
-        numeric: numericValue,
-        isNaN: isNaN(numericValue)
+      console.debug('[EditableValue] Numeric conversion:', {
+        input: {
+          value: editValue,
+          type: typeof editValue
+        },
+        output: {
+          value: numericValue,
+          type: typeof numericValue,
+          isNaN: isNaN(numericValue),
+          isFinite: isFinite(numericValue)
+        }
       });
 
-      const parsed = schema.parse(numericValue);
+      if (isNaN(numericValue)) {
+        throw new Error('Invalid number');
+      }
+
+      // Validate constraints before parsing
+      if (numericValue < min || numericValue > max) {
+        console.debug('[EditableValue] Value outside min/max range:', {
+          value: numericValue,
+          min,
+          max
+        });
+        setEditValue(value.toString());
+        setIsEditing(false);
+        return;
+      }
+
+      if (step !== 0 && (numericValue % step !== 0)) {
+        console.debug('[EditableValue] Value not multiple of step:', {
+          value: numericValue,
+          step
+        });
+        setEditValue(value.toString());
+        setIsEditing(false);
+        return;
+      }
+
+      // Debug: Log validation attempt
+      console.debug('[EditableValue] Attempting validation:', {
+        value: numericValue,
+        constraints: { min, max, step },
+        schema: {
+          min: schema._def?.checks?.find(c => c.kind === 'min')?.value,
+          max: schema._def?.checks?.find(c => c.kind === 'max')?.value,
+          step: schema._def?.checks?.find(c => c.kind === 'multipleOf')?.value
+        }
+      });
+
+      // If we get here, the value is valid
       console.debug('[EditableValue] Validation successful:', {
-        input: numericValue,
-        validated: parsed,
+        input: {
+          value: numericValue,
+          type: typeof numericValue
+        },
+        output: {
+          value: numericValue,
+          type: typeof numericValue
+        },
         constraints: { min, max, step }
       });
 
-      onChange(parsed);
-      setEditValue(parsed.toString());
+      // Debug: Log state updates
+      console.debug('[EditableValue] Updating state:', {
+        previous: {
+          editValue,
+          isEditing
+        },
+        new: {
+          editValue: numericValue.toString(),
+          isEditing: false
+        }
+      });
+
+      setEditValue(numericValue.toString());
+      setIsEditing(false);
+      onChange(numericValue);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.debug('[EditableValue] Validation failed:', {
-          error: error.errors,
-          input: editValue,
+          error: {
+            name: error.name,
+            message: error.message,
+            issues: error.issues.map(issue => ({
+              code: issue.code,
+              message: issue.message,
+              path: issue.path
+            }))
+          },
+          input: {
+            value: editValue,
+            type: typeof editValue,
+            numeric: Number(editValue)
+          },
           constraints: { min, max, step }
         });
       } else {
         console.error('[EditableValue] Unexpected error:', error);
       }
       setEditValue(value.toString());
+      setIsEditing(false);
     }
-    setIsEditing(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    console.debug('[EditableValue] Key pressed:', {
+    console.debug('[EditableValue] Key event:', {
       key: e.key,
-      currentValue: editValue
+      currentState: {
+        editValue,
+        isEditing,
+        inputValue: inputRef.current?.value
+      }
     });
 
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleBlur();
     } else if (e.key === 'Escape') {
-      console.debug('[EditableValue] Escaping edit mode, reverting to:', value);
+      console.debug('[EditableValue] Escaping edit mode:', {
+        previous: {
+          editValue,
+          isEditing: true
+        },
+        new: {
+          editValue: value.toString(),
+          isEditing: false
+        }
+      });
       setIsEditing(false);
       setEditValue(value.toString());
     }
@@ -89,9 +208,24 @@ export function EditableValue({ value, min, max, step, onChange }: EditableValue
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.debug('[EditableValue] Input changed:', {
-      from: editValue,
-      to: newValue
+    console.debug('[EditableValue] Input change:', {
+      previous: {
+        value: editValue,
+        type: typeof editValue
+      },
+      new: {
+        value: newValue,
+        type: typeof newValue
+      },
+      event: {
+        target: {
+          value: e.target.value,
+          type: e.target.type,
+          min: e.target.min,
+          max: e.target.max,
+          step: e.target.step
+        }
+      }
     });
     setEditValue(newValue);
   };
@@ -118,7 +252,16 @@ export function EditableValue({ value, min, max, step, onChange }: EditableValue
     <button
       className="w-16 text-sm text-right border border-input rounded px-1 hover:bg-accent transition-colors"
       onClick={() => {
-        console.debug('[EditableValue] Entering edit mode');
+        console.debug('[EditableValue] Button click:', {
+          previousState: {
+            isEditing: false,
+            editValue
+          },
+          newState: {
+            isEditing: true,
+            editValue
+          }
+        });
         setIsEditing(true);
       }}
     >

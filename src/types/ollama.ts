@@ -42,11 +42,17 @@ export interface Tool {
 }
 
 export interface ModelResponse {
-  name: string
+  name: string;
   details: {
-    format: string
-    family: string
-    parameter_size: string
-    quantization_level: string
-  }
+    format: string;
+    family: string;
+    parameter_size: string;
+    quantization_level: string;
+  };
+  capabilities?: string[];
+  description?: string;
+  parameterSizes?: string[];
+  pullCount?: number;
+  tagCount?: number;
+  lastUpdated?: string;
 } 

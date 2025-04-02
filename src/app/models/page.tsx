@@ -1,7 +1,7 @@
 // /ollama-ui/src/app/models/page.tsx
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -26,14 +26,15 @@ import {
 } from "@/components/ui/select"
 import { useModelDownload } from '@/store/model-download'
 
-interface LibraryModel {
-  name: string
-  description: string
-  parameterSizes: string[]
-  capabilities: string[]
-  pullCount: string
-  tagCount: string
-  lastUpdated: string
+type ModelCapability = 'chat' | 'code' | 'vision' | 'tools';
+
+interface LibraryModel extends ModelResponse {
+  description: string;
+  capabilities: ModelCapability[];
+  parameterSizes: string[];
+  pullCount: number;
+  tagCount: number;
+  lastUpdated: string;
 }
 
 const ModelsPage: React.FC = (): React.ReactElement => {
@@ -61,15 +62,31 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   } = useModelDownload()
 
   const fetchModels = React.useCallback(async () => {
+    console.debug('[ModelsPage] Fetching models:', {
+      currentModels: models?.length,
+      isLoading,
+      pageError
+    });
+    
     try {
       const response = await fetch("/api/models")
       if (!response.ok) {
         throw new Error("Failed to fetch models")
       }
       const data = await response.json()
+      console.debug('[ModelsPage] Models fetch response:', {
+        status: response.status,
+        modelCount: data.models?.length,
+        modelNames: data.models?.map((m: ModelResponse) => m.name)
+      });
       setModels(data.models)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch models"
+      console.error('[ModelsPage] Error fetching models:', {
+        error: err,
+        errorMessage,
+        stack: err instanceof Error ? err.stack : undefined
+      });
       setPageError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -78,14 +95,32 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   }, [])
 
   const fetchLibraryModels = async () => {
+    console.debug('[ModelsPage] Fetching library models:', {
+      currentLibraryModels: libraryModels?.length,
+      isLoading
+    });
+    
     try {
       const response = await fetch('/api/models/library')
       if (!response.ok) throw new Error('Failed to fetch library models')
       const data = await response.json()
-      console.log('Library models capabilities:', data.models?.map((m: LibraryModel) => ({ name: m.name, capabilities: m.capabilities })))
+      console.debug('[ModelsPage] Library models fetch response:', {
+        status: response.status,
+        modelCount: data.models?.length,
+        modelDetails: data.models?.map((m: LibraryModel) => ({
+          name: m.name,
+          capabilities: m.capabilities,
+          parameterSizes: m.parameterSizes,
+          pullCount: m.pullCount
+        }))
+      });
       setLibraryModels(data.models || [])
     } catch (error) {
-      console.error('Error fetching library models:', error)
+      console.error('[ModelsPage] Error fetching library models:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       toast.error('Failed to fetch library models')
       setLibraryModels([])
     }
@@ -120,33 +155,217 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     }
   }, [fetchModels])
 
-  const pullModel = async (modelName: string, parameterSize: string, config: string) => {
-    // For models with 'default' size, don't append the size
-    const fullModelName = parameterSize === 'default' ? modelName : `${modelName}:${parameterSize}`
-    if (!modelName || isModelInstalled(fullModelName)) {
-      toast.info(`${fullModelName} is already installed`)
-      return
-    }
-    
-    startDownload(fullModelName)
+  const handleTabChange = (value: string) => {
+    console.debug('[ModelsPage] Tab change:', {
+      from: selectedTab,
+      to: value,
+      availableModels: models?.length,
+      libraryModels: libraryModels?.length,
+      filteredModels: models?.filter(m => {
+        const libraryModel = libraryModels?.find(lm => lm.name === m.name);
+        return libraryModel?.capabilities?.includes(value as ModelCapability);
+      }).length,
+      modelCapabilities: libraryModels?.map(m => ({
+        name: m.name,
+        capabilities: m.capabilities
+      }))
+    });
+    setSelectedTab(value);
+  };
 
-    try {
-      console.log(`Pulling model: ${fullModelName}`)
-      const response = await fetch('/api/models/pull', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: fullModelName })
+  // Add detailed logging for model filtering
+  const filteredModels = useMemo(() => {
+    console.debug('[ModelsPage] Starting model filtering:', {
+      selectedTab,
+      totalModels: models?.length,
+      libraryModels: libraryModels?.length,
+      modelNames: models?.map(m => m.name),
+      libraryModelNames: libraryModels?.map(m => m.name)
+    });
+
+    if (!models || !libraryModels) {
+      console.debug('[ModelsPage] Filtering skipped - missing data:', {
+        hasModels: !!models,
+        hasLibraryModels: !!libraryModels
+      });
+      return [];
+    }
+
+    const filtered = models.filter(model => {
+      const libraryModel = libraryModels.find(lm => lm.name === model.name);
+      const matchesCapability = selectedTab === 'all' || 
+        libraryModel?.capabilities?.includes(selectedTab as ModelCapability);
+      
+      console.debug('[ModelsPage] Model filter check:', {
+        modelName: model.name,
+        selectedTab,
+        libraryModelFound: !!libraryModel,
+        capabilities: libraryModel?.capabilities,
+        matchesCapability,
+        result: matchesCapability ? 'included' : 'excluded'
+      });
+
+      return matchesCapability;
+    });
+
+    console.debug('[ModelsPage] Filtering complete:', {
+      inputCount: models.length,
+      outputCount: filtered.length,
+      filteredNames: filtered.map(m => m.name)
+    });
+
+    return filtered;
+  }, [models, libraryModels, selectedTab]);
+
+  // Add effect to log state changes
+  useEffect(() => {
+    console.debug('[ModelsPage] State update:', {
+      selectedTab,
+      isLoading,
+      pageError,
+      modelCount: models?.length,
+      libraryModelCount: libraryModels?.length,
+      selectedSizes,
+      showAdvanced,
+      focusedModel,
+      isDownloading,
+      currentModel,
+      progress,
+      status
+    });
+  }, [
+    selectedTab,
+    isLoading,
+    pageError,
+    models,
+    libraryModels,
+    selectedSizes,
+    showAdvanced,
+    focusedModel,
+    isDownloading,
+    currentModel,
+    progress,
+    status
+  ]);
+
+  // Add effect to log filtered models changes
+  useEffect(() => {
+    console.debug('[ModelsPage] Filtered models update:', {
+      selectedTab,
+      filteredCount: filteredModels.length,
+      filteredNames: filteredModels.map(m => m.name),
+      modelCapabilities: filteredModels.map(m => {
+        const libraryModel = libraryModels?.find(lm => lm.name === m.name);
+        return {
+          name: m.name,
+          capabilities: libraryModel?.capabilities
+        };
       })
+    });
+  }, [filteredModels, selectedTab, libraryModels]);
+
+  // Add effect to log model installation status changes
+  useEffect(() => {
+    console.debug('[ModelsPage] Model installation status:', {
+      installedModels: models?.map(m => m.name),
+      libraryModels: libraryModels?.map(m => m.name),
+      installationStatus: libraryModels?.map(m => ({
+        name: m.name,
+        isInstalled: isModelInstalled(m.name),
+        fullName: getModelFullName({ name: m.name, details: {} } as ModelResponse)
+      }))
+    });
+  }, [models, libraryModels]);
+
+  const handleModelDelete = async (modelName: string) => {
+    console.debug('[ModelsPage] Starting model deletion:', {
+      modelName,
+      currentModels: models?.map(m => m.name),
+      isInstalled: isModelInstalled(modelName)
+    });
+    
+    try {
+      const response = await fetch('/api/delete-model', {
+        method: 'DELETE',
+        body: JSON.stringify({ name: modelName })
+      });
+
+      console.debug('[ModelsPage] Delete response:', {
+        status: response.status,
+        ok: response.ok,
+        modelName
+      });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Failed to pull model')
+        throw new Error('Failed to delete model');
+      }
+
+      toast.success(`Successfully deleted ${modelName}`, {
+        position: 'top-right',
+        duration: 3000,
+        dismissible: true
+      });
+
+      // Refresh models list
+      console.debug('[ModelsPage] Refreshing models after deletion');
+      fetchModels();
+    } catch (error) {
+      console.error('[ModelsPage] Error deleting model:', {
+        error,
+        modelName,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      toast.error(error instanceof Error ? error.message : 'Failed to delete model');
+    }
+  };
+
+  const handleModelPull = async (modelName: string, modelTag?: string) => {
+    console.debug('[ModelsPage] Starting model pull:', {
+      modelName,
+      modelTag,
+      currentStatus: status,
+      isDownloading,
+      currentModel,
+      selectedSize: selectedSizes[modelName],
+      libraryModel: libraryModels?.find(m => m.name === modelName)
+    });
+
+    const fullModelName = modelTag ? `${modelName}:${modelTag}` : modelName;
+    
+    try {
+      startDownload(fullModelName);
+      setStatus('pulling');
+
+      const response = await fetch('/api/models/pull', {
+        method: 'POST',
+        body: JSON.stringify({ name: modelName, tag: modelTag })
+      });
+
+      console.debug('[ModelsPage] Pull response:', {
+        status: response.status,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries()),
+        modelName: fullModelName
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to pull model');
       }
 
       // Check if it's a non-streaming response (model already installed)
       const contentType = response.headers.get('content-type')
+      console.debug('[ModelsPage] Response content type:', {
+        contentType,
+        modelName: fullModelName
+      });
+
       if (!contentType?.includes('text/event-stream')) {
         const data = await response.json()
+        console.debug('[ModelsPage] Non-streaming response:', {
+          data,
+          modelName: fullModelName
+        });
         if (data.status === 'success') {
           setStatus('success')
           await fetchModels() // Refresh the models list
@@ -175,7 +394,11 @@ const ModelsPage: React.FC = (): React.ReactElement => {
 
           try {
             const status = JSON.parse(line)
-            console.log('Pull status:', status)
+            console.debug('[ModelsPage] Pull status update:', {
+              status,
+              modelName: fullModelName,
+              currentProgress: progress
+            });
             
             if (status.status === "error") {
               throw new Error(status.error || 'Failed to pull model')
@@ -187,11 +410,21 @@ const ModelsPage: React.FC = (): React.ReactElement => {
               setStatus('pulling')
               if (status.total && status.completed) {
                 const progress = Math.round((status.completed / status.total) * 100)
+                console.debug('[ModelsPage] Progress update:', {
+                  completed: status.completed,
+                  total: status.total,
+                  progress,
+                  modelName: fullModelName
+                });
                 updateProgress(progress)
               }
             }
           } catch (e) {
-            console.error("Failed to parse status:", e, "Raw line:", line)
+            console.error('[ModelsPage] Failed to parse status:', {
+              error: e,
+              rawLine: line,
+              modelName: fullModelName
+            });
             throw new Error('Failed to parse model pull status')
           }
         }
@@ -200,8 +433,14 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       // If we get here without a success status, something went wrong
       throw new Error('Model pull did not complete successfully')
     } catch (error) {
-      console.error('Error pulling model:', error)
-      setError(error instanceof Error ? error.message : `Failed to pull ${fullModelName}`)
+      console.error('[ModelsPage] Error pulling model:', {
+        error,
+        modelName: fullModelName,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        currentStatus: status,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      setError(error instanceof Error ? error.message : 'Failed to pull model');
       setStatus('error')
     } finally {
       reset()
@@ -209,15 +448,38 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   }
 
   const isModelInstalled = (modelName: string) => {
-    if (!models || models.length === 0) return false
+    console.debug('[ModelsPage] Checking if model is installed:', {
+      modelName,
+      currentModels: models?.map(m => m.name),
+      normalizedName: modelName.toLowerCase()
+    });
     
-    const normalizedName = modelName.toLowerCase()
+    if (!models || models.length === 0) {
+      console.debug('[ModelsPage] No models available');
+      return false;
+    }
+    
+    const normalizedName = modelName.toLowerCase();
     const isInstalled = models.some(model => {
-      const installedName = (model.name || '').toLowerCase()
-      return installedName === normalizedName
-    })
+      const installedName = (model.name || '').toLowerCase();
+      const matches = installedName === normalizedName;
+      
+      console.debug('[ModelsPage] Model installation check:', {
+        modelName,
+        installedName,
+        normalizedName,
+        matches
+      });
+      
+      return matches;
+    });
     
-    return isInstalled
+    console.debug('[ModelsPage] Installation check result:', {
+      modelName,
+      isInstalled
+    });
+    
+    return isInstalled;
   }
 
   const deleteModel = async (modelName: string) => {
@@ -251,13 +513,79 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     }
   }
 
-  // Group models by capability
-  const modelsByCapability = {
-    all: libraryModels,
-    chat: libraryModels.filter(m => m.capabilities.includes('chat') || m.capabilities.includes('tools')),
-    code: libraryModels.filter(m => m.capabilities.includes('tools')),
-    vision: libraryModels.filter(m => m.capabilities.includes('vision')),
-  }
+  // Group models by capability with detailed logging
+  const modelsByCapability = useMemo(() => {
+    console.debug('[ModelsPage] Computing models by capability:', {
+      totalLibraryModels: libraryModels?.length,
+      modelNames: libraryModels?.map(m => m.name),
+      capabilities: libraryModels?.map(m => m.capabilities)
+    });
+
+    const result = {
+      all: libraryModels,
+      chat: libraryModels.filter(m => {
+        const hasChat = m.capabilities.includes('chat') || m.capabilities.includes('tools');
+        console.debug('[ModelsPage] Chat capability check:', {
+          model: m.name,
+          capabilities: m.capabilities,
+          hasChat
+        });
+        return hasChat;
+      }),
+      code: libraryModels.filter(m => {
+        const hasCode = m.capabilities.includes('tools');
+        console.debug('[ModelsPage] Code capability check:', {
+          model: m.name,
+          capabilities: m.capabilities,
+          hasCode
+        });
+        return hasCode;
+      }),
+      vision: libraryModels.filter(m => {
+        const hasVision = m.capabilities.includes('vision');
+        console.debug('[ModelsPage] Vision capability check:', {
+          model: m.name,
+          capabilities: m.capabilities,
+          hasVision
+        });
+        return hasVision;
+      }),
+    };
+
+    console.debug('[ModelsPage] Models by capability result:', {
+      allCount: result.all?.length,
+      chatCount: result.chat?.length,
+      codeCount: result.code?.length,
+      visionCount: result.vision?.length
+    });
+
+    return result;
+  }, [libraryModels]);
+
+  const getModelFullName = (model: ModelResponse) => {
+    console.debug('[ModelsPage] Computing model full name:', {
+      modelName: model.name,
+      selectedSize: selectedSizes[model.name],
+      libraryModel: libraryModels?.find(m => m.name === model.name),
+      defaultSize: libraryModels?.find(m => m.name === model.name)?.parameterSizes[0]
+    });
+
+    const libraryModel = libraryModels?.find(m => m.name === model.name);
+    const selectedSize = selectedSizes[model.name];
+    const defaultSize = libraryModel?.parameterSizes?.[0];
+    const size = selectedSize || defaultSize;
+
+    const fullName = size ? `${model.name}:${size}` : model.name;
+    
+    console.debug('[ModelsPage] Model full name result:', {
+      input: model.name,
+      selectedSize,
+      defaultSize,
+      result: fullName
+    });
+
+    return fullName;
+  };
 
   if (isLoading) {
     return (
@@ -270,7 +598,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
           <Skeleton className="h-10 w-full max-w-md mx-auto" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-64" />
+              <div className="animate-pulse rounded-md bg-muted h-64" data-testid="skeleton" />
             ))}
           </div>
         </div>
@@ -279,7 +607,15 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   }
 
   if (pageError) {
-    return <div>Error: {pageError}</div>
+    return (
+      <div className="container mx-auto p-4 space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{pageError}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
@@ -291,7 +627,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         </Link>
       </div>
 
-      {models.length === 0 && !isLoading && (
+      {filteredModels.length === 0 && !isLoading && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Welcome to Ollama UI!</AlertTitle>
@@ -301,7 +637,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         </Alert>
       )}
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+      <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full max-w-md mx-auto grid grid-cols-4">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="chat">Chat</TabsTrigger>
@@ -309,119 +645,134 @@ const ModelsPage: React.FC = (): React.ReactElement => {
           <TabsTrigger value="vision">Vision</TabsTrigger>
         </TabsList>
 
-        {Object.entries(modelsByCapability).map(([category, models]) => (
-          <TabsContent key={category} value={category} className="mt-6">
-            <ScrollArea className="w-full max-w-5xl mx-auto h-[calc(100vh-300px)]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {models.map((model) => (
-                  <Card key={model.name} className={cn(
+        <TabsContent value={selectedTab} className="mt-6">
+          <ScrollArea className="w-full max-w-5xl mx-auto h-[calc(100vh-300px)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredModels.map((model) => (
+                <Card 
+                  key={model.name} 
+                  className={cn(
                     'h-full flex flex-col',
-                    isModelInstalled(`${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}`) ? 'bg-primary/5' : ''
-                  )}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        {model.name}
-                        {model.capabilities.map(cap => (
-                          <span key={cap} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                            {cap}
-                          </span>
-                        ))}
-                      </CardTitle>
-                      <CardDescription>{model.description}</CardDescription>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <span>👥 {model.pullCount}</span>
-                        <span>🏷️ {model.tagCount}</span>
-                        <span>🕒 {model.lastUpdated}</span>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4 flex-grow">
-                      <div className="flex items-center justify-between">
-                        <Label>Advanced Configuration</Label>
-                        <Switch
-                          checked={showAdvanced[model.name] || false}
-                          onCheckedChange={(checked) => {
-                            setShowAdvanced(prev => ({ ...prev, [model.name]: checked }))
-                          }}
-                        />
-                      </div>
-
-                      {showAdvanced[model.name] && (
+                    isModelInstalled(getModelFullName(model)) ? 'bg-primary/5' : ''
+                  )}
+                  data-testid={`model-card-${model.name}`}
+                >
+                  <CardHeader>
+                    {(() => {
+                      const libraryModel = libraryModels.find(m => m.name === model.name);
+                      return (
                         <>
-                          <Separator className="my-4" />
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Model Parameters</Label>
-                              <Textarea
-                                placeholder="Enter model parameters in JSON format..."
-                                value={modelConfig[model.name] || ''}
-                                onChange={(e) => setModelConfig(prev => ({
-                                  ...prev,
-                                  [model.name]: e.target.value
-                                }))}
-                                className="h-24"
-                              />
-                            </div>
+                          <CardTitle className="flex items-center gap-2">
+                            {model.name}
+                            {libraryModel?.capabilities?.map(cap => (
+                              <span key={cap} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                {cap}
+                              </span>
+                            ))}
+                          </CardTitle>
+                          <CardDescription>{libraryModel?.description}</CardDescription>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                            <span>👥 {libraryModel?.pullCount}</span>
+                            <span>🏷️ {libraryModel?.tagCount}</span>
+                            <span>🕒 {libraryModel?.lastUpdated}</span>
                           </div>
                         </>
-                      )}
+                      );
+                    })()}
+                  </CardHeader>
 
-                      {model.parameterSizes.length > 0 && (
-                        <Select
-                          value={selectedSizes[model.name] || model.parameterSizes[0]}
-                          onValueChange={(value) => setSelectedSizes(prev => ({ ...prev, [model.name]: value }))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select size" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {model.parameterSizes.map((size) => (
-                              <SelectItem key={size} value={size}>
-                                {size}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </CardContent>
-
-                    <CardFooter className="flex items-center justify-between mt-auto">
-                      <div className="flex items-center gap-2">
-                        {isModelInstalled(`${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}`) ? (
-                          <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span>Installed</span>
+                  <CardContent className="space-y-4 flex-grow">
+                    {(() => {
+                      const libraryModel = libraryModels.find(m => m.name === model.name);
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <Label>Advanced Configuration</Label>
+                            <Switch
+                              checked={showAdvanced[model.name] || false}
+                              onCheckedChange={(checked) => {
+                                setShowAdvanced(prev => ({ ...prev, [model.name]: checked }))
+                              }}
+                            />
                           </div>
-                        ) : (
-                          <Button
-                            onClick={() => pullModel(
-                              model.name,
-                              selectedSizes[model.name] || model.parameterSizes[0],
-                              modelConfig[model.name]
-                            )}
-                            disabled={isDownloading}
-                            variant="outline"
-                          >
-                            {currentModel === `${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}` ? 'Pulling...' : 'Install Model'}
-                          </Button>
-                        )}
-                      </div>
-                      {isModelInstalled(`${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}`) && (
+
+                          {showAdvanced[model.name] && (
+                            <>
+                              <Separator className="my-4" />
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label>Model Parameters</Label>
+                                  <Textarea
+                                    placeholder="Enter model parameters in JSON format..."
+                                    value={modelConfig[model.name] || ''}
+                                    onChange={(e) => setModelConfig(prev => ({
+                                      ...prev,
+                                      [model.name]: e.target.value
+                                    }))}
+                                    className="h-24"
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {(libraryModel?.parameterSizes?.length ?? 0) > 0 && (
+                            <Select
+                              value={selectedSizes[model.name] || libraryModel?.parameterSizes?.[0] || ''}
+                              onValueChange={(value) => setSelectedSizes(prev => ({ ...prev, [model.name]: value }))}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select size" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {libraryModel?.parameterSizes?.map((size) => (
+                                  <SelectItem key={size} value={size}>
+                                    {size}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </CardContent>
+
+                  <CardFooter className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center gap-2">
+                      {isModelInstalled(getModelFullName(model)) ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Installed</span>
+                        </div>
+                      ) : (
                         <Button
-                          variant="destructive"
-                          onClick={() => deleteModel(`${model.name}:${selectedSizes[model.name] || model.parameterSizes[0]}`)}
-                          aria-label="Delete"
+                          onClick={() => handleModelPull(
+                            model.name,
+                            selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]
+                          )}
+                          disabled={isDownloading}
+                          variant="outline"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {currentModel === `${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}` ? 'Pulling...' : 'Install Model'}
                         </Button>
                       )}
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        ))}
+                    </div>
+                    {isModelInstalled(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`) && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleModelDelete(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`)}
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+        </TabsContent>
       </Tabs>
 
       {focusedModel === 'nomic-embed-text' && !isModelInstalled('nomic-embed-text') && (

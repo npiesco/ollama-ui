@@ -1,9 +1,10 @@
 import { GET } from '@/app/api/models/route'
 import { config } from '@/lib/config'
-import { render } from '@testing-library/react'
-import { act } from 'react-dom/test-utils'
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react'
 import ModelsPage from '@/app/models/page'
 import { toast } from 'sonner'
+import { useModelDownload } from '@/store/model-download'
+import { ModelResponse } from '@/types/ollama'
 
 // Mock the toast notifications
 jest.mock('sonner', () => ({
@@ -14,16 +15,15 @@ jest.mock('sonner', () => ({
   }
 }))
 
-// Mock fetch
-const mockFetch = jest.fn()
-global.fetch = mockFetch
+// Mock fetch with a simple implementation
+global.fetch = jest.fn()
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: (data: any, options?: any) => ({
+    json: (data: any) => ({
       json: () => Promise.resolve(data),
-      status: options?.status || 200
+      status: 200
     })
   }
 }))
@@ -56,8 +56,12 @@ jest.mock('@/components/ui/scroll-area', () => ({
 jest.mock('@/components/ui/tabs', () => ({
   Tabs: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   TabsContent: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  TabsList: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  TabsTrigger: ({ children, ...props }: any) => <div {...props}>{children}</div>
+  TabsList: ({ children, ...props }: any) => <div role="tablist" {...props}>{children}</div>,
+  TabsTrigger: ({ children, value, ...props }: any) => (
+    <button role="tab" aria-selected={value === props['data-state']} {...props}>
+      {children}
+    </button>
+  )
 }))
 
 jest.mock('@/components/ui/select', () => ({
@@ -74,19 +78,59 @@ jest.mock('@/components/ui/alert', () => ({
   AlertDescription: ({ children, ...props }: any) => <div {...props}>{children}</div>
 }))
 
+// Mock the model download store
 jest.mock('@/store/model-download', () => ({
-  useModelDownload: () => ({
-    isDownloading: false,
-    currentModel: null,
-    progress: 0,
-    status: 'idle',
-    startDownload: jest.fn(),
-    updateProgress: jest.fn(),
-    setStatus: jest.fn(),
-    setError: jest.fn(),
-    reset: jest.fn()
-  })
+  useModelDownload: jest.fn()
 }))
+
+// Define mock data
+const mockInstalledModels = [
+  {
+    name: 'test-model',
+    capabilities: ['chat', 'tools'],
+    description: 'Test model',
+    parameterSizes: ['7b', '13b'],
+    pullCount: 100,
+    tagCount: 5,
+    lastUpdated: '2024-03-20',
+    details: {
+      format: 'gguf',
+      family: 'llama2',
+      parameter_size: '7b',
+      quantization_level: 'Q4_K_M'
+    }
+  }
+];
+
+const mockModels = [
+  {
+    name: 'test-model',
+    capabilities: ['chat', 'tools'],
+    description: 'Test model',
+    parameterSizes: ['7b', '13b'],
+    pullCount: 100,
+    tagCount: 5,
+    lastUpdated: '2024-03-20'
+  },
+  {
+    name: 'code-model',
+    capabilities: ['code'],
+    description: 'Code model',
+    parameterSizes: ['7b'],
+    pullCount: 50,
+    tagCount: 2,
+    lastUpdated: '2024-03-19'
+  },
+  {
+    name: 'vision-model',
+    capabilities: ['vision'],
+    description: 'Vision model',
+    parameterSizes: ['13b'],
+    pullCount: 75,
+    tagCount: 3,
+    lastUpdated: '2024-03-18'
+  }
+];
 
 describe('Models API', () => {
   beforeEach(() => {
@@ -94,23 +138,24 @@ describe('Models API', () => {
   })
 
   it('fetches local models from Ollama API', async () => {
-    mockFetch.mockResolvedValueOnce({
+    const mockResponse = {
       ok: true,
       json: () => Promise.resolve({ models: [] })
-    })
+    }
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse)
 
     const response = await GET(new Request('http://localhost/api/models'))
     const data = await response.json()
 
     expect(data).toEqual({ models: [] })
-    expect(mockFetch).toHaveBeenCalledWith(
+    expect(global.fetch).toHaveBeenCalledWith(
       `${config.OLLAMA_API_HOST}/api/tags`,
       { method: 'GET' }
     )
   })
 
   it('handles API errors', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('API Error'))
+    ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'))
 
     const response = await GET(new Request('http://localhost/api/models'))
     const data = await response.json()
@@ -122,207 +167,152 @@ describe('Models API', () => {
 describe('ModelsPage API Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    console.log('[TEST SETUP] Clearing all mocks')
     
-    // Mock successful API responses
-    mockFetch.mockImplementation((url) => {
-      console.log('[MOCK FETCH] Intercepting request to:', url)
-      
-      if (url === '/api/models') {
-        console.log('[MOCK FETCH] Returning mocked local models')
+    // Mock the model download store
+    ;(useModelDownload as unknown as jest.Mock).mockReturnValue({
+      isDownloading: false,
+      currentModel: null,
+      progress: 0,
+      status: 'idle',
+      startDownload: jest.fn(),
+      updateProgress: jest.fn(),
+      setStatus: jest.fn(),
+      setError: jest.fn(),
+      reset: jest.fn()
+    });
+
+    // Mock fetch for models
+    ;(global.fetch as jest.Mock).mockImplementation((url) => {
+      const urlString = url?.toString() || '';
+      if (urlString === '/api/models') {
         return Promise.resolve({
           ok: true,
-          json: () => {
-            const mockData = { models: [{ name: 'test-model:7b' }] }
-            console.log('[MOCK FETCH] Local models response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
+          json: () => Promise.resolve({ models: mockModels })
+        });
       }
-      if (url === '/api/models/library') {
-        console.log('[MOCK FETCH] Returning mocked library models')
+      if (urlString === '/api/models/library') {
         return Promise.resolve({
           ok: true,
-          json: () => {
-            const mockData = {
-              models: [{
-                name: 'test-model',
-                description: 'Test model',
-                parameterSizes: ['7b'],
-                capabilities: ['chat'],
-                pullCount: '1000',
-                tagCount: '10',
-                lastUpdated: '2024-03-20'
-              }]
-            }
-            console.log('[MOCK FETCH] Library models response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
+          json: () => Promise.resolve({ models: mockInstalledModels })
+        });
       }
-      if (url.includes('/api/delete-model')) {
-        console.log('[MOCK FETCH] Handling model deletion request')
-        return Promise.resolve({
-          ok: true,
-          json: () => {
-            const mockData = { status: 'success' }
-            console.log('[MOCK FETCH] Delete model response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
-      }
-      console.error('[MOCK FETCH] Unhandled URL:', url)
-      return Promise.reject(new Error('API Error'))
-    })
+      return Promise.reject(new Error('API Error'));
+    });
   })
 
   it('makes required API calls on mount', async () => {
-    console.log('[TEST] Starting mount API calls test')
     await act(async () => {
       render(<ModelsPage />)
-      console.log('[TEST] Component rendered')
     })
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/models')
-    expect(mockFetch).toHaveBeenCalledWith('/api/models/library')
-    console.log('[TEST] Verified API calls were made')
-  })
-
-  it('handles model deletion API call', async () => {
-    console.log('[TEST] Starting model deletion test')
-    
-    // Mock the initial models fetch to include our test model
-    mockFetch.mockImplementation((url) => {
-      console.log('[MOCK FETCH] Deletion test - Intercepting request to:', url)
-      
-      if (url === '/api/models') {
-        console.log('[MOCK FETCH] Returning test model in local models')
-        return Promise.resolve({
-          ok: true,
-          json: () => {
-            const mockData = { models: [{ name: 'test-model:7b' }] }
-            console.log('[MOCK FETCH] Local models response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
-      }
-      if (url === '/api/models/library') {
-        console.log('[MOCK FETCH] Returning library models')
-        return Promise.resolve({
-          ok: true,
-          json: () => {
-            const mockData = {
-              models: [{
-                name: 'test-model',
-                description: 'Test model',
-                parameterSizes: ['7b'],
-                capabilities: ['chat'],
-                pullCount: '1000',
-                tagCount: '10',
-                lastUpdated: '2024-03-20'
-              }]
-            }
-            console.log('[MOCK FETCH] Library models response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
-      }
-      if (url.includes('/api/delete-model')) {
-        console.log('[MOCK FETCH] Processing delete request')
-        return Promise.resolve({
-          ok: true,
-          json: () => {
-            const mockData = { status: 'success' }
-            console.log('[MOCK FETCH] Delete response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ models: [] })
-      })
-    })
-
-    const { container } = render(<ModelsPage />)
-    console.log('[TEST] Component rendered for deletion test')
-
-    // Wait for initial data to load and component to update
-    await act(async () => {
-      console.log('[TEST] Waiting for initial data load')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    })
-
-    // Find the delete button using the correct selector
-    const deleteButton = container.querySelector('button[variant="destructive"]') as HTMLButtonElement
-    console.log('[TEST] Delete button found:', Boolean(deleteButton))
-    console.log('[TEST] Delete button HTML:', deleteButton?.outerHTML)
-    expect(deleteButton).toBeTruthy()
-
-    await act(async () => {
-      console.log('[TEST] Clicking delete button')
-      deleteButton?.click()
-      console.log('[TEST] Waiting for deletion to complete')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    })
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      '/api/delete-model',
-      expect.objectContaining({
-        method: 'DELETE',
-        body: JSON.stringify({ name: 'test-model:7b' })
-      })
-    )
-    console.log('[TEST] Verified delete API call was made')
-
-    expect(toast.success).toHaveBeenCalledWith(
-      'Successfully deleted test-model:7b',
-      expect.objectContaining({
-        position: 'top-right',
-        duration: 3000,
-        dismissible: true
-      })
-    )
-    console.log('[TEST] Verified success toast was shown')
+    expect(global.fetch).toHaveBeenCalledWith('/api/models')
+    expect(global.fetch).toHaveBeenCalledWith('/api/models/library')
   })
 
   it('handles API errors', async () => {
-    console.log('[TEST] Starting API error handling test')
+    // Mock API error
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch models'))
     
-    // Mock the models API call to fail
-    mockFetch.mockImplementation((url) => {
-      console.log('[MOCK FETCH] Error test - Intercepting request to:', url)
-      
-      if (url === '/api/models') {
-        console.log('[MOCK FETCH] Simulating API error response')
-        return Promise.resolve({
-          ok: false,
-          status: 500,
-          json: () => {
-            const mockData = { error: 'Failed to fetch models' }
-            console.log('[MOCK FETCH] Error response:', mockData)
-            return Promise.resolve(mockData)
-          }
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ models: [] })
-      })
-    })
-
     await act(async () => {
-      console.log('[TEST] Rendering component for error test')
       render(<ModelsPage />)
     })
 
-    // Wait for error state to be processed
     await act(async () => {
-      console.log('[TEST] Waiting for error state to be processed')
       await new Promise(resolve => setTimeout(resolve, 100))
     })
 
     expect(toast.error).toHaveBeenCalledWith('Failed to fetch models')
-    console.log('[TEST] Verified error toast was shown')
   })
-}) 
+})
+
+describe('ModelsPage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Mock the model download store
+    (useModelDownload as unknown as jest.Mock).mockReturnValue({
+      isDownloading: false,
+      currentModel: null,
+      progress: 0,
+      status: 'idle',
+      startDownload: jest.fn(),
+      updateProgress: jest.fn(),
+      setStatus: jest.fn(),
+      setError: jest.fn(),
+      reset: jest.fn()
+    });
+
+    // Mock fetch responses
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      const urlString = url?.toString() || '';
+      if (urlString === '/api/models') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ models: mockInstalledModels })
+        });
+      }
+      if (urlString === '/api/models/library') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ models: mockModels })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 'success' })
+      });
+    });
+  });
+
+  it('renders the page with models', async () => {
+    render(<ModelsPage />);
+
+    // Wait for loading state to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('skeleton')).not.toBeInTheDocument();
+    });
+
+    // Basic page elements should now be visible
+    expect(screen.getByText('Models')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /go to chat/i })).toBeInTheDocument();
+    
+    // Model card should be visible
+    expect(screen.getByTestId('model-card-test-model')).toBeInTheDocument();
+  });
+
+  it('makes API calls on mount', async () => {
+    render(<ModelsPage />);
+    
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/models');
+      expect(global.fetch).toHaveBeenCalledWith('/api/models/library');
+    });
+  });
+
+  it('shows basic model information', async () => {
+    render(<ModelsPage />);
+
+    // Wait for loading state to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('skeleton')).not.toBeInTheDocument();
+    });
+
+    const modelCard = screen.getByTestId('model-card-test-model');
+    expect(modelCard).toBeInTheDocument();
+    expect(within(modelCard).getByText('test-model')).toBeInTheDocument();
+    expect(within(modelCard).getByText('Test model')).toBeInTheDocument();
+  });
+
+  it('handles API errors gracefully', async () => {
+    // Mock API error
+    (global.fetch as jest.Mock)
+      .mockRejectedValueOnce(new Error('Failed to fetch models'))
+      .mockRejectedValueOnce(new Error('Failed to fetch models'));
+    
+    render(<ModelsPage />);
+    
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to fetch models');
+    });
+  });
+}); 

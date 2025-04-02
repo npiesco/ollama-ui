@@ -24,28 +24,52 @@ interface CodeComponentProps {
 export function FormattedMessage({ message, darkMode: _darkMode = false }: FormattedMessageProps) {
   const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
 
+  console.debug('[FormattedMessage] Initializing component:', {
+    role: message.role,
+    contentLength: message.content.length,
+    darkMode: _darkMode,
+    hasHighlighter: !!highlighter
+  });
+
   useEffect(() => {
     const initHighlighter = async () => {
+      console.debug('[FormattedMessage] Initializing highlighter');
       try {
         const { getSingletonHighlighter } = await import('shiki/dist/bundle-full.mjs');
         const highlighter = await getSingletonHighlighter({
           themes: ['github-dark', 'github-light'],
           langs: ['typescript', 'javascript', 'python', 'bash', 'plaintext', 'rust', 'json', 'html', 'css']
         });
+        console.debug('[FormattedMessage] Highlighter initialized successfully');
         setHighlighter(highlighter);
       } catch (error) {
-        console.error('Failed to initialize highlighter:', error);
+        console.error('[FormattedMessage] Failed to initialize highlighter:', {
+          error,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     };
 
     initHighlighter();
   }, [_darkMode]);
 
-  const getTheme = () => _darkMode ? 'github-dark' : 'github-light';
+  const getTheme = () => {
+    const theme = _darkMode ? 'github-dark' : 'github-light';
+    console.debug('[FormattedMessage] Selected theme:', theme);
+    return theme;
+  };
 
   const components: Record<string, React.ComponentType<CodeComponentProps>> = {
     code: ({ inline, className, children, ...props }: CodeComponentProps) => {
+      console.debug('[FormattedMessage] Rendering code block:', {
+        inline,
+        className,
+        hasHighlighter: !!highlighter,
+        codeLength: String(children || '').length
+      });
+
       if (!highlighter) {
+        console.debug('[FormattedMessage] No highlighter available, rendering plain code');
         return (
           <code className={className} {...props}>
             {children}
@@ -57,10 +81,21 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
       const language = match ? match[1] : 'plaintext';
       const code = String(children || '').replace(/\n$/, '');
 
+      console.debug('[FormattedMessage] Processing code block:', {
+        language,
+        codeLength: code.length,
+        theme: getTheme()
+      });
+
       try {
         const html = highlighter.codeToHtml(code, {
           lang: language,
           theme: getTheme()
+        });
+
+        console.debug('[FormattedMessage] Code highlighting successful:', {
+          language,
+          htmlLength: html.length
         });
 
         if (inline) {
@@ -80,7 +115,12 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
           />
         );
       } catch (error) {
-        console.error('Error highlighting code:', error);
+        console.error('[FormattedMessage] Error highlighting code:', {
+          error,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          language,
+          codeLength: code.length
+        });
         return (
           <code className={className} {...props}>
             {children}
@@ -101,6 +141,4 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
       </ReactMarkdown>
     </div>
   );
-}
-
-export default FormattedMessage; 
+} 
