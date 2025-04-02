@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
 import { AlertCircle, MessageSquare, Maximize2, Minimize2, X } from 'lucide-react'
+import { config } from '@/lib/config'
 
 import { AdvancedParametersControl } from '@/components/AdvancedParameters'
 import AnimatedMessage from "@/components/AnimatedMessage"
@@ -63,7 +64,7 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
 
   const fetchModels = useCallback(async () => {
     try {
-      const response = await fetch('/api/models')
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
       if (!response.ok) throw new Error('Failed to fetch models')
       const data = await response.json()
       setAvailableModels(data.models || [])

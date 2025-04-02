@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select"
 import { useModelDownload } from '@/store/model-download'
 
-type ModelCapability = 'chat' | 'code' | 'vision' | 'tools';
+type ModelCapability = 'tools' | 'embedding' | 'vision' | 'all';
 
 interface LibraryModel extends ModelResponse {
   description: string;
@@ -539,24 +539,24 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     });
 
     const result = {
-    all: libraryModels,
-      chat: libraryModels.filter(m => {
-        const hasChat = m.capabilities.includes('chat') || m.capabilities.includes('tools');
-        console.debug('[ModelsPage] Chat capability check:', {
+      all: libraryModels,
+      tools: libraryModels.filter(m => {
+        const hasTools = m.capabilities.includes('tools');
+        console.debug('[ModelsPage] Tools capability check:', {
           model: m.name,
           capabilities: m.capabilities,
-          hasChat
+          hasTools
         });
-        return hasChat;
+        return hasTools;
       }),
-      code: libraryModels.filter(m => {
-        const hasCode = m.capabilities.includes('tools');
-        console.debug('[ModelsPage] Code capability check:', {
+      embeddings: libraryModels.filter(m => {
+        const hasEmbeddings = m.capabilities.includes('embedding');
+        console.debug('[ModelsPage] Embeddings capability check:', {
           model: m.name,
           capabilities: m.capabilities,
-          hasCode
+          hasEmbeddings
         });
-        return hasCode;
+        return hasEmbeddings;
       }),
       vision: libraryModels.filter(m => {
         const hasVision = m.capabilities.includes('vision');
@@ -571,8 +571,8 @@ const ModelsPage: React.FC = (): React.ReactElement => {
 
     console.debug('[ModelsPage] Models by capability result:', {
       allCount: result.all?.length,
-      chatCount: result.chat?.length,
-      codeCount: result.code?.length,
+      toolsCount: result.tools?.length,
+      embeddingsCount: result.embeddings?.length,
       visionCount: result.vision?.length
     });
 
@@ -661,8 +661,8 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full max-w-md mx-auto grid grid-cols-4">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="code">Code</TabsTrigger>
+          <TabsTrigger value="tools">Tools</TabsTrigger>
+          <TabsTrigger value="embedding">Embedding</TabsTrigger>
           <TabsTrigger value="vision">Vision</TabsTrigger>
         </TabsList>
 
@@ -805,65 +805,6 @@ const ModelsPage: React.FC = (): React.ReactElement => {
           </AlertDescription>
         </Alert>
       )}
-
-      <Button
-        onClick={async () => {
-          if (!newModelName.trim()) {
-            toast.error("Please enter a model name")
-            return
-          }
-
-          try {
-            const response = await fetch("/api/pull-model", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ name: newModelName.trim() }),
-            })
-
-            if (!response.ok) {
-              throw new Error("Failed to pull model")
-            }
-
-            toast.success("Model pulled successfully")
-            setNewModelName("")
-            fetchModels()
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to pull model")
-          }
-        }}
-      >
-        Pull Model
-      </Button>
-      <Button
-        onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
-          const name = e.currentTarget.getAttribute('data-model-name')
-          if (!name) return
-
-          try {
-            const response = await fetch("/api/delete-model", {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ name }),
-            })
-
-            if (!response.ok) {
-              throw new Error("Failed to delete model")
-            }
-
-            toast.success("Model deleted successfully")
-            fetchModels()
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to delete model")
-          }
-        }}
-        data-model-name={newModelName}
-      >
-        Delete Model
-      </Button>
     </div>
   )
 }
