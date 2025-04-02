@@ -1,6 +1,5 @@
-import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { EditableValue } from '@/components/EditableValue';
-import { z } from 'zod';
 
 // Mock zod
 jest.mock('zod', () => {

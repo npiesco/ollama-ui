@@ -19,7 +19,16 @@ interface ChatResponse {
 
 export async function POST(request: Request): Promise<NextResponse<ChatResponse | { error: string }>> {
   try {
-    const body: RequestBody = await request.json();
+    let body: RequestBody;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
     const { messages } = body;
 
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/chat`, {
@@ -43,8 +52,8 @@ export async function POST(request: Request): Promise<NextResponse<ChatResponse 
   } catch (error) {
     console.error('Error in chat API:', error);
     return NextResponse.json(
-      { error: 'Failed to process chat request' },
-      { status: 500 }
+      { error: 'Failed to generate response' },
+      { status: 503 }
     );
   }
 } 

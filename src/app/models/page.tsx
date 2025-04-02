@@ -48,6 +48,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   const [modelConfig, setModelConfig] = React.useState<Record<string, string>>({})
   const [pageError, setPageError] = React.useState<string | null>(null)
   const [newModelName, setNewModelName] = React.useState("")
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const { 
     isDownloading, 
@@ -60,6 +61,18 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     setError, 
     reset 
   } = useModelDownload()
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([fetchModels(), fetchLibraryModels()])
+      toast.success('Models refreshed')
+    } catch (err) {
+      toast.error('Failed to refresh models')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const fetchModels = React.useCallback(async () => {
     console.debug('[ModelsPage] Fetching models:', {
@@ -339,6 +352,9 @@ const ModelsPage: React.FC = (): React.ReactElement => {
 
       const response = await fetch('/api/models/pull', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ name: modelName, tag: modelTag })
       });
 
@@ -350,7 +366,8 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to pull model');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to pull model');
       }
 
       // Check if it's a non-streaming response (model already installed)
@@ -388,7 +405,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         // Process complete lines
         const lines = buffer.split('\n')
         buffer = lines.pop() || '' // Keep the last incomplete line in the buffer
-
+        
         for (const line of lines) {
           if (!line.trim()) continue
 
@@ -522,7 +539,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     });
 
     const result = {
-      all: libraryModels,
+    all: libraryModels,
       chat: libraryModels.filter(m => {
         const hasChat = m.capabilities.includes('chat') || m.capabilities.includes('tools');
         console.debug('[ModelsPage] Chat capability check:', {
@@ -598,7 +615,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
           <Skeleton className="h-10 w-full max-w-md mx-auto" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div className="animate-pulse rounded-md bg-muted h-64" data-testid="skeleton" />
+              <div key={i} className="animate-pulse rounded-md bg-muted h-64" data-testid="skeleton" />
             ))}
           </div>
         </div>
@@ -619,12 +636,16 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto p-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Models</h1>
-        <Link href="/chat">
-          <Button variant="outline">Go to Chat</Button>
-        </Link>
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? 'Refreshing...' : 'Refresh Models'}
+        </Button>
       </div>
 
       {filteredModels.length === 0 && !isLoading && (
@@ -646,133 +667,133 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         </TabsList>
 
         <TabsContent value={selectedTab} className="mt-6">
-          <ScrollArea className="w-full max-w-5xl mx-auto h-[calc(100vh-300px)]">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <ScrollArea className="w-full max-w-5xl mx-auto h-[calc(100vh-300px)]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredModels.map((model) => (
                 <Card 
-                  key={model.name} 
+                  key={`${model.name}-${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0] || 'default'}`} 
                   className={cn(
                     'h-full flex flex-col',
                     isModelInstalled(getModelFullName(model)) ? 'bg-primary/5' : ''
                   )}
                   data-testid={`model-card-${model.name}`}
                 >
-                  <CardHeader>
+                    <CardHeader>
                     {(() => {
                       const libraryModel = libraryModels.find(m => m.name === model.name);
                       return (
                         <>
-                          <CardTitle className="flex items-center gap-2">
-                            {model.name}
+                      <CardTitle className="flex items-center gap-2">
+                        {model.name}
                             {libraryModel?.capabilities?.map(cap => (
-                              <span key={cap} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                {cap}
-                              </span>
-                            ))}
-                          </CardTitle>
+                          <span key={cap} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                            {cap}
+                          </span>
+                        ))}
+                      </CardTitle>
                           <CardDescription>{libraryModel?.description}</CardDescription>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                             <span>👥 {libraryModel?.pullCount}</span>
                             <span>🏷️ {libraryModel?.tagCount}</span>
                             <span>🕒 {libraryModel?.lastUpdated}</span>
-                          </div>
+                      </div>
                         </>
                       );
                     })()}
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="space-y-4 flex-grow">
+                    <CardContent className="space-y-4 flex-grow">
                     {(() => {
                       const libraryModel = libraryModels.find(m => m.name === model.name);
                       return (
                         <>
-                          <div className="flex items-center justify-between">
-                            <Label>Advanced Configuration</Label>
-                            <Switch
-                              checked={showAdvanced[model.name] || false}
-                              onCheckedChange={(checked) => {
-                                setShowAdvanced(prev => ({ ...prev, [model.name]: checked }))
-                              }}
-                            />
-                          </div>
+                      <div className="flex items-center justify-between">
+                        <Label>Advanced Configuration</Label>
+                        <Switch
+                          checked={showAdvanced[model.name] || false}
+                          onCheckedChange={(checked) => {
+                            setShowAdvanced(prev => ({ ...prev, [model.name]: checked }))
+                          }}
+                        />
+                      </div>
 
-                          {showAdvanced[model.name] && (
-                            <>
-                              <Separator className="my-4" />
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <Label>Model Parameters</Label>
-                                  <Textarea
-                                    placeholder="Enter model parameters in JSON format..."
-                                    value={modelConfig[model.name] || ''}
-                                    onChange={(e) => setModelConfig(prev => ({
-                                      ...prev,
-                                      [model.name]: e.target.value
-                                    }))}
-                                    className="h-24"
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          )}
+                      {showAdvanced[model.name] && (
+                        <>
+                          <Separator className="my-4" />
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Model Parameters</Label>
+                              <Textarea
+                                placeholder="Enter model parameters in JSON format..."
+                                value={modelConfig[model.name] || ''}
+                                onChange={(e) => setModelConfig(prev => ({
+                                  ...prev,
+                                  [model.name]: e.target.value
+                                }))}
+                                className="h-24"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                           {(libraryModel?.parameterSizes?.length ?? 0) > 0 && (
-                            <Select
+                        <Select
                               value={selectedSizes[model.name] || libraryModel?.parameterSizes?.[0] || ''}
-                              onValueChange={(value) => setSelectedSizes(prev => ({ ...prev, [model.name]: value }))}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select size" />
-                              </SelectTrigger>
-                              <SelectContent>
+                          onValueChange={(value) => setSelectedSizes(prev => ({ ...prev, [model.name]: value }))}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select size" />
+                          </SelectTrigger>
+                          <SelectContent>
                                 {libraryModel?.parameterSizes?.map((size) => (
-                                  <SelectItem key={size} value={size}>
-                                    {size}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
+                              <SelectItem key={size} value={size}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                         </>
                       );
                     })()}
-                  </CardContent>
+                    </CardContent>
 
-                  <CardFooter className="flex items-center justify-between mt-auto">
-                    <div className="flex items-center gap-2">
+                    <CardFooter className="flex items-center justify-between mt-auto">
+                      <div className="flex items-center gap-2">
                       {isModelInstalled(getModelFullName(model)) ? (
-                        <div className="flex items-center gap-2 text-green-600">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span>Installed</span>
-                        </div>
-                      ) : (
-                        <Button
+                          <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Installed</span>
+                          </div>
+                        ) : (
+                          <Button
                           onClick={() => handleModelPull(
-                            model.name,
+                              model.name,
                             selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]
-                          )}
+                            )}
                           disabled={isDownloading}
-                          variant="outline"
-                        >
+                            variant="outline"
+                          >
                           {currentModel === `${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}` ? 'Pulling...' : 'Install Model'}
+                          </Button>
+                        )}
+                      </div>
+                    {isModelInstalled(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`) && (
+                        <Button
+                          variant="destructive"
+                        onClick={() => handleModelDelete(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`)}
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
-                    {isModelInstalled(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`) && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleModelDelete(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`)}
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
       </Tabs>
 
       {focusedModel === 'nomic-embed-text' && !isModelInstalled('nomic-embed-text') && (

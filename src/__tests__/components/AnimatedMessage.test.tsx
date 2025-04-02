@@ -1,8 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import AnimatedMessage from '@/components/AnimatedMessage';
-import { motion } from 'framer-motion';
-import { Pencil } from 'lucide-react';
-import { FormattedMessage } from '@/components/FormattedMessage';
 
 // Mock dependencies
 jest.mock('framer-motion', () => ({

@@ -60,6 +60,58 @@ python deploy.py --environment local
 
 The UI will be available at `http://localhost:3001`
 
+### Model Name and Tag Handling
+
+Ollama UI properly handles model names and tags according to Ollama's conventions:
+
+1. **Basic Model Names**
+   - Simple model names like `llama2` or `mistral` are used as-is
+   - Example: `llama2`
+
+2. **Model Names with Tags**
+   - Tags are appended to model names with a colon separator
+   - Format: `model_name:tag`
+   - Example: `llama2:7b`, `mistral:instruct`
+
+3. **Parameter Sizes**
+   - Parameter sizes are treated as tags
+   - Examples:
+     - `llama2:7b` (7 billion parameters)
+     - `llama2:13b` (13 billion parameters)
+     - `llama2:70b` (70 billion parameters)
+
+4. **Default Tags**
+   - Some models use the `default` tag
+   - When `default` is the only available tag, it's omitted from the model name
+   - Example: `nomic-embed-text` (uses default tag)
+
+5. **API Handling**
+   - The UI automatically formats model names with tags when making API calls
+   - When pulling models, the full name (with tag) is sent to Ollama
+   - Example: `POST /api/pull` with `{ "name": "llama2:7b" }`
+
+6. **Error Prevention**
+   - The UI validates model names and tags before making API calls
+   - Invalid combinations are caught and reported with clear error messages
+   - Duplicate model installations are prevented
+
+7. **Model Discovery**
+   - The `/api/models` endpoint uses HTML scraping from `ollama.com/library` to discover available models
+   - This provides more detailed model information than the JSON API
+   - The scraping implementation uses JSDOM to parse model cards and extract:
+     - Model names and descriptions
+     - Parameter sizes and capabilities
+     - Pull counts and tag counts
+     - Last updated timestamps
+   - The implementation includes a smart caching mechanism:
+     - HTML content is hashed to detect changes
+     - If the HTML hasn't changed and we have cached models, we reuse the cached data
+     - Only fetches and parses new data when the library page has been updated
+     - Cache is persisted in IndexedDB for offline access
+   - This approach ensures we have the most up-to-date model information directly from Ollama's website while minimizing unnecessary API calls
+
+This ensures consistent handling of model names and tags across the application, preventing issues with model installation and management.
+
 #### 2. Docker Deployment
 
 Run everything in containers:

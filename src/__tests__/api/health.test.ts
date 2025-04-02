@@ -62,4 +62,75 @@ describe('Health API', () => {
       }
     });
   });
+
+  it('returns 200 when Ollama is available', async () => {
+    const mockResponse = new Response(JSON.stringify({ version: '1.0.0' }), { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    Object.defineProperty(mockResponse, 'ok', { value: true });
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const response = await GET();
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toMatchObject({
+      status: 'healthy',
+      environment: {
+        nodeEnv: expect.any(String),
+        ollamaHost: expect.any(String)
+      },
+      ollama: {
+        host: expect.any(String),
+        status: 'connected',
+        version: '1.0.0'
+      }
+    });
+  });
+
+  it('returns 503 when Ollama is not available', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Connection failed'));
+
+    const response = await GET();
+    expect(response.status).toBe(503);
+    const data = await response.json();
+    expect(data).toMatchObject({
+      status: 'unhealthy',
+      environment: {
+        nodeEnv: expect.any(String),
+        ollamaHost: expect.any(String)
+      },
+      ollama: {
+        host: expect.any(String),
+        status: 'disconnected',
+        version: null
+      }
+    });
+  });
+
+  it('returns unhealthy status when Ollama returns error', async () => {
+    // Mock fetch to simulate error response
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.reject(new Error('Internal server error'))
+    });
+
+    const response = await GET();
+    const data = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(data).toMatchObject({
+      status: 'unhealthy',
+      environment: {
+        nodeEnv: 'test',
+        ollamaHost: expect.any(String)
+      },
+      ollama: {
+        host: expect.any(String),
+        status: 'disconnected',
+        version: null
+      }
+    });
+  });
 }); 

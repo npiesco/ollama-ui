@@ -1,8 +1,7 @@
 // /ollama-ui/src/__tests__/components/FormattedMessage.test.tsx
-import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { FormattedMessage } from '@/components/FormattedMessage';
-import { Message } from '@/store/chat';
+import { Message } from '@/lib/types';
 import { act } from 'react-dom/test-utils';
 import { getSingletonHighlighter } from 'shiki/dist/bundle-full.mjs';
 
@@ -62,10 +61,9 @@ const createMessage = (content: string, role: Message['role'] = 'user'): Message
 });
 
 describe('FormattedMessage', () => {
-  const mockMessage = {
-    id: '1',
+  const mockMessage: Message = {
     role: 'user',
-    content: 'Test message with `code` and ```typescript\nconst test = "code";\n```'
+    content: 'Hello, world!'
   };
 
   beforeEach(() => {
@@ -73,6 +71,24 @@ describe('FormattedMessage', () => {
     (getSingletonHighlighter as jest.Mock).mockResolvedValue({
       codeToHtml: jest.fn().mockReturnValue('<pre><code>highlighted code</code></pre>')
     });
+  });
+
+  it('renders user message correctly', () => {
+    render(<FormattedMessage message={mockMessage} darkMode={false} />);
+    expect(screen.getByText('Hello, world!')).toBeInTheDocument();
+  });
+
+  it('renders code blocks with syntax highlighting', async () => {
+    const codeMessage: Message = {
+      role: 'assistant',
+      content: '```typescript\nconst test = "code";\n```'
+    };
+
+    await act(async () => {
+      render(<FormattedMessage message={codeMessage} darkMode={false} />);
+    });
+
+    expect(screen.getByTestId('formatted-message')).toBeInTheDocument();
   });
 
   it('renders plain text messages correctly', async () => {

@@ -36,64 +36,142 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
-// Mock Request and Response for Next.js API routes
-class MockRequest {
-  private url: string;
-  private options: RequestInit;
+// Mock fetch
+global.fetch = jest.fn();
 
-  constructor(input: string | URL | Request, init?: RequestInit) {
-    this.url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : 'http://localhost';
-    this.options = init || {};
+// Mock Request
+class MockRequest {
+  private _url: string;
+  private _method: string;
+  private _body: any;
+
+  constructor(url: string, init?: RequestInit) {
+    this._url = url;
+    this._method = init?.method || 'GET';
+    this._body = init?.body;
+  }
+
+  json() {
+    return Promise.resolve(JSON.parse(this._body));
   }
 
   get method() {
-    return this.options.method || 'GET';
+    return this._method;
   }
 
-  async json() {
-    return this.options.body ? JSON.parse(this.options.body as string) : {};
+  get url() {
+    return this._url;
   }
 }
 
+// Mock Response
 class MockResponse {
-  private body: BodyInit | null | undefined;
-  private init: ResponseInit;
+  private _status: number;
+  private _headers: Headers;
+  private _body: any;
+  private _ok: boolean;
 
-  constructor(body?: BodyInit | null, init?: ResponseInit) {
-    this.body = body;
-    this.init = init || {};
+  constructor(body?: any, init?: ResponseInit) {
+    this._body = body;
+    this._status = init?.status || 200;
+    this._headers = new Headers(init?.headers || {});
+    this._ok = this._status >= 200 && this._status < 300;
   }
 
-  get ok() {
-    return (this.init.status || 200) >= 200 && (this.init.status || 200) < 300;
+  json() {
+    return Promise.resolve(this._body);
   }
 
   get status() {
-    return this.init.status || 200;
+    return this._status;
   }
 
   get headers() {
-    return new Headers(this.init.headers);
+    return this._headers;
   }
 
-  async json() {
-    return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+  get body() {
+    return this._body;
   }
 
-  clone() {
-    return new MockResponse(this.body, this.init);
+  get ok() {
+    return this._ok;
+  }
+
+  static json(data: any, init?: ResponseInit) {
+    return new MockResponse(data, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers || {})
+      }
+    });
   }
 }
 
-Object.defineProperty(global, 'Request', {
-  writable: true,
-  value: MockRequest
-})
+// Mock Headers
+class MockHeaders {
+  private headers: Map<string, string>;
 
-Object.defineProperty(global, 'Response', {
+  constructor(init?: HeadersInit) {
+    this.headers = new Map();
+    if (init) {
+      if (Array.isArray(init)) {
+        init.forEach(([key, value]) => this.headers.set(key, value));
+      } else if (init instanceof Headers) {
+        init.forEach((value, key) => this.headers.set(key, value));
+      } else {
+        Object.entries(init).forEach(([key, value]) => this.headers.set(key, value));
+      }
+    }
+  }
+
+  get(key: string) {
+    return this.headers.get(key) || null;
+  }
+
+  set(key: string, value: string) {
+    this.headers.set(key, value);
+  }
+
+  has(key: string) {
+    return this.headers.has(key);
+  }
+
+  delete(key: string) {
+    this.headers.delete(key);
+  }
+
+  forEach(callback: (value: string, key: string) => void) {
+    this.headers.forEach((value, key) => callback(value, key));
+  }
+}
+
+// Add mocks to global scope
+global.Request = MockRequest as any;
+global.Response = MockResponse as any;
+global.Headers = MockHeaders as any;
+
+// Mock next/server
+jest.mock('next/server', () => ({
+  NextRequest: MockRequest,
+  NextResponse: MockResponse
+}));
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: MockResponse
-})
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
 
 // Mock lucide-react icons globally
 jest.mock('lucide-react', () => {
@@ -136,26 +214,6 @@ Object.defineProperty(window, 'ResizeObserver', {
   writable: true,
   configurable: true,
   value: MockResizeObserver
-});
-
-// Mock window.matchMedia
-interface MockMatchMedia {
-  matches: boolean;
-  addEventListener: (type: string, listener: EventListener) => void;
-  removeEventListener: (type: string, listener: EventListener) => void;
-  dispatchEvent: (event: Event) => boolean;
-}
-
-const mockMatchMedia = (): MockMatchMedia => ({
-  matches: false,
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  dispatchEvent: jest.fn(),
-});
-
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn(mockMatchMedia),
 });
 
 // Mock window.scrollTo
@@ -228,22 +286,4 @@ Object.defineProperty(global, 'ReadableStream', {
 
 afterEach(() => {
   // Cleanup handled by Jest
-});
-
-// Mock window.fetch
-(global as unknown as { fetch: jest.Mock }).fetch = jest.fn(() => 
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({}),
-    text: () => Promise.resolve(""),
-    blob: () => Promise.resolve(new Blob()),
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    formData: () => Promise.resolve(new FormData()),
-    headers: new Headers(),
-    status: 200,
-    statusText: "OK",
-    type: "basic" as ResponseType,
-    url: "",
-    clone: function() { return this },
-  } as Response)
-); 
+}); 

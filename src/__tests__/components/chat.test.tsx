@@ -2,6 +2,8 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { Chat } from '@/components/Chat';
 import { useChatStore, type Message } from '@/store/chat';
+import { useModelDownload } from '@/store/model-download';
+import { useSettings } from '@/store/settings';
 import { toast } from 'sonner';
 import type { AdvancedParameters } from '@/types/ollama';
 import React from 'react';
@@ -198,20 +200,31 @@ jest.mock('@/components/MultimodalInput', () => ({
 describe('Chat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset chat store with properly typed state
     const initialState = {
-      messages: [],
-      model: 'model1',
-      parameters: undefined,
+      messages: [] as Message[],
+      model: 'test-model',
+      parameters: {
+        temperature: 0.7,
+        top_p: 0.9,
+        top_k: 40,
+        repeat_penalty: 1.1,
+        presence_penalty: 0,
+        num_predict: 128
+      },
       addMessage: jest.fn(),
       updateLastMessage: jest.fn(),
+      clearMessages: jest.fn(),
       setModel: jest.fn(),
       setParameters: jest.fn(),
-      getFormattedMessages: jest.fn().mockReturnValue([])
+      getFormattedMessages: jest.fn().mockReturnValue([]),
+      editMessage: jest.fn(),
+      setMessageEditing: jest.fn(),
+      regenerateFromMessage: jest.fn(),
+      setMessages: jest.fn()
     };
     
-    debug('Setting initial store state', initialState);
     useChatStore.setState(initialState);
 
     // Mock successful models fetch
@@ -219,11 +232,36 @@ describe('Chat', () => {
       ok: true,
       json: () => Promise.resolve({
         models: [
-          { name: 'model1' },
-          { name: 'model2' }
+          { name: 'test-model' }
         ]
       })
     });
+  });
+
+  it('renders chat interface', () => {
+    render(<Chat />);
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+  });
+
+  it('handles message submission', () => {
+    const mockAddMessage = jest.fn();
+    useChatStore.setState({
+      ...useChatStore.getState(),
+      addMessage: mockAddMessage
+    });
+
+    render(<Chat />);
+    const input = screen.getByRole('textbox');
+    const sendButton = screen.getByRole('button', { name: /send/i });
+
+    fireEvent.change(input, { target: { value: 'Hello' } });
+    fireEvent.click(sendButton);
+
+    expect(mockAddMessage).toHaveBeenCalledWith(expect.objectContaining({
+      role: 'user',
+      content: 'Hello'
+    }));
   });
 
   it('renders chat interface with basic elements', async () => {

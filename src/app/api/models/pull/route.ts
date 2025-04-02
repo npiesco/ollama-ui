@@ -44,7 +44,7 @@ export async function POST(request: Request): Promise<NextResponse<PullModelResp
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, tag }),
+      body: JSON.stringify({ name: tag ? `${name}:${tag}` : name }),
     });
 
     if (!response.ok) {

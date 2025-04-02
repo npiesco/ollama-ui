@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { AlertCircle, MessageSquare, Maximize2, Minimize2, X } from 'lucide-react'
 
 import { AdvancedParametersControl } from '@/components/AdvancedParameters'
-import { AnimatedMessage } from "@/components/AnimatedMessage"
+import AnimatedMessage from "@/components/AnimatedMessage"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"

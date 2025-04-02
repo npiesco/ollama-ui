@@ -1,6 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import ModelsPage from '@/app/models/page'
-import { toast } from 'sonner'
 import { useModelDownload } from '@/store/model-download'
 
 // Mock the toast notifications

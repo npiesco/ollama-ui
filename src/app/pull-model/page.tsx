@@ -51,6 +51,7 @@ export default function PullModel() {
   const [error, setError] = useState<string | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [inputValue, setInputValue] = useState("")
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     fetchLibraryModels()
@@ -66,6 +67,18 @@ export default function PullModel() {
       console.error('Error fetching library models:', error)
       toast.error('Failed to fetch library models')
       setLibraryModels([])
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await fetchLibraryModels()
+      toast.success('Library models refreshed')
+    } catch (err) {
+      toast.error('Failed to refresh library models')
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -190,7 +203,16 @@ export default function PullModel() {
 
   return (
     <div className="container mx-auto p-8 space-y-6">
-      <h1 className="text-2xl font-bold">Pull Model</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Pull Model</h1>
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? 'Refreshing...' : 'Refresh Library'}
+        </Button>
+      </div>
       
       <div className="space-y-4">
         <div className="space-y-2">
