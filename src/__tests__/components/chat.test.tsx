@@ -92,7 +92,9 @@ jest.mock('lucide-react', () => ({
   Loader2: () => <div data-testid="loader-icon">Loader Icon</div>,
   RefreshCw: () => <div data-testid="refresh-icon">Refresh Icon</div>,
   Copy: () => <div data-testid="copy-icon">Copy Icon</div>,
-  Check: () => <div data-testid="check-icon">Check Icon</div>
+  Check: () => <div data-testid="check-icon">Check Icon</div>,
+  Upload: () => <div data-testid="upload-icon">Upload Icon</div>,
+  ImageIcon: () => <div data-testid="image-icon">Image Icon</div>
 }));
 
 // Mock the FormattedMessage component to avoid markdown dependencies
@@ -234,5 +236,102 @@ describe('Chat Component', () => {
         content: 'Test message'
       })
     );
+  });
+
+  it('handles message submission with error handling', async () => {
+    // Mock fetch to simulate an error
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.endsWith('/api/tags')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            models: [{ name: 'test-model' }]
+          })
+        });
+      }
+      if (url.endsWith('/api/show')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            model_info: {}
+          })
+        });
+      }
+      if (url.endsWith('/api/chat')) {
+        return Promise.reject(new Error('API Error'));
+      }
+      return Promise.reject(new Error('Not found'));
+    });
+
+    render(<Chat />);
+    
+    // Wait for models to load
+    await waitFor(() => {
+      expect(screen.getByTestId('select-trigger')).toBeInTheDocument();
+    });
+
+    // Type a message
+    const input = screen.getByRole('textbox');
+    await userEvent.type(input, 'Test message{enter}');
+
+    // Verify the message was added to the store
+    expect(mockChatStore.addMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'user',
+        content: 'Test message'
+      })
+    );
+
+    // Verify the input was cleared
+    expect(input).toHaveValue('');
+  });
+
+  it('fetches and sets model capabilities', async () => {
+    // Mock fetch to return model capabilities
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.endsWith('/api/tags')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            models: [{ name: 'test-model' }]
+          })
+        });
+      }
+      if (url.endsWith('/api/show')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            model_info: {
+              vision: true,
+              other_capability: true
+            }
+          })
+        });
+      }
+      return Promise.reject(new Error('Not found'));
+    });
+
+    render(<Chat />);
+    
+    // Wait for models to load
+    await waitFor(() => {
+      expect(screen.getByTestId('select-trigger')).toBeInTheDocument();
+    });
+
+    // Verify the model was selected
+    expect(mockChatStore.setModel).toHaveBeenCalledWith('test-model');
+
+    // Wait for capabilities to be fetched
+    await waitFor(() => {
+      // Check if the model capabilities were fetched
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/show'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('test-model')
+        })
+      );
+    });
   });
 }); 

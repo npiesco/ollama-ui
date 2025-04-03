@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Trash2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Trash2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { ModelResponse } from '@/types/ollama'
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import Link from 'next/link'
@@ -313,7 +313,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         throw new Error('Failed to delete model');
       }
 
-      toast.success(`Successfully deleted ${modelName}`, {
+      toast.success('Model deleted successfully', {
         position: 'top-right',
         duration: 3000,
         dismissible: true
@@ -329,7 +329,11 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
-      toast.error(error instanceof Error ? error.message : 'Failed to delete model');
+      toast.error('Failed to delete model', {
+        position: 'top-right',
+        duration: 3000,
+        dismissible: true
+      });
     }
   };
 
@@ -465,39 +469,27 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   }
 
   const isModelInstalled = (modelName: string) => {
-    console.debug('[ModelsPage] Checking if model is installed:', {
-      modelName,
-      currentModels: models?.map(m => m.name),
-      normalizedName: modelName.toLowerCase()
-    });
-    
     if (!models || models.length === 0) {
-      console.debug('[ModelsPage] No models available');
+      console.debug('isModelInstalled: No models available');
       return false;
     }
-    
-    const normalizedName = modelName.toLowerCase();
-    const isInstalled = models.some(model => {
-      const installedName = (model.name || '').toLowerCase();
-      const matches = installedName === normalizedName;
-      
-      console.debug('[ModelsPage] Model installation check:', {
-        modelName,
-        installedName,
-        normalizedName,
-        matches
-      });
-      
-      return matches;
+
+    // Normalize the model name to lowercase for comparison
+    const normalizedModelName = modelName.toLowerCase();
+    console.debug('isModelInstalled: Checking model name:', normalizedModelName);
+    console.debug('isModelInstalled: Current models:', models.map(m => m.name));
+
+    // Check if any installed model matches the normalized name
+    const isInstalled = models.some(m => {
+      const installedName = m.name.toLowerCase();
+      // Check if the model name matches either with or without parameter size
+      return installedName === normalizedModelName || 
+             installedName.startsWith(normalizedModelName + ':');
     });
-    
-    console.debug('[ModelsPage] Installation check result:', {
-      modelName,
-      isInstalled
-    });
-    
+
+    console.debug('isModelInstalled: Result:', isInstalled);
     return isInstalled;
-  }
+  };
 
   const deleteModel = async (modelName: string) => {
     if (!modelName || !isModelInstalled(modelName)) return
@@ -541,7 +533,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     const result = {
       all: libraryModels,
       tools: libraryModels.filter(m => {
-        const hasTools = m.capabilities.includes('tools');
+        const hasTools = m.capabilities?.includes('tools') ?? false;
         console.debug('[ModelsPage] Tools capability check:', {
           model: m.name,
           capabilities: m.capabilities,
@@ -550,7 +542,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         return hasTools;
       }),
       embeddings: libraryModels.filter(m => {
-        const hasEmbeddings = m.capabilities.includes('embedding');
+        const hasEmbeddings = m.capabilities?.includes('embedding') ?? false;
         console.debug('[ModelsPage] Embeddings capability check:', {
           model: m.name,
           capabilities: m.capabilities,
@@ -559,7 +551,7 @@ const ModelsPage: React.FC = (): React.ReactElement => {
         return hasEmbeddings;
       }),
       vision: libraryModels.filter(m => {
-        const hasVision = m.capabilities.includes('vision');
+        const hasVision = m.capabilities?.includes('vision') ?? false;
         console.debug('[ModelsPage] Vision capability check:', {
           model: m.name,
           capabilities: m.capabilities,
@@ -762,27 +754,33 @@ const ModelsPage: React.FC = (): React.ReactElement => {
                     <CardFooter className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-2">
                       {isModelInstalled(getModelFullName(model)) ? (
-                          <div className="flex items-center gap-2 text-green-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <CheckCircle2 className="h-4 w-4" />
                             <span>Installed</span>
                           </div>
                         ) : (
                           <Button
-                          onClick={() => handleModelPull(
+                            onClick={() => handleModelPull(
                               model.name,
-                            selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]
+                              selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]
                             )}
-                          disabled={isDownloading}
+                            disabled={isDownloading}
                             variant="outline"
                           >
-                          {currentModel === `${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}` ? 'Pulling...' : 'Install Model'}
+                            {currentModel === `${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}` ? (
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Pulling... ({progress}%)</span>
+                              </div>
+                            ) : 'Install Model'}
                           </Button>
                         )}
                       </div>
-                    {isModelInstalled(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`) && (
+                    {isModelInstalled(getModelFullName(model)) && (
                         <Button
                           variant="destructive"
-                        onClick={() => handleModelDelete(`${model.name}:${selectedSizes[model.name] || libraryModels.find(m => m.name === model.name)?.parameterSizes?.[0]}`)}
+                          onClick={() => handleModelDelete(getModelFullName(model))}
+                          role="button"
                           aria-label="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
