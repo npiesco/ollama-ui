@@ -126,7 +126,7 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
         }
 
         return (
-          <div 
+          <code 
             className={cn("not-prose", className)}
             dangerouslySetInnerHTML={{ __html: html }} 
           />
@@ -146,6 +146,24 @@ export function FormattedMessage({ message, darkMode: _darkMode = false }: Forma
           </code>
         );
       }
+    },
+    pre: ({ children, ...props }) => {
+      return (
+        <pre className="not-prose my-4 overflow-x-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-800" {...props}>
+          {children}
+        </pre>
+      );
+    },
+    p: ({ children, ...props }) => {
+      const hasOnlyCodeBlock = React.Children.toArray(children).every(
+        child => React.isValidElement(child) && child.type === 'code'
+      );
+      
+      if (hasOnlyCodeBlock) {
+        return <>{children}</>;
+      }
+      
+      return <p {...props}>{children}</p>;
     }
   };
 
