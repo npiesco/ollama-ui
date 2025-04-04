@@ -1,100 +1,64 @@
 // /ollama-ui/src/components/AnimatedMessage.tsx
 'use client';
 
-import type React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Pencil } from 'lucide-react';
-import { useCallback } from 'react';
+import { Pencil, RotateCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { Message } from '@/store/chat';
+import { Spinner } from '@/components/ui/spinner';
 import { FormattedMessage } from '@/components/FormattedMessage';
+import { cn } from '@/lib/utils';
+import type { Message } from '@/store/chat';
 import { useChatStore } from '@/store/chat';
 
 interface AnimatedMessageProps {
   message: Message;
-  onRegenerate: (messageId: string) => Promise<void>;
-  isGenerating: boolean;
+  onRegenerate?: (messageId: string) => Promise<void>;
+  isGenerating?: boolean;
 }
 
-function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessageProps) {
+export default function AnimatedMessage({ 
+  message, 
+  onRegenerate, 
+  isGenerating = false
+}: AnimatedMessageProps) {
   const chatStore = useChatStore();
-  
-  console.debug('[AnimatedMessage] Component initialization:', {
-    messageId: message.id,
-    role: message.role,
-    contentLength: message.content.length,
-    isEditing: message.isEditing,
-    isGenerating,
-    contentPreview: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '')
-  });
 
   const handleEditClick = useCallback(() => {
-    console.debug('[AnimatedMessage] Edit button clicked:', {
-      messageId: message.id,
-      currentContent: message.content
-    });
-    chatStore.setMessageEditing(message.id!, true);
-  }, [message.id, message.content, chatStore]);
-
-  const handleEditChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.debug('[AnimatedMessage] Edit content changed:', {
-      messageId: message.id,
-      newContentLength: e.target.value.length,
-      contentPreview: e.target.value.substring(0, 50) + (e.target.value.length > 50 ? '...' : '')
-    });
-    chatStore.editMessage(message.id!, e.target.value);
+    chatStore.setMessageEditing(message.id || '', true);
   }, [message.id, chatStore]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    console.debug('[AnimatedMessage] Key pressed in edit mode:', {
-      messageId: message.id,
-      key: e.key,
-      ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey
-    });
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSaveAndRegenerate();
-    } else if (e.key === 'Escape') {
-      handleCancelEdit();
-    }
-  }, [message.id]);
+  const handleEditChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    chatStore.editMessage(message.id || '', e.target.value);
+  }, [message.id, chatStore]);
 
   const handleCancelEdit = useCallback(() => {
-    console.debug('[AnimatedMessage] Edit cancelled:', {
-      messageId: message.id,
-      originalContent: message.content
-    });
-    chatStore.setMessageEditing(message.id!, false);
-  }, [message.id, message.content, chatStore]);
+    chatStore.setMessageEditing(message.id || '', false);
+  }, [message.id, chatStore]);
 
   const handleSaveAndRegenerate = useCallback(async () => {
-    console.debug('[AnimatedMessage] Saving and regenerating:', {
-      messageId: message.id,
-      contentLength: message.content.length,
-      contentPreview: message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '')
-    });
-    chatStore.setMessageEditing(message.id!, false);
-    await onRegenerate(message.id!);
-  }, [message.id, message.content, onRegenerate, chatStore]);
+    if (message.id && onRegenerate) {
+      chatStore.setMessageEditing(message.id, false);
+      await onRegenerate(message.id);
+    }
+  }, [message.id, onRegenerate, chatStore]);
 
-  console.debug('[AnimatedMessage] Rendering message:', {
-    messageId: message.id,
-    role: message.role,
-    isEditing: message.isEditing,
-    isGenerating,
-    contentLength: message.content.length,
-    hasContent: !!message.content
-  });
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      handleSaveAndRegenerate();
+    }
+  }, [handleCancelEdit, handleSaveAndRegenerate]);
 
   return (
     <motion.div
-      animate={{ opacity: 1, y: 0 }}
-      className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}
       initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className={`message-${message.role} slide-in ${isGenerating ? 'opacity-50' : ''} group relative`}
     >
       {message.isEditing ? (
         <div className="flex flex-col gap-2">
@@ -134,8 +98,25 @@ function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessag
                 <Pencil className="h-3 w-3" />
               </Button>
             )}
+            {message.role === 'assistant' && message.id && message.content && message.content !== 'Thinking...' && (
+              <Button
+                className="h-6 w-6"
+                size="icon"
+                variant="ghost"
+                onClick={handleSaveAndRegenerate}
+                disabled={isGenerating}
+              >
+                <RotateCw className="h-3 w-3" />
+              </Button>
+            )}
           </div>
-          {message.role === 'user' ? (
+          
+          {message.content === 'Thinking...' ? (
+            <div className="flex items-center gap-2 text-muted-foreground p-2">
+              <Spinner size="sm" />
+              <span>Thinking...</span>
+            </div>
+          ) : message.role === 'user' ? (
             <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 shadow-sm">
               {message.content}
             </div>
@@ -147,6 +128,4 @@ function AnimatedMessage({ message, onRegenerate, isGenerating }: AnimatedMessag
     </motion.div>
   );
 }
-
-export default AnimatedMessage;
 

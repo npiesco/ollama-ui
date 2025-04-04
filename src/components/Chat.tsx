@@ -243,6 +243,14 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
       chatStore.addMessage(userMessage)
       scrollToBottom(true)
 
+      // Add thinking indicator immediately
+      const thinkingMessage: Message = {
+        role: 'assistant',
+        content: 'Thinking...'
+      }
+      chatStore.addMessage(thinkingMessage)
+      scrollToBottom(true)
+
       const payload = {
         model: chatStore.model,
         messages: chatStore.getFormattedMessages(),
@@ -267,27 +275,30 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
         throw new Error(errorData.error || "Chat request failed")
       }
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: ''
-      }
-      chatStore.addMessage(assistantMessage)
-      
       const reader = response.body?.getReader()
       let assistantMessageContent = ""
       let buffer = ""
+      let chunkCount = 0
+      let responseStartTime = Date.now()
 
       try {
         while (true) {
           if (!reader) {
             throw new Error('Failed to read response stream')
           }
+          
           const { done, value } = await reader.read()
           if (done) break
 
-          buffer += new TextDecoder().decode(value)
+          chunkCount++
+          
+          const chunk = new TextDecoder().decode(value)
+          buffer += chunk
           const lines = buffer.split("\n")
           buffer = lines.pop() || ""
+
+          let updatedContent = assistantMessageContent
+          let foundContent = false
 
           for (const line of lines) {
             if (line.trim()) {
@@ -295,13 +306,27 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
                 const parsed = JSON.parse(line)
                 if (parsed.message?.content) {
                   const content = parsed.message.content
-                  assistantMessageContent += content
-                  chatStore.updateLastMessage(assistantMessageContent)
+                  updatedContent += content
+                  foundContent = true
+                  
+                  // If this is the first content chunk, replace "Thinking..." with actual content
+                  if (assistantMessageContent === "" && updatedContent.trim()) {
+                    updatedContent = content
+                  }
                 }
               } catch (error) {
                 console.error("Failed to parse message:", error)
               }
             }
+          }
+          
+          if (foundContent) {
+            assistantMessageContent = updatedContent
+            chatStore.updateLastMessage(assistantMessageContent)
+            
+            // Log progress
+            const elapsedSeconds = ((Date.now() - responseStartTime) / 1000).toFixed(1)
+            console.debug(`[Chat] Processing response: ${chunkCount} chunks, ${elapsedSeconds}s elapsed`)
           }
         }
       } catch (error) {
@@ -514,19 +539,22 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: ''
+        content: 'Thinking...'
       };
       chatStore.addMessage(assistantMessage);
       
       const reader = response.body?.getReader();
       let assistantMessageContent = "";
       let buffer = "";
+      let chunkCount = 0;
+      let responseStartTime = Date.now();
+      let lastChunkTime = Date.now();
 
       console.debug('[Chat] Starting to read response stream');
 
-        while (true) {
+      while (true) {
         const { done, value } = await reader!.read();
-          if (done) break;
+        if (done) break;
 
         const chunk = new TextDecoder().decode(value);
         buffer += chunk;
@@ -546,7 +574,7 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
 
               if (data.type === 'content') {
                 assistantMessageContent += data.content;
-                  chatStore.updateLastMessage(assistantMessageContent);
+                chatStore.updateLastMessage(assistantMessageContent);
               }
             }
           }
@@ -581,8 +609,11 @@ export function Chat({ isPopped = false }: ChatProps): React.ReactElement {
     if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        const imageUrl = e.target?.result as string
-        setImages(prev => [...prev, imageUrl])
+        const dataUrl = e.target?.result as string
+        // Extract just the base64 data, removing the data URL prefix
+        const base64Data = dataUrl.split(',')[1]
+        console.log(`[Chat] Image selected: ${file.name}, ${file.type}, size: ${file.size} bytes`)
+        setImages(prev => [...prev, base64Data])
       }
       reader.readAsDataURL(file)
     } else if (typeof index === 'number') {

@@ -145,11 +145,17 @@ export function MultimodalInput({
                   onMouseEnter={() => setHoveredImage(image)}
                   onMouseLeave={() => setHoveredImage(null)}
                 >
-                  <Image
-                    src={image}
+                  <img
+                    src={image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`}
                     alt={`Image ${index + 1}`}
-                    fill
-                    className="rounded-md object-cover"
+                    className="h-full w-full rounded-md object-cover"
+                    onError={(e) => {
+                      console.error(`Error loading image ${index}`);
+                      // Try with PNG format as fallback
+                      if (!image.startsWith('data:') && (e.target as HTMLImageElement).src.includes('image/jpeg')) {
+                        (e.target as HTMLImageElement).src = `data:image/png;base64,${image}`;
+                      }
+                    }}
                   />
                   <Button
                     variant="destructive"

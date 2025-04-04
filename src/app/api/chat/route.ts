@@ -33,6 +33,33 @@ export async function POST(request: Request): Promise<NextResponse<ChatResponse 
 
     const { messages, model } = body;
 
+    // Format the messages with proper handling for images
+    const formattedMessages = messages.map(msg => {
+      // Properly format user messages with images according to Ollama API
+      if (msg.role === 'user' && msg.images && msg.images.length > 0) {
+        // Process images to ensure proper base64 format
+        const processedImages = msg.images.map(img => {
+          // If it's already a data URL, extract just the base64 part
+          if (img.startsWith('data:')) {
+            return img.split(',')[1]; // Extract base64 data without data URL prefix
+          }
+          return img; // Already base64 encoded
+        });
+        
+        console.log(`[API] Processing message with ${processedImages.length} images`);
+        
+        // Return properly formatted message with images
+        return {
+          role: msg.role,
+          content: msg.content,
+          images: processedImages
+        };
+      }
+      return msg;
+    });
+
+    console.log(`[API] Sending request to Ollama with model: ${model}, messages: ${formattedMessages.length}`);
+
     const response = await fetch(`${config.OLLAMA_API_HOST}/api/chat`, {
       method: 'POST',
       headers: {
@@ -40,17 +67,21 @@ export async function POST(request: Request): Promise<NextResponse<ChatResponse 
       },
       body: JSON.stringify({
         model,
-        messages,
-        stream: false,
+        messages: formattedMessages,
+        stream: true,
       }),
     });
 
     if (!response.ok) {
+      console.error(`[API] Error from Ollama: ${response.status} ${response.statusText}`);
       throw new Error('Failed to get response from Ollama');
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return new NextResponse(response.body, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error('Error in chat API:', error);
     return NextResponse.json(
