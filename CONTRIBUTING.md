@@ -7,6 +7,7 @@ Thank you for your interest in contributing to Ollama UI! This document provides
 - [Getting Started](#getting-started)
 - [Development Workflow](#development-workflow)
 - [Code Style](#code-style)
+- [Vector Database Development](#vector-database-development)
 - [Testing](#testing)
 - [Pull Requests](#pull-requests)
 - [Documentation](#documentation)
@@ -57,6 +58,98 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 - Use meaningful variable and function names
 - Add comments for complex logic
 - Keep functions small and focused
+
+## Vector Database Development
+
+### Architecture Guidelines
+- **Core Implementation**
+  - Use WebAssembly for HNSW algorithm
+  - Implement in Rust for performance
+  - Use TypeScript for browser integration
+  - Follow WASM best practices
+
+- **Storage Layer**
+  - Use IndexedDB for persistence
+  - Implement efficient serialization
+  - Handle storage quotas gracefully
+  - Support data migration
+
+- **Performance Considerations**
+  - Optimize memory usage
+  - Use Web Workers for heavy computations
+  - Implement progressive loading
+  - Add performance monitoring
+
+### Development Workflow
+1. **Setup Development Environment**
+   ```bash
+   # Install Rust toolchain
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   
+   # Install wasm-pack
+   cargo install wasm-pack
+   
+   # Install additional dependencies
+   npm install
+   ```
+
+2. **Building the VectorDB**
+   ```bash
+   # Build WASM module
+   cd src/lib/vector-db
+   wasm-pack build --target web
+   
+   # Build TypeScript bindings
+   npm run build:vector-db
+   ```
+
+3. **Testing**
+   - Run Rust tests: `cargo test`
+   - Run WASM tests: `wasm-pack test --chrome --headless`
+   - Run integration tests: `npm test -- vector-db`
+
+### Code Organization
+```
+src/lib/vector-db/
+├── rust/              # Rust implementation
+│   ├── src/
+│   │   ├── lib.rs    # Core HNSW implementation
+│   │   └── ffi.rs    # WASM bindings
+│   └── Cargo.toml
+├── typescript/        # TypeScript integration
+│   ├── index.ts      # Main interface
+│   ├── storage.ts    # IndexedDB wrapper
+│   └── worker.ts     # Web Worker implementation
+└── tests/            # Test suite
+    ├── rust/         # Rust unit tests
+    ├── wasm/         # WASM integration tests
+    └── integration/  # End-to-end tests
+```
+
+### Best Practices
+1. **Memory Management**
+   - Use RAII patterns in Rust
+   - Implement proper cleanup
+   - Monitor memory usage
+   - Handle large datasets
+
+2. **Error Handling**
+   - Use Result types in Rust
+   - Implement proper error propagation
+   - Add detailed error messages
+   - Handle edge cases
+
+3. **Testing**
+   - Write unit tests for Rust code
+   - Test WASM integration
+   - Add performance benchmarks
+   - Test offline scenarios
+
+4. **Documentation**
+   - Document public APIs
+   - Add usage examples
+   - Include performance notes
+   - Document limitations
 
 ## Testing
 
