@@ -37,7 +37,7 @@ export class OfflineInference {
     try {
       // Load model from IndexedDB or download if not available
       const modelBuffer = await this.getModelBuffer();
-      this.session = await ort.InferenceSession.create(modelBuffer, {
+      this.session = await ort.InferenceSession.create(new Uint8Array(modelBuffer), {
         executionProviders: ['wasm'],
         graphOptimizationLevel: 'all',
       });
