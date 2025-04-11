@@ -23,8 +23,7 @@
     },
     "types": [
       "jest",
-      "@testing-library/jest-dom",
-      "@serwist/next/typings"
+      "@testing-library/jest-dom"
     ],
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },

@@ -17,6 +17,13 @@ const config = withSerwist({
     serverActions: {
       allowedOrigins: ['localhost:3000', 'localhost:3001']
     },
+    // Updated turbo configuration
+    turbo: {
+      rules: {
+        '*.mdx': ['@next/mdx'],
+        '*.md': ['@next/mdx']
+      }
+    }
   },
   output: 'standalone',
   transpilePackages: ['jsonwebtoken'],

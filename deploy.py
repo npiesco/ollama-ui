@@ -13,6 +13,7 @@ import string
 import requests
 import argparse
 from typing import Optional
+import socket
 
 def check_command(cmd: str) -> bool:
     """Check if a command exists."""
@@ -97,7 +98,16 @@ def create_env_file(environment: str):
         with open(".env", "w") as f:
             f.write(content)
 
-def check_service_health(max_attempts: int = 30, interval: int = 5) -> bool:
+def is_port_in_use(port: int) -> bool:
+    """Check if a port is in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(('127.0.0.1', port))
+            return False
+        except socket.error:
+            return True
+
+def check_service_health(max_attempts: int = 60, interval: int = 5) -> bool:
     """Check if services are healthy."""
     # For testing: skip health check if SKIP_HEALTH_CHECK is set
     if os.environ.get('SKIP_HEALTH_CHECK') == 'true':
@@ -105,17 +115,43 @@ def check_service_health(max_attempts: int = 30, interval: int = 5) -> bool:
 
     print("Waiting for services to be healthy...")
     
+    # First wait for the port to be in use (Next.js is listening)
+    print("Waiting for Next.js to start listening...")
+    port_attempts = 0
+    port = int(os.environ.get('PORT', '3000'))
+    
+    while not is_port_in_use(port) and port_attempts < 30:
+        print(f"Port check attempt {port_attempts + 1}/30 for port {port}...")
+        time.sleep(1)
+        port_attempts += 1
+    
+    if not is_port_in_use(port):
+        print(f"Warning: Next.js did not start listening on port {port}")
+        return False
+    
+    print(f"Port {port} is now in use, checking application health...")
+    
+    # Now try the health check
     for attempt in range(max_attempts):
         try:
-            response = requests.get("http://localhost:3000/api/health")
-            if response.status_code == 200 and response.json().get("status") == "healthy":
+            response = requests.get(f"http://127.0.0.1:{port}/api/health", timeout=5)
+            data = response.json()
+            
+            if response.status_code == 200 and data.get("status") == "healthy":
+                print("Application is healthy!")
+                print(f"Environment: {data.get('environment', {})}")
+                print(f"Ollama Status: {data.get('ollama', {}).get('status', 'unknown')}")
                 return True
-        except requests.RequestException:
-            pass
+            else:
+                print(f"Health check attempt {attempt + 1}/{max_attempts}: Unhealthy response")
+                print(f"Status code: {response.status_code}")
+                print(f"Response data: {data}")
+        except requests.RequestException as e:
+            print(f"Health check attempt {attempt + 1}/{max_attempts}: {str(e)}")
         
-        print(f"Attempt {attempt + 1}/{max_attempts}: Waiting for services to be ready...")
         time.sleep(interval)
     
+    print("Error: Application failed to become healthy within timeout period")
     return False
 
 def check_ollama_running(host: str = "http://localhost:11434") -> bool:
@@ -172,106 +208,46 @@ def main():
                       help="Deployment environment (local or docker)")
     args = parser.parse_args()
 
-    # Check if we're in a Docker container
-    if is_running_in_docker():
-        print("Running inside Docker container, forcing Docker environment")
-        args.environment = "docker"
-
-    # Check for required commands
-    check_required_commands(args.environment)
-
-    # Check for Python virtual environment
-    if os.environ.get('MOCK_VENV_MISSING') == 'true':
-        print("Error: Python virtual environment not found")
-        sys.exit(1)
-    elif not os.environ.get('VIRTUAL_ENV'):
-        print("Error: Python virtual environment not found")
-        sys.exit(1)
-
-    # Set up environment based on deployment mode
-    if args.environment == "docker":
-        setup_docker_environment()
-        print("Building and starting services")
-
-    # Check for Python virtual environment
-    if not os.environ.get('VIRTUAL_ENV'):
-        print("Error: Python virtual environment not found")
-        sys.exit(1)
-
-    # For Docker environment, check GPU and handle Docker-specific setup
-    if args.environment == "docker":
-        # Check for NVIDIA GPU
-        has_gpu = check_nvidia_gpu()
-        if has_gpu:
-            print("NVIDIA GPU detected")
-            code, stdout, _ = run_command("nvidia-smi")
-            if code == 0:
-                print(stdout)
-        else:
-            print("Warning: NVIDIA GPU not detected. The application will run in CPU-only mode.")
-
-        # Create .env file for Docker
-        create_env_file("docker")
-
-        # Pull latest images
-        print("Pulling latest Docker images...")
-        code, stdout, stderr = run_command("docker-compose pull")
-        if code != 0:
-            print(stderr)
-            sys.exit(1)
-
-        # Build and start services
-        print("Building and starting services...")
-        code, stdout, stderr = run_command("docker-compose up --build -d")
-        if code != 0:
-            print(stderr)
-            sys.exit(1)
-
-    else:  # Local environment
-        # Create .env file for local setup
-        create_env_file("local")
+    # For local development, just start Next.js directly
+    if args.environment == "local":
+        print("Starting Next.js in development mode...")
+        process = subprocess.Popen(
+            "npm run dev",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
         
-        # Check if Ollama is running locally
-        if not check_ollama_running():
-            print("Error: Ollama is not running locally. Please start Ollama first.")
-            print("You can start it by running: ollama serve")
-            sys.exit(1)
-
-        # For local development, you might want to start your Next.js app
-        # Skip in test mode
-        if not os.environ.get('SKIP_NPM_COMMANDS'):
-            print("Starting Next.js application...")
-            print("\n🚀 Ollama UI is starting up!")
-            print("📝 Once ready, you can access it at: http://localhost:3000")
-            print("💡 Press Ctrl+C to stop the application\n")
-            run_command("npm run dev", shell=True)
-
-    # Check service health
-    if not check_service_health():
-        print("Error: Services failed to become healthy within the timeout period")
-        if args.environment == "docker":
-            run_command("docker-compose logs")
-        sys.exit(1)
-
-    print(f"""
-✨ Deployment successful! ({args.environment} environment) ✨
-
-📝 Access the application:
-   - Web UI: http://localhost:3000
-   - Ollama API: http://localhost:11434
-
-🔍 Useful commands:""")
-    
-    if args.environment == "docker":
-        print("""   - View logs: docker-compose logs -f
-   - Stop services: docker-compose down
-   - Restart services: docker-compose restart""")
+        # Print output in real-time and monitor health
+        server_ready = False
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+                
+                # Wait for the ready message before starting health checks
+                if "Ready in" in output:
+                    server_ready = True
+                    print("\nServer is ready, starting health checks...")
+                    if not check_service_health():
+                        print("Error: Application failed health checks")
+                        process.terminate()
+                        sys.exit(1)
+                    print("Health checks passed successfully!")
+        
+        # If process ended, check for errors
+        if process.poll() is not None:
+            _, stderr = process.communicate()
+            if stderr:
+                print("Error starting Next.js:")
+                print(stderr)
+                sys.exit(1)
     else:
-        print("""   - Stop the application: Ctrl+C
-   - Restart Ollama: ollama serve
-   - View Ollama logs: Check your terminal running 'ollama serve'""")
-
-    print("\nFor more information, check the README.md file.")
+        print("Docker deployment not implemented yet")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 

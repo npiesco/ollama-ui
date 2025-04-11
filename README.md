@@ -98,11 +98,12 @@ ollama serve
 2. Set up the development environment:
 ```bash
 # Create and activate a Python virtual environment
-python -m venv venv
+python -m venv venv --clear
 source venv/bin/activate  # On Windows: venv\\Scripts\\activate
 
 # Install dependencies
 npm install
+pip install -r requirements.txt
 
 # Run the deployment script in local mode
 python deploy.py --environment local
