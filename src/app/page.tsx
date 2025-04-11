@@ -14,6 +14,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 export default function Home() {
   const quickStartSteps = [
@@ -47,6 +49,31 @@ export default function Home() {
       href: "/settings"
     }
   ]
+
+  useEffect(() => {
+    const checkOllamaRunning = async () => {
+      try {
+        const response = await fetch('http://localhost:11434/api/version');
+        if (!response.ok) {
+          throw new Error('Ollama not running');
+        }
+      } catch (error) {
+        toast.error('Ollama is not running. Attempting to start...');
+        // Attempt to start Ollama
+        try {
+          const startResponse = await fetch('/api/server/start', { method: 'POST' });
+          if (!startResponse.ok) {
+            throw new Error('Failed to start Ollama');
+          }
+          toast.success('Ollama started successfully');
+        } catch (startError) {
+          toast.error('Failed to start Ollama. Please start it manually.');
+        }
+      }
+    };
+
+    checkOllamaRunning();
+  }, []);
 
   return (
     <div className="container mx-auto p-1 space-y-2 h-[calc(100vh-4rem)]">
