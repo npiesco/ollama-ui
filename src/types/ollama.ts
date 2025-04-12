@@ -55,4 +55,6 @@ export interface ModelResponse {
   pullCount?: number;
   tagCount?: number;
   lastUpdated?: string;
+  modelfile: string;
+  isInstalled?: boolean;
 } 

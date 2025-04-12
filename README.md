@@ -236,7 +236,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 
 The application intelligently detects the environment it's running in:
 
-1. **Local Development**: Uses `http://localhost:11434` for the Ollama API host
+1. **Local Development**: Uses `http://localhost:11434` or `http://127.0.0.1:11434 for the Ollama API host
 2. **Docker Environment**: Uses `http://ollama:11434` for the Ollama API host
 3. **Custom Configuration**: Environment variables can override the defaults
 
@@ -395,6 +395,11 @@ Ollama UI features a robust offline mode that allows you to continue using the a
 1. **"Ollama is not running"**
    - Make sure `ollama serve` is running for local development
    - For Docker, ensure the Ollama container is healthy
+   - For Ubuntu/Linux, verify Ollama is running and check API with:
+     ```bash
+     curl http://127.0.0.1:11434/api/tags
+     ```
+   - This will show all installed models and their details
 
 2. **Port Conflicts**
    - Local development uses port 3001

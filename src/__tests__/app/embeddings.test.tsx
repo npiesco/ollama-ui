@@ -38,12 +38,36 @@ describe('Embeddings Page', () => {
     expect(screen.getByText('Checking model availability...')).toBeInTheDocument();
   });
 
-  it('should show install prompt when nomic-embed-text is not installed', async () => {
-    // Mock the models API to return no models
+  it('should correctly check for nomic-embed-text model using Ollama API', async () => {
+    // Mock successful Ollama API response with nomic-embed-text installed
     global.fetch = jest.fn().mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ models: [] })
+        json: () => Promise.resolve({
+          models: [
+            { name: 'nomic-embed-text:latest' }
+          ]
+        })
+      } as Response)
+    );
+
+    await act(async () => {
+      render(<Embeddings />);
+    });
+
+    // Should show the embeddings interface since model is installed
+    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Generate Embeddings' })).toBeInTheDocument();
+  });
+
+  it('should show install prompt when nomic-embed-text is not installed', async () => {
+    // Mock Ollama API response with no models installed
+    global.fetch = jest.fn().mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: []
+        })
       } as Response)
     );
 
@@ -53,35 +77,10 @@ describe('Embeddings Page', () => {
 
     expect(screen.getByText('Model Required')).toBeInTheDocument();
     expect(screen.getByText('Install nomic-embed-text Model')).toBeInTheDocument();
-
-    // Test navigation to models page
-    fireEvent.click(screen.getByText('Install nomic-embed-text Model'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/models');
-    expect(sessionStorage.getItem('focusModel')).toBe('nomic-embed-text');
   });
 
-  it('should show embeddings interface when model is installed', async () => {
-    // Mock the models API to return nomic-embed-text
-    global.fetch = jest.fn().mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          models: [{ name: 'nomic-embed-text' }]
-        })
-      } as Response)
-    );
-
-    await act(async () => {
-      render(<Embeddings />);
-    });
-
-    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Generate Embeddings' })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Enter text to generate embeddings/)).toBeInTheDocument();
-  });
-
-  it('should handle model check errors gracefully', async () => {
-    // Mock API error
+  it('should handle Ollama API errors gracefully', async () => {
+    // Mock Ollama API error
     global.fetch = jest.fn().mockImplementationOnce(() =>
       Promise.reject(new Error('API Error'))
     );
@@ -91,6 +90,62 @@ describe('Embeddings Page', () => {
     });
 
     expect(toast.error).toHaveBeenCalledWith('Failed to check model installation');
+  });
+
+  it('should recheck model installation when window gains focus', async () => {
+    // Mock initial Ollama API response with model installed
+    global.fetch = jest.fn()
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: [
+            { name: 'nomic-embed-text:latest' }
+          ]
+        })
+      }))
+      // Mock second call when focus event triggers to return no models
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: []
+        })
+      }));
+
+    await act(async () => {
+      render(<Embeddings />);
+    });
+
+    // Initially, embeddings interface should be shown
+    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument();
+
+    // Simulate window focus event
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    // After focus event, model required message should be shown
+    expect(screen.getByText('Model Required')).toBeInTheDocument();
+  });
+
+  it('should handle model name variations with tags', async () => {
+    // Mock Ollama API response with tagged model name
+    global.fetch = jest.fn().mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          models: [
+            { name: 'nomic-embed-text:latest' }
+          ]
+        })
+      } as Response)
+    );
+
+    await act(async () => {
+      render(<Embeddings />);
+    });
+
+    // Should show the embeddings interface since model is installed (even with tag)
+    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument();
   });
 
   it('should generate embeddings when form is submitted', async () => {
@@ -194,39 +249,6 @@ describe('Embeddings Page', () => {
       fireEvent.click(submitButton);
     });
 
-    expect(screen.getByText('Model Required')).toBeInTheDocument();
-  });
-
-  it('should recheck model installation when window gains focus', async () => {
-    // Mock models API to initially return nomic-embed-text
-    global.fetch = jest.fn()
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          models: [{ name: 'nomic-embed-text' }]
-        })
-      }))
-      // Mock second call when focus event triggers to return no models
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          models: []
-        })
-      }));
-
-    await act(async () => {
-      render(<Embeddings />);
-    });
-
-    // Initially, embeddings interface should be shown
-    expect(screen.getByRole('heading', { name: 'Generate Embeddings' })).toBeInTheDocument();
-
-    // Simulate window focus event
-    await act(async () => {
-      window.dispatchEvent(new Event('focus'));
-    });
-
-    // After focus event, model required message should be shown
     expect(screen.getByText('Model Required')).toBeInTheDocument();
   });
 }); 

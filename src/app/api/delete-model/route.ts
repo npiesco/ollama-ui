@@ -19,7 +19,7 @@ export async function DELETE(request: Request): Promise<NextResponse<DeleteModel
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ model: name }),
+      body: JSON.stringify({ name }),
     })
 
     if (!response.ok) {

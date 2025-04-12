@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useModelDownload } from '@/store/model-download'
+import { config } from '@/lib/config'
 
 type ModelCapability = 'tools' | 'embedding' | 'vision' | 'all';
 
@@ -65,9 +66,26 @@ const ModelsPage: React.FC = (): React.ReactElement => {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      await Promise.all([fetchModels(), fetchLibraryModels()])
+      // Clear service worker cache
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'CLEAR_MODEL_CACHE'
+        });
+      }
+
+      // Force fresh fetch by clearing the models state first
+      setModels([]);
+      setLibraryModels([]);
+
+      // Fetch fresh data
+      await Promise.all([
+        fetch('/api/models').then(res => res.json()).then(data => setModels(data.models)),
+        fetch('/api/models/library').then(res => res.json()).then(data => setLibraryModels(data.models))
+      ]);
+      
       toast.success('Models refreshed')
     } catch (err) {
+      console.error('Error refreshing models:', err);
       toast.error('Failed to refresh models')
     } finally {
       setIsRefreshing(false)
@@ -82,17 +100,34 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     });
     
     try {
-      const response = await fetch("/api/models")
-      if (!response.ok) {
-        throw new Error("Failed to fetch models")
+      // Fetch available models from the library
+      const libraryResponse = await fetch("/api/models")
+      if (!libraryResponse.ok) {
+        throw new Error("Failed to fetch available models")
       }
-      const data = await response.json()
-      console.debug('[ModelsPage] Models fetch response:', {
-        status: response.status,
-        modelCount: data.models?.length,
-        modelNames: data.models?.map((m: ModelResponse) => m.name)
+      const libraryData = await libraryResponse.json()
+      
+      // Fetch actually installed models from Ollama
+      const installedResponse = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
+      if (!installedResponse.ok) {
+        throw new Error("Failed to fetch installed models")
+      }
+      const installedData = await installedResponse.json()
+      
+      // Get list of installed model names
+      const installedModelNames = installedData.models.map((m: any) => m.name)
+      
+      console.debug('[ModelsPage] Model comparison:', {
+        availableModels: libraryData.models?.length,
+        installedModels: installedModelNames.length,
+        installedModelNames
       });
-      setModels(data.models)
+      
+      // Set the models state with installation status
+      setModels(libraryData.models.map((model: ModelResponse) => ({
+        ...model,
+        isInstalled: installedModelNames.includes(model.name)
+      })))
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch models"
       console.error('[ModelsPage] Error fetching models:', {
@@ -474,21 +509,14 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       return false;
     }
 
-    // Normalize the model name to lowercase for comparison
-    const normalizedModelName = modelName.toLowerCase();
-    console.debug('isModelInstalled: Checking model name:', normalizedModelName);
-    console.debug('isModelInstalled: Current models:', models.map(m => m.name));
+    console.debug('isModelInstalled: Checking model name:', modelName);
+    console.debug('isModelInstalled: Current models:', models.map(m => ({
+      name: m.name,
+      isInstalled: m.isInstalled
+    })));
 
-    // Check if any installed model matches the normalized name
-    const isInstalled = models.some(m => {
-      const installedName = m.name.toLowerCase();
-      // Check if the model name matches either with or without parameter size
-      return installedName === normalizedModelName || 
-             installedName.startsWith(normalizedModelName + ':');
-    });
-
-    console.debug('isModelInstalled: Result:', isInstalled);
-    return isInstalled;
+    // Check the isInstalled flag
+    return models.some(m => m.name === modelName && m.isInstalled);
   };
 
   const deleteModel = async (modelName: string) => {
@@ -571,13 +599,18 @@ const ModelsPage: React.FC = (): React.ReactElement => {
     return result;
   }, [libraryModels]);
 
-  const getModelFullName = (model: ModelResponse) => {
+  const getModelFullName = (model: ModelResponse, includeSize: boolean = true) => {
     console.debug('[ModelsPage] Computing model full name:', {
       modelName: model.name,
       selectedSize: selectedSizes[model.name],
       libraryModel: libraryModels?.find(m => m.name === model.name),
-      defaultSize: libraryModels?.find(m => m.name === model.name)?.parameterSizes[0]
+      defaultSize: libraryModels?.find(m => m.name === model.name)?.parameterSizes[0],
+      includeSize
     });
+
+    if (!includeSize) {
+      return model.name;
+    }
 
     const libraryModel = libraryModels?.find(m => m.name === model.name);
     const selectedSize = selectedSizes[model.name];

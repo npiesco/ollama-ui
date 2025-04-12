@@ -36,8 +36,8 @@ export default function Embeddings() {
 
   const checkModelInstallation = async () => {
     try {
-      const response = await fetch('/api/models')
-      if (!response.ok) throw new Error('Failed to fetch models')
+      const response = await fetch(`${config.OLLAMA_API_HOST}/api/tags`)
+      if (!response.ok) throw new Error('Failed to fetch installed models')
       const data = await response.json()
       setIsModelInstalled((data.models || []).some((model: { name: string }) => {
         const modelName = model.name.toLowerCase();
