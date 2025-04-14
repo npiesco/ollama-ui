@@ -9,11 +9,33 @@ jest.mock('framer-motion', () => ({
 }));
 
 jest.mock('lucide-react', () => ({
-  Pencil: () => <div data-testid="pencil-icon">Pencil</div>
+  Pencil: () => <div data-testid="pencil-icon">Pencil</div>,
+  RotateCw: () => <div data-testid="rotate-icon">RotateCw</div>
 }));
 
 jest.mock('@/components/FormattedMessage', () => ({
   FormattedMessage: ({ message }: any) => <div data-testid="formatted-message">{message.content}</div>
+}));
+
+// Mock the chat store
+jest.mock('@/store/chat', () => ({
+  useChatStore: () => ({
+    setMessageEditing: jest.fn(),
+    editMessage: jest.fn(),
+  })
+}));
+
+// Mock UI components
+jest.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>
+}));
+
+jest.mock('@/components/ui/textarea', () => ({
+  Textarea: ({ ...props }: any) => <textarea {...props} />
+}));
+
+jest.mock('@/components/ui/spinner', () => ({
+  Spinner: () => <div data-testid="spinner">Loading...</div>
 }));
 
 describe('AnimatedMessage', () => {
