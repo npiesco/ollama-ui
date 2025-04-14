@@ -12,7 +12,61 @@ jest.setTimeout(30000)
 // Store the original config values to restore after tests
 const originalApiHost = config.OLLAMA_API_HOST
 
-// We'll use the actual cached HTML from the Zustand store
+// Sample HTML content from ollama.com/library that matches the actual structure
+const sampleLibraryHtml = `
+<!DOCTYPE html>
+<html>
+<body>
+  <ul>
+    <li x-test-model>
+      <div x-test-model-title title="llama3">Llama 3</div>
+      <div class="text-neutral-800">Meta Llama 3: The most capable openly available LLM to date</div>
+      <div>
+        <span x-test-size>8b</span>
+        <span x-test-size>70b</span>
+      </div>
+      <div>
+        <span x-test-capability>tools</span>
+      </div>
+      <div>
+        <span x-test-pull-count>89.8M</span>
+        <span x-test-tag-count>93</span>
+        <span x-test-updated>4 months ago</span>
+      </div>
+    </li>
+    <li x-test-model>
+      <div x-test-model-title title="mistral">Mistral</div>
+      <div class="text-neutral-800">The 7B model released by Mistral AI, updated to version 0.3.</div>
+      <div>
+        <span x-test-size>7b</span>
+      </div>
+      <div>
+        <span x-test-capability>tools</span>
+      </div>
+      <div>
+        <span x-test-pull-count>11.7M</span>
+        <span x-test-tag-count>84</span>
+        <span x-test-updated>8 months ago</span>
+      </div>
+    </li>
+    <li x-test-model>
+      <div x-test-model-title title="nomic-embed-text">Nomic Embed Text</div>
+      <div class="text-neutral-800">A high-performing open embedding model with a large token context window.</div>
+      <div>
+      </div>
+      <div>
+        <span x-test-capability>embedding</span>
+      </div>
+      <div>
+        <span x-test-pull-count>22.2M</span>
+        <span x-test-tag-count>3</span>
+        <span x-test-updated>13 months ago</span>
+      </div>
+    </li>
+  </ul>
+</body>
+</html>
+`
 
 // Create a test component that uses the real store
 const TestModelsComponent = () => {
@@ -57,18 +111,8 @@ const TestModelsComponent = () => {
 // Mock fetch to avoid actual network requests during tests
 const originalFetch = global.fetch;
 
-// Helper function to get localStorage data for the store
-const getStoredData = () => {
-  try {
-    const storedData = localStorage.getItem('models-storage');
-    if (storedData) {
-      return JSON.parse(storedData);
-    }
-  } catch (e) {
-    console.error('Error reading from localStorage:', e);
-  }
-  return null;
-};
+// We don't need this helper function anymore since we're using sample HTML
+
 
 describe('Models functionality with cached HTML', () => {
   // Setup mock for fetch
@@ -105,23 +149,13 @@ describe('Models functionality with cached HTML', () => {
     config.OLLAMA_API_HOST = originalApiHost;
   });
   
-  it('should use cached HTML from Zustand store', async () => {
-    // Get the cached HTML from the store or use a sample if not available
-    const cachedData = getStoredData();
-    const cachedHtml = cachedData?.state?.htmlContent || null;
-    
-    // Skip test if no cached HTML is available
-    if (!cachedHtml) {
-      console.warn('No cached HTML available, skipping test');
-      return;
-    }
-    
-    // Mock the fetch to return the cached HTML
+  it('should parse models from the Ollama website HTML', async () => {
+    // Mock the fetch to return our sample HTML
     mockFetch.mockImplementation((url: string) => {
       if (url === 'https://ollama.com/library') {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(cachedHtml)
+          text: () => Promise.resolve(sampleLibraryHtml)
         });
       }
       
@@ -136,49 +170,50 @@ describe('Models functionality with cached HTML', () => {
       return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
     
-    // Call fetchModels to process the cached HTML
+    // Call fetchModels to process the HTML
     await act(async () => {
       await useModelsStore.getState().fetchModels();
     });
     
-    // Verify models were parsed from the cached HTML
+    // Verify models were parsed from the HTML
     const { models } = useModelsStore.getState();
     expect(models.length).toBeGreaterThan(0);
     
     // Parse the HTML to verify model elements
-    const dom = new JSDOM(cachedHtml);
+    const dom = new JSDOM(sampleLibraryHtml);
     const document = dom.window.document;
     const modelElements = document.querySelectorAll('li[x-test-model]');
     
     // Verify the number of models matches
     expect(models.length).toBe(modelElements.length);
     
-    // Check a sample model to verify parsing
-    const firstModelElement = modelElements[0];
-    const firstModelName = firstModelElement.querySelector('[x-test-model-title]')?.getAttribute('title');
-    const firstModel = models.find(m => m.name === firstModelName);
+    // Check the models to verify parsing
+    expect(models.length).toBe(3); // We have 3 models in our sample
     
-    expect(firstModel).toBeDefined();
-    expect(firstModel?.description).toBeTruthy();
+    // Check llama3 model
+    const llama3 = models.find(m => m.name === 'llama3');
+    expect(llama3).toBeDefined();
+    expect(llama3?.description).toBe('Meta Llama 3: The most capable openly available LLM to date');
+    expect(llama3?.parameterSizes).toEqual(['8b', '70b']);
+    expect(llama3?.capabilities).toEqual(['tools']);
+    expect(llama3?.pullCount).toBe('89.8M');
+    expect(llama3?.tagCount).toBe('93');
+    expect(llama3?.lastUpdated).toBe('4 months ago');
+    
+    // Check nomic-embed-text model (embedding model)
+    const nomic = models.find(m => m.name === 'nomic-embed-text');
+    expect(nomic).toBeDefined();
+    expect(nomic?.capabilities).toEqual(['embedding']);
+    expect(nomic?.parameterSizes).toEqual([]);
   })
   
-  it('should test model parsing with cached HTML', async () => {
-    // Get the cached HTML from the store or use a sample if not available
-    const cachedData = getStoredData();
-    const cachedHtml = cachedData?.state?.htmlContent || null;
-    
-    // Skip test if no cached HTML is available
-    if (!cachedHtml) {
-      console.warn('No cached HTML available, skipping test');
-      return;
-    }
-    
-    // Mock the fetch to return the cached HTML
+  it('should extract model details correctly from HTML', async () => {
+    // Mock the fetch to return our sample HTML
     mockFetch.mockImplementation((url: string) => {
       if (url === 'https://ollama.com/library') {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(cachedHtml)
+          text: () => Promise.resolve(sampleLibraryHtml)
         });
       }
       
@@ -194,13 +229,18 @@ describe('Models functionality with cached HTML', () => {
     });
     
     // Parse the HTML to extract model data
-    const dom = new JSDOM(cachedHtml);
+    const dom = new JSDOM(sampleLibraryHtml);
     const document = dom.window.document;
     const modelElements = document.querySelectorAll('li[x-test-model]');
     
-    // Get a sample model name to verify
-    const sampleModelName = modelElements[0].querySelector('[x-test-model-title]')?.getAttribute('title');
-    expect(sampleModelName).toBeTruthy();
+    // Get the model names to verify
+    const modelNames = Array.from(modelElements).map(el => 
+      el.querySelector('[x-test-model-title]')?.getAttribute('title')
+    ).filter(Boolean);
+    
+    expect(modelNames).toContain('llama3');
+    expect(modelNames).toContain('mistral');
+    expect(modelNames).toContain('nomic-embed-text');
     
     // Now use the store's fetchModels function
     await act(async () => {
@@ -211,35 +251,26 @@ describe('Models functionality with cached HTML', () => {
     const { models } = useModelsStore.getState();
     
     // Verify models were parsed
-    expect(models.length).toBeGreaterThan(0);
+    expect(models.length).toBe(3);
     
-    // Verify the sample model exists in the parsed models
-    const foundModel = models.find(m => m.name === sampleModelName);
-    expect(foundModel).toBeTruthy();
-    
-    // Verify model structure
-    expect(foundModel).toHaveProperty('description');
-    expect(foundModel).toHaveProperty('parameterSizes');
-    expect(foundModel).toHaveProperty('capabilities');
+    // Check the mistral model details
+    const mistral = models.find(m => m.name === 'mistral');
+    expect(mistral).toBeDefined();
+    expect(mistral?.description).toBe('The 7B model released by Mistral AI, updated to version 0.3.');
+    expect(mistral?.parameterSizes).toEqual(['7b']);
+    expect(mistral?.capabilities).toEqual(['tools']);
+    expect(mistral?.pullCount).toBe('11.7M');
+    expect(mistral?.tagCount).toBe('84');
+    expect(mistral?.lastUpdated).toBe('8 months ago');
   });
   
   it('should handle error when Ollama API is unreachable', async () => {
-    // Get the cached HTML from the store
-    const cachedData = getStoredData();
-    const cachedHtml = cachedData?.state?.htmlContent || null;
-    
-    // Skip test if no cached HTML is available
-    if (!cachedHtml) {
-      console.warn('No cached HTML available, skipping test');
-      return;
-    }
-    
     // Mock successful HTML fetch but failed API fetch
     mockFetch.mockImplementation((url: string) => {
       if (url === 'https://ollama.com/library') {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(cachedHtml)
+          text: () => Promise.resolve(sampleLibraryHtml)
         });
       }
       
@@ -268,29 +299,19 @@ describe('Models functionality with cached HTML', () => {
     const { models } = useModelsStore.getState();
     
     // We should still have models from ollama.com even if the API is unreachable
-    expect(models.length).toBeGreaterThan(0);
+    expect(models.length).toBe(3);
     
     // But all models should be marked as not installed
     expect(models.every(model => !model.isInstalled)).toBe(true);
   });
   
-  it('should update UI with model data from cached HTML', async () => {
-    // Get the cached HTML from the store
-    const cachedData = getStoredData();
-    const cachedHtml = cachedData?.state?.htmlContent || null;
-    
-    // Skip test if no cached HTML is available
-    if (!cachedHtml) {
-      console.warn('No cached HTML available, skipping test');
-      return;
-    }
-    
+  it('should update UI with model data from HTML', async () => {
     // Mock successful HTML fetch
     mockFetch.mockImplementation((url: string) => {
       if (url === 'https://ollama.com/library') {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(cachedHtml)
+          text: () => Promise.resolve(sampleLibraryHtml)
         });
       }
       
@@ -326,35 +347,26 @@ describe('Models functionality with cached HTML', () => {
     
     // Get the models from the store to verify UI matches data
     const { models } = useModelsStore.getState();
-    expect(models.length).toBeGreaterThan(0);
+    expect(models.length).toBe(3);
     
-    // Check if at least the first model is displayed
-    if (models.length > 0) {
-      const firstModel = models[0];
-      expect(screen.getByText(firstModel.name)).toBeInTheDocument();
-      if (firstModel.description) {
-        expect(screen.getByText(firstModel.description)).toBeInTheDocument();
-      }
-    }
+    // Check if models are displayed in the UI
+    expect(screen.getByText('llama3')).toBeInTheDocument();
+    expect(screen.getByText('mistral')).toBeInTheDocument();
+    expect(screen.getByText('nomic-embed-text')).toBeInTheDocument();
+    
+    // Check if descriptions are displayed
+    expect(screen.getByText('Meta Llama 3: The most capable openly available LLM to date')).toBeInTheDocument();
+    expect(screen.getByText('The 7B model released by Mistral AI, updated to version 0.3.')).toBeInTheDocument();
+    expect(screen.getByText('A high-performing open embedding model with a large token context window.')).toBeInTheDocument();
   });
   
   it('should verify model installation status correctly', async () => {
-    // Get the cached HTML from the store
-    const cachedData = getStoredData();
-    const cachedHtml = cachedData?.state?.htmlContent || null;
-    
-    // Skip test if no cached HTML is available
-    if (!cachedHtml) {
-      console.warn('No cached HTML available, skipping test');
-      return;
-    }
-    
     // Mock successful HTML fetch and API response
     mockFetch.mockImplementation((url: string) => {
       if (url === 'https://ollama.com/library') {
         return Promise.resolve({
           ok: true,
-          text: () => Promise.resolve(cachedHtml)
+          text: () => Promise.resolve(sampleLibraryHtml)
         });
       }
       
@@ -398,9 +410,14 @@ describe('Models functionality with cached HTML', () => {
     // Models should have isInstalled property
     expect(models.every(model => 'isInstalled' in model)).toBe(true);
     
-    // Models with matching names should be marked as installed
-    const installedModels = models.filter(model => model.isInstalled);
-    expect(installedModels.some(model => model.name === 'llama3' || model.name === 'mistral')).toBe(true);
+    // Verify specific models installation status
+    const llama3 = models.find(m => m.name === 'llama3');
+    const mistral = models.find(m => m.name === 'mistral');
+    const nomic = models.find(m => m.name === 'nomic-embed-text');
+    
+    expect(llama3?.isInstalled).toBe(true);
+    expect(mistral?.isInstalled).toBe(true);
+    expect(nomic?.isInstalled).toBe(false);
   })
 });
 
