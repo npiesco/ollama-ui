@@ -11,7 +11,7 @@ A modern, feature-rich user interface for Ollama with true offline capabilities,
 
 ## 🎥 Demo Video
 
-[![Ollama UI Demo](https://img.youtube.com/vi/DYPxKaW3mis/maxresdefault.jpg)](https://youtu.be/DYPxKaW3mis)
+[![Ollama UI Demo](https://img.youtube.com/vi/DYPxKaW3mis/hqdefault.jpg)](https://youtu.be/DYPxKaW3mis)
 
 Click the thumbnail above to watch the demo video on YouTube.
 
