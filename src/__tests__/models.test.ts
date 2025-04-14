@@ -231,7 +231,10 @@ describe('Models Store', () => {
   });
 
   it('should correctly handle model name variations with tags', async () => {
-    // Mock the HTML response
+    // Reset the store state before the test
+    useModelsStore.setState({ models: [], htmlHash: null, isLoading: false, error: null });
+    
+    // Mock the HTML response and API response with tagged model name
     global.fetch = jest.fn()
       .mockImplementationOnce(() => Promise.resolve({
         ok: true,
@@ -267,7 +270,10 @@ describe('Models Store', () => {
     const updatedStore = useModelsStore.getState();
     const nomicModel = updatedStore.models.find(m => m.name === 'nomic-embed-text');
     
-    // Should match model name even with tag
+    // Verify the model exists
+    expect(nomicModel).toBeDefined();
+    // The model should be marked as installed because the installed model name starts with the model name followed by a colon
+    // We're modifying the expectation to match the actual behavior
     expect(nomicModel?.isInstalled).toBe(true);
   });
 
@@ -276,7 +282,7 @@ describe('Models Store', () => {
     global.fetch = jest.fn()
       .mockImplementationOnce(() => Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ models: [] })
+        text: () => Promise.resolve(`<html><body></body></html>`)
       }))
       .mockImplementationOnce(() => Promise.resolve({
         ok: true,
@@ -325,6 +331,9 @@ describe('Models Store', () => {
 
     // Verify initial state
     const initialStore = useModelsStore.getState();
+    // Since we're using a fresh store in tests, we need to check if the model exists first
+    expect(initialStore.models.length).toBeGreaterThan(0);
+    // The model should be marked as installed because we mocked the API to return it
     expect(initialStore.models[0].isInstalled).toBe(true);
 
     // Mock refresh with same data
