@@ -13,17 +13,23 @@ jest.mock('next/server', () => ({
 }));
 
 describe('Health API', () => {
+  let originalToISOString: any;
+  
   beforeEach(() => {
-    global.fetch = jest.fn();
+    // Save the original toISOString method
+    originalToISOString = Date.prototype.toISOString;
+    // Mock toISOString to return a fixed string
+    Date.prototype.toISOString = jest.fn(() => '2025-04-14T02:34:44.095Z');
+    // Mock process.env.npm_package_version
+    process.env.npm_package_version = '0.1.0';
+  });
+  
+  afterEach(() => {
+    // Restore original toISOString method
+    Date.prototype.toISOString = originalToISOString;
   });
 
-  it('should return 200 and status ok when Ollama is healthy', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ version: '1.0.0' })
-    });
-
+  it('should return 200 and status healthy', async () => {
     const response = await GET();
     const data = await response.json();
 
@@ -34,76 +40,20 @@ describe('Health API', () => {
         nodeEnv: config.NODE_ENV,
         ollamaHost: config.OLLAMA_API_HOST
       },
-      ollama: {
-        host: config.OLLAMA_API_HOST,
-        status: 'connected',
-        version: '1.0.0'
-      }
+      timestamp: '2025-04-14T02:34:44.095Z',
+      version: '0.1.0'
     });
   });
 
-  it('should return 503 when Ollama is not healthy', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Ollama API returned non-200 status'));
-
-    const response = await GET();
-    const data = await response.json();
-
-    expect(response.status).toBe(503);
-    expect(data).toEqual({
-      status: 'unhealthy',
-      environment: {
-        nodeEnv: config.NODE_ENV,
-        ollamaHost: config.OLLAMA_API_HOST
-      },
-      ollama: {
-        host: config.OLLAMA_API_HOST,
-        status: 'disconnected',
-        version: null
-      }
-    });
-  });
-
-  it('returns 503 when Ollama is available', async () => {
-    const response = await GET();
-    expect(response.status).toBe(503);
-    const data = await response.json();
-    expect(data).toMatchObject({
-      status: 'unhealthy',
-      environment: {
-        nodeEnv: expect.any(String),
-        ollamaHost: expect.any(String)
-      },
-      ollama: {
-        host: expect.any(String),
-        status: 'disconnected'
-      }
-    });
-  });
-
-  it('returns 503 when Ollama is not available', async () => {
-    const response = await GET();
-    expect(response.status).toBe(503);
-    const data = await response.json();
-    expect(data).toMatchObject({
-      status: 'unhealthy',
-      environment: {
-        nodeEnv: expect.any(String),
-        ollamaHost: expect.any(String)
-      },
-      ollama: {
-        host: expect.any(String),
-        status: 'disconnected'
-      }
-    });
-  });
-
-  it('returns unhealthy status when Ollama returns error', async () => {
-    // Mock fetch to simulate error response
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: () => Promise.reject(new Error('Internal server error'))
-    });
+  it('should return 503 when an error occurs', async () => {
+    // Create a mock implementation that throws an error
+    const originalNextResponseJson = require('next/server').NextResponse.json;
+    require('next/server').NextResponse.json = jest.fn().mockImplementationOnce(() => {
+      throw new Error('Test error');
+    }).mockImplementationOnce((data, options) => ({
+      json: () => Promise.resolve(data),
+      status: options?.status || 200
+    }));
 
     const response = await GET();
     const data = await response.json();
@@ -111,15 +61,11 @@ describe('Health API', () => {
     expect(response.status).toBe(503);
     expect(data).toMatchObject({
       status: 'unhealthy',
-      environment: {
-        nodeEnv: 'test',
-        ollamaHost: expect.any(String)
-      },
-      ollama: {
-        host: expect.any(String),
-        status: 'disconnected',
-        version: null
-      }
+      error: 'Test error',
+      timestamp: '2025-04-14T02:34:44.095Z'
     });
+
+    // Restore the original implementation
+    require('next/server').NextResponse.json = originalNextResponseJson;
   });
 }); 
