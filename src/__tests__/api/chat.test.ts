@@ -1,12 +1,33 @@
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/chat/route';
 
+// Mock ReadableStream for testing
+class MockReadableStream {
+  constructor(private data: any) {}
+  getReader() {
+    let done = false;
+    return {
+      read: () => {
+        if (done) {
+          return Promise.resolve({ done: true, value: undefined });
+        }
+        done = true;
+        return Promise.resolve({
+          done: false,
+          value: new TextEncoder().encode(JSON.stringify(this.data))
+        });
+      },
+      releaseLock: () => {}
+    };
+  }
+}
+
 describe('Chat API', () => {
   it('returns chat response when Ollama is available', async () => {
-    // Mock fetch to simulate successful chat response
+    // Mock fetch to simulate successful chat response with streaming
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
+      body: new MockReadableStream({
         message: {
           role: 'assistant',
           content: 'Hello! How can I help you today?'
@@ -23,9 +44,13 @@ describe('Chat API', () => {
     });
 
     const response = await POST(request);
-    const data = await response.json();
-
     expect(response.status).toBe(200);
+    
+    // Get the response body and read it
+    const reader = response.body?.getReader();
+    const { value } = await reader!.read();
+    const data = JSON.parse(new TextDecoder().decode(value));
+    
     expect(data).toEqual({
       message: {
         role: 'assistant',
@@ -58,7 +83,7 @@ describe('Chat API', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      json: () => Promise.resolve({ error: 'Internal server error' })
+      statusText: 'Internal Server Error'
     });
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
