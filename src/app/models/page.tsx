@@ -838,6 +838,6 @@ const ModelsPage: React.FC = (): React.ReactElement => {
       )}
     </div>
   )
-}
+} 
 
-export default ModelsPage 
+export default ModelsPage;
