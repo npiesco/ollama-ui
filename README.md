@@ -11,10 +11,7 @@ A modern, feature-rich user interface for Ollama with true offline capabilities,
 
 ## 🎥 Demo Video
 
-<video width="100%" controls>
-  <source src="OllamaUIv3Produced.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<iframe width="100%" height="480" src="https://www.youtube.com/embed/DYPxKaW3mis" title="Ollama UI Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## 🎯 Why Ollama UI?
 
