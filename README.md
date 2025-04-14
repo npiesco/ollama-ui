@@ -9,6 +9,13 @@ A modern, feature-rich user interface for Ollama with true offline capabilities,
 [![ONNX Runtime](https://img.shields.io/badge/onnx--runtime--web-1.17.0-7931C3.svg)](https://onnxruntime.ai)
 [![PWA](https://img.shields.io/badge/PWA-ready-brightgreen.svg)](https://web.dev/progressive-web-apps/)
 
+## 🎥 Demo Video
+
+<video width="100%" controls>
+  <source src="OllamaUIv3Produced.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## 🎯 Why Ollama UI?
 
 AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistral, and Phi now capable of running on consumer-grade GPUs. Tools like Ollama make this possible, but there's still a significant barrier to entry - command line interfaces, AI terminology, and complex model parameters can be intimidating for newcomers.
