@@ -48,3 +48,16 @@ venv
 public/sw*
 public/swe-worker*
 public/workbox-*
+
+# Virtual Environment
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Media files
+*.mp4
