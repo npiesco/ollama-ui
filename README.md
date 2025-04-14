@@ -11,8 +11,6 @@ A modern, feature-rich user interface for Ollama with true offline capabilities,
 
 ## 🎥 Demo Video
 
-<iframe width="100%" height="480" src="https://www.youtube.com/embed/DYPxKaW3mis" title="Ollama UI Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ## 🎯 Why Ollama UI?
 
 AI is rapidly evolving with powerful language models like Llama, DeepSeek, Mistral, and Phi now capable of running on consumer-grade GPUs. Tools like Ollama make this possible, but there's still a significant barrier to entry - command line interfaces, AI terminology, and complex model parameters can be intimidating for newcomers.
