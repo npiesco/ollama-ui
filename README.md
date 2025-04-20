@@ -40,7 +40,7 @@ Whether you're running models locally on your machine or hosting in the cloud to
 
 ## 🗺️ Development Roadmap
 
-### Q2 2024 - Vector Database Integration
+### Q1 2026 - Vector Database Integration
 - **Browser-Based VectorDB with Offline RAG**
   - HNSW-based vector indexing in WebAssembly
   - Local document processing and embedding
@@ -49,7 +49,7 @@ Whether you're running models locally on your machine or hosting in the cloud to
   - IndexedDB for persistent storage
   - Integration with existing chat system
 
-### Q3 2024 - Enhanced RAG Capabilities
+### Q1 2026 - Enhanced RAG Capabilities
 - **Advanced Document Processing**
   - Multi-format document support (PDF, DOCX, TXT)
   - Automatic chunking and embedding
@@ -62,7 +62,7 @@ Whether you're running models locally on your machine or hosting in the cloud to
   - Search history and favorites
   - Custom search templates
 
-### Q4 2024 - Performance & Scale
+### Q2 2026 - Performance & Scale
 - **Performance Optimizations**
   - WebGPU acceleration for embeddings
   - Optimized memory management
@@ -75,7 +75,7 @@ Whether you're running models locally on your machine or hosting in the cloud to
   - Cross-origin resource sharing
   - Cloud synchronization
 
-### 2025 - Advanced Features
+### 2026 - Advanced Features
 - **AI-Powered Enhancements**
   - Automatic document summarization
   - Smart document clustering
